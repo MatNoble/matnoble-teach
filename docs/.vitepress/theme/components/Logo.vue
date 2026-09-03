@@ -13,11 +13,11 @@ onMounted(() => {
         setTimeout(() => {
           isVisible.value = true
         }, 100)
-        // 触发一次后即可取消监听，避免反复闪烁（除非你希望反复触发，这里设定为一次性入场）
+        // 触发一次后即可取消监听，避免反复闪烁
         if (logoRef.value) observer?.unobserve(logoRef.value)
       }
     })
-  }, { threshold: 0.1 }) // 10% 可见即触发
+  }, { threshold: 0.1 })
 
   if (logoRef.value) {
     observer.observe(logoRef.value)
@@ -30,7 +30,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="logo" ref="logoRef" :class="{ 'is-active': isVisible }" role="img" aria-label="MatNoble Logo">
+  <div class="logo" ref="logoRef" :class="{ 'is-active': isVisible }" role="img" aria-label="MatNoble 教学中心 Logo">
     <svg viewBox="0 -10 100 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <defs>
         <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
@@ -57,7 +57,10 @@ onUnmounted(() => {
         </g>
       </g>
     </svg>
-    <span class="logo-text">MatNoble</span>
+    <div class="logo-text-wrapper">
+      <span class="logo-text">MatNoble</span>
+      <span class="logo-badge">Teach</span>
+    </div>
   </div>
 </template>
 
@@ -66,7 +69,6 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 0.8rem;
-  /* 初始不可见状态的文字也可以淡入 */
   opacity: 0; 
   transform: translateY(5px);
   transition: opacity 0.6s ease-out, transform 0.6s ease-out;
@@ -83,9 +85,9 @@ onUnmounted(() => {
 }
 
 svg {
-  width: 36px; /* 稍微调大一点以展示细节 */
+  width: 36px;
   height: 36px;
-  overflow: visible; /* 允许微小的溢出位移 */
+  overflow: visible;
 }
 
 /* 经典莫兰迪配色 (Google Tribute) */
@@ -94,7 +96,13 @@ svg {
 .accent-green  { fill: #4aa98c; }
 .accent-blue   { fill: #4d84c4; }
 
-/* 文字样式 */
+/* 文字与胶囊徽标排版 */
+.logo-text-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
 .logo-text {
   font-family: 'Jost', sans-serif;
   font-weight: 700;
@@ -102,6 +110,30 @@ svg {
   letter-spacing: -0.01em;
   color: var(--mn-text);
   line-height: 1;
+}
+
+.logo-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--vp-font-family-base, sans-serif);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1;
+  padding: 0.18rem 0.45rem;
+  border-radius: 6px;
+  background: var(--vp-c-brand-soft, rgba(77, 132, 196, 0.12));
+  color: var(--vp-c-brand-1, #4d84c4);
+  border: 1px solid rgba(77, 132, 196, 0.2);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  user-select: none;
+  transition: all 0.25s ease;
+}
+
+.logo:hover .logo-badge {
+  background: var(--vp-c-brand-1, #4d84c4);
+  color: #ffffff;
+  border-color: var(--vp-c-brand-1, #4d84c4);
 }
 
 /* === 微动效逻辑 === */
