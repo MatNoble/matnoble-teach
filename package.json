@@ -1,0 +1,45 @@
+{
+  "name": "matnoble-teach",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "MatNoble Teaching Hub & Courseware Platform",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "docs:markdown": "node scripts/generate-agent-markdown.mjs",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "npm run docs:markdown && vitepress build docs",
+    "docs:preview": "vitepress preview docs"
+  },
+  "keywords": [
+    "math",
+    "teaching",
+    "courseware",
+    "discrete-math",
+    "calculus",
+    "linear-algebra"
+  ],
+  "author": "MatNoble <me@matnoble.top>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/katex": "^0.16.8",
+    "@types/qrcode": "^1.5.6",
+    "@types/video.js": "^7.3.58",
+    "axios": "^1.6.0",
+    "feed": "^5.2.0",
+    "markdown-it-mathjax3": "^4.3.2",
+    "vite-plugin-pwa": "^1.2.0",
+    "vite-plugin-webfont-dl": "^3.11.1",
+    "vitepress": "^1.0.0",
+    "vue": "^3.0.0"
+  },
+  "dependencies": {
+    "@types/three": "^0.183.1",
+    "@waline/client": "^3.8.0",
+    "katex": "^0.16.28",
+    "medium-zoom": "^1.1.0",
+    "qrcode": "^1.5.4",
+    "three": "^0.183.2",
+    "video.js": "^8.23.7"
+  }
+}
