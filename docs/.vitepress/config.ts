@@ -218,8 +218,8 @@ export default defineConfig({
       { text: "课程中心", link: "/courses/" },
       { text: "教学讲义", link: "/teaching/" },
       { text: "数学工具", link: "/tools/" },
-      { text: "主讲教师 ↗", link: "https://matnoble.top/about" },
-      { text: "个人门户 ↗", link: "https://matnoble.top/" },
+      { text: "主讲教师", link: "https://matnoble.top/about" },
+      { text: "个人门户", link: "https://matnoble.top/" },
     ],
 
     sidebar: [],
