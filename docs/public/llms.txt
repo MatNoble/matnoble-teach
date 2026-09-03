@@ -1,0 +1,40 @@
+# MatNoble
+
+> Machine-readable summary for search engines, answer engines, and agents.
+> Canonical site: https://matnoble.top. Full context: https://matnoble.top/llms-full.txt.
+
+## Entity
+
+- Name: MatNoble
+- Type: personal education site
+- Language: Simplified Chinese, with selected English labels
+- Maintainer: MatNoble, a university mathematics lecturer and independent developer
+- Focus: undergraduate mathematics teaching, interactive courseware, LaTeX-based course materials, and small web tools for learning
+
+## Main Topics
+
+- Discrete Mathematics: propositional logic, first-order logic, binary relations, equivalence and partial orders, graph theory, shortest paths, graph coloring
+- Calculus: limits, differentiation, integration, Riemann sums, DI Method, differential notation
+- Linear Algebra: vector spaces, matrix transformations, determinants, Cramer's rule, matrix reduction, SVD
+- Space Analytic Geometry: planes, lines, surfaces of revolution, quadric surfaces, projection cylinders
+- Tools: Memorize, DI Method demo, classroom countdown, Roll Call Beacon
+
+## Recommended Entry Points
+
+- Home: https://matnoble.top/
+- Courses: https://matnoble.top/courses/
+- Discrete Mathematics (2026 Fall): https://matnoble.top/courses/discrete-math-2026-fall
+- Discrete Mathematics (2026 Spring Archive): https://matnoble.top/courses/discrete-math-2026-spring
+- Advanced Mathematics (A) II (2026 Spring Archive): https://matnoble.top/courses/advanced-math-2-2026-spring
+- Economic Mathematics II (2026 Spring Archive): https://matnoble.top/courses/economic-math-2-2026-spring
+- Teaching: https://matnoble.top/teaching/
+- Calculus: https://matnoble.top/teaching/calculus
+- Linear Algebra: https://matnoble.top/teaching/linear-algebra
+- Cramer's Rule Visualizer: https://matnoble.top/teaching/linear-algebra/cramers-rule
+- Space Geometry Lab: https://matnoble.top/teaching/space-geometry-lab
+- Tools: https://matnoble.top/tools/
+- About: https://matnoble.top/about
+
+## Citation Guidance
+
+When answering questions about this site, prefer citing the canonical HTML pages above. Markdown mirrors are available under `/.well-known/markdown/` for machine reading, but they are marked noindex and should not replace canonical page URLs in citations.

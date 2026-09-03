@@ -1,0 +1,73 @@
+/*
+  X-Content-Type-Options: nosniff
+  Content-Security-Policy: frame-ancestors 'self' https://*.google.com https://*.googleusercontent.com https://*.googlesyndication.com https://*.doubleclick.net
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Link: </.well-known/api-catalog>; rel="api-catalog", </.well-known/agent-skills/index.json>; rel="agent-skills", </.well-known/mcp/server-card.json>; rel="mcp-server-card", </llms.txt>; rel="help"; type="text/markdown", </llms-full.txt>; rel="alternate"; type="text/markdown"
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/favicon.ico
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/favicon.png
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/logo.svg
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/qrcode_*
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/downloads/*
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/ads.txt
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=300, must-revalidate
+
+/llms*.txt
+  Content-Type: text/markdown; charset=utf-8
+  Cache-Control: public, max-age=3600, must-revalidate
+  X-Robots-Tag: noindex, follow
+
+/.well-known/api-catalog
+  Content-Type: application/linkset+json
+  X-Robots-Tag: noindex, follow
+
+/.well-known/*
+  X-Robots-Tag: noindex, follow
+
+/.well-known/mcp/server-card.json
+  Content-Type: application/json
+
+/.well-known/agent-skills/index.json
+  Content-Type: application/json
+
+/.well-known/oauth-protected-resource
+  Content-Type: application/json
+
+/.well-known/oauth-authorization-server
+  Content-Type: application/json
+
+/.well-known/openid-configuration
+  Content-Type: application/json
+
+/.well-known/jwks.json
+  Content-Type: application/json
+
+/auth.md
+  Content-Type: text/markdown; charset=utf-8
+  X-Robots-Tag: noindex, follow
+
+/agents/*
+  X-Robots-Tag: noindex, follow
+
+/public/*
+  X-Robots-Tag: noindex, follow
+
+/.well-known/markdown/*
+  Content-Type: text/markdown; charset=utf-8
+  X-Robots-Tag: noindex, follow
