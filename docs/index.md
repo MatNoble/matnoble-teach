@@ -110,6 +110,23 @@ const CourseList = defineAsyncComponent(() => import('./.vitepress/theme/compone
   </div>
 </section>
 
+<section class="teach-section">
+  <div class="instructor-card">
+    <div class="instructor-avatar">
+      <img src="/logo.svg" alt="MatNoble" width="44" height="44" />
+    </div>
+    <div class="instructor-info">
+      <div class="instructor-title">主讲教师 · MatNoble</div>
+      <div class="instructor-bio">高校数学教师与独立开发者，主讲《离散数学》《微积分》《线性代数》等本科核心数学课程。用程序生成可交互的数学世界，让每一条公式都有具象的几何直觉。</div>
+      <div class="instructor-actions">
+        <a href="https://matnoble.top/about" class="inst-btn primary">关于教师 ↗</a>
+        <a href="https://matnoble.top/" class="inst-btn secondary">个人门户主站 ↗</a>
+        <a href="https://blog.matnoble.top" class="inst-btn secondary">技术博客 ↗</a>
+      </div>
+    </div>
+  </div>
+</section>
+
 </div>
 
 <style scoped>
@@ -206,5 +223,85 @@ const CourseList = defineAsyncComponent(() => import('./.vitepress/theme/compone
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--vp-c-brand-1);
+}
+
+/* 教师简介卡片 */
+.instructor-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-border);
+  margin-top: 1rem;
+}
+
+.instructor-avatar {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.instructor-info {
+  flex-grow: 1;
+}
+
+.instructor-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--vp-c-text-1);
+  margin-bottom: 0.4rem;
+}
+
+.instructor-bio {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--vp-c-text-2);
+  margin-bottom: 1rem;
+}
+
+.instructor-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.inst-btn {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: 0.35rem 0.85rem;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.inst-btn.primary {
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+  border: 1px solid rgba(77, 132, 196, 0.25);
+}
+
+.inst-btn.primary:hover {
+  background: var(--vp-c-brand-1);
+  color: #ffffff;
+}
+
+.inst-btn.secondary {
+  background: var(--vp-c-default-soft);
+  color: var(--vp-c-text-2);
+}
+
+.inst-btn.secondary:hover {
+  color: var(--vp-c-text-1);
+}
+
+@media (max-width: 640px) {
+  .instructor-card {
+    flex-direction: column;
+  }
 }
 </style>

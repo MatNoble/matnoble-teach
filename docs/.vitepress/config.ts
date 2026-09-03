@@ -226,7 +226,7 @@ export default defineConfig({
     socialLinks: [],
 
     footer: {
-      message: '以数学构建逻辑，用技术驱动学习。<br>主讲教师：<a href="https://matnoble.top/about">MatNoble</a> | <a href="https://matnoble.top/">返回主站</a><br>Copyright © 2025-2026 MatNoble',
+      message: '<a href="https://matnoble.top/">个人门户</a> · <a href="/courses/">课程中心</a> · <a href="/teaching/">教学讲义</a> · <a href="/tools/">数学工具</a> · <a href="https://blog.matnoble.top">技术博客</a><br>以数学构建逻辑，用技术驱动学习。<br>主讲教师：<a href="https://matnoble.top/about">MatNoble</a> | Copyright © 2025-2026 MatNoble',
       copyright: "",
     },
 
@@ -442,5 +442,48 @@ export default defineConfig({
     ['meta', { name: 'referrer', content: 'strict-origin-when-cross-origin' }],
     ["meta", { property: "og:site_name", content: "MatNoble 教学中心" }],
     ["meta", { property: "og:type", content: "website" }],
+    [
+      "script",
+      { type: "application/ld+json" },
+      JSON.stringify({
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "EducationalOrganization",
+            "@id": "https://teach.matnoble.top/#organization",
+            "name": "MatNoble 教学中心",
+            "url": "https://teach.matnoble.top",
+            "logo": "https://teach.matnoble.top/logo.svg",
+            "parentOrganization": {
+              "@type": "EducationalOrganization",
+              "@id": "https://matnoble.top/#organization",
+              "name": "MatNoble",
+              "url": "https://matnoble.top"
+            },
+            "founder": {
+              "@type": "Person",
+              "@id": "https://matnoble.top/#person",
+              "name": "MatNoble",
+              "jobTitle": "University Mathematics Lecturer",
+              "url": "https://matnoble.top/about"
+            },
+            "sameAs": [
+              "https://matnoble.top",
+              "https://github.com/matnoble",
+              "https://blog.matnoble.top"
+            ]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://teach.matnoble.top/#website",
+            "url": "https://teach.matnoble.top",
+            "name": "MatNoble 教学中心",
+            "description": SITE_DESCRIPTION,
+            "publisher": { "@id": "https://matnoble.top/#person" },
+            "inLanguage": "zh-CN"
+          }
+        ]
+      })
+    ],
   ],
 });
