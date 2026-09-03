@@ -15,9 +15,20 @@ const router = useRouter()
 // Hierarchical Knowledge Map
 const fullData: NodeData = {
   id: 'core',
-  label: 'MatNoble Core',
-  details: '数学作为底层架构',
+  label: 'MatNoble Teach',
+  details: '数学与计算教学体系',
   children: [
+    {
+      id: 'discrete',
+      label: '离散数学',
+      details: '命题逻辑与图论算法',
+      children: [
+        { id: 'logic', label: '命题逻辑', details: '符号化与等值演算', link: '/courses/discrete-math-2026-fall' },
+        { id: 'first-order', label: '一阶逻辑', details: '量词与前束范式', link: '/courses/discrete-math-2026-fall' },
+        { id: 'relation', label: '二元关系', details: '等价闭包与偏序', link: '/courses/discrete-math-2026-fall' },
+        { id: 'graph', label: '图论图谱', details: '最短路径与着色', link: '/courses/discrete-math-2026-fall' }
+      ]
+    },
     {
       id: 'calculus',
       label: '微积分直觉',
@@ -37,7 +48,6 @@ const fullData: NodeData = {
         { id: 'matrix', label: '初等变换', details: '矩阵动画演示', link: '/teaching/linear-algebra/elementary-transformations' },
         { id: 'cramer', label: '克拉默法则', details: '面积比值交互', link: '/teaching/linear-algebra/cramers-rule' },
         { id: 'simplification', label: '矩阵化简', details: '矩阵去冗余演示', link: '/teaching/linear-algebra/matrix-normal-form' },
-        { id: 'geometric', label: '专题总论', details: '线性代数核心版图', link: '/teaching/linear-algebra' },
         { id: 'space', label: '3D 实验室', details: '空间几何交互', link: '/teaching/space-geometry-lab' }
       ]
     },

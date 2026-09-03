@@ -22,6 +22,7 @@ import { defineAsyncComponent } from 'vue'
 
 const HighFidelityHero = defineAsyncComponent(() => import('./.vitepress/theme/components/HighFidelityHero.vue'))
 const CourseList = defineAsyncComponent(() => import('./.vitepress/theme/components/CourseList.vue'))
+const KnowledgeGraph = defineAsyncComponent(() => import('./.vitepress/theme/components/KnowledgeGraph.vue'))
 </script>
 
 <HighFidelityHero 
@@ -108,6 +109,18 @@ const CourseList = defineAsyncComponent(() => import('./.vitepress/theme/compone
       <div class="card-arrow">开始复习 →</div>
     </a>
   </div>
+</section>
+
+<section class="teach-section">
+  <div class="section-header">
+    <h2 class="section-title">
+      教学内容地图
+      <span class="section-subtitle">Knowledge Graph</span>
+    </h2>
+    <p class="section-desc">可交互的数学知识星图，点击节点探索离散数学、微积分与线性代数子领域。</p>
+  </div>
+
+  <KnowledgeGraph />
 </section>
 
 <section class="teach-section">
