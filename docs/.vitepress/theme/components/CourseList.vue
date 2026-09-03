@@ -1,6 +1,14 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { withBase } from 'vitepress'
+
+const props = withDefaults(defineProps<{
+  currentOnly?: boolean
+  hideHeader?: boolean
+}>(), {
+  currentOnly: false,
+  hideHeader: false
+})
 
 interface Course {
   id: string
@@ -133,12 +141,19 @@ const semesterGroups = ref<SemesterGroup[]>([
     ]
   }
 ])
+
+const displayedGroups = computed(() => {
+  if (props.currentOnly) {
+    return semesterGroups.value.filter(g => g.status === 'current')
+  }
+  return semesterGroups.value
+})
 </script>
 
 <template>
   <div class="courses-hub">
     <!-- Header -->
-    <div class="hub-header">
+    <div v-if="!hideHeader" class="hub-header">
       <h1 class="hub-title">课程中心 <span class="subtitle">Course Hub</span></h1>
       <p class="hub-description">
         以数学直觉为引领，用计算与代码重构科学视野。按学期查阅主讲课程的章节化教学大纲及精品讲义课件。
@@ -147,7 +162,7 @@ const semesterGroups = ref<SemesterGroup[]>([
 
     <!-- Semester Sections -->
     <section 
-      v-for="group in semesterGroups" 
+      v-for="group in displayedGroups" 
       :key="group.semester" 
       class="semester-section"
       :class="{ 'is-current': group.status === 'current', 'is-completed': group.status === 'completed' }"
