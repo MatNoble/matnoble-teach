@@ -1,6 +1,6 @@
 ---
 layout: page
-title: 大学数学与工程计算教学平台
+title: MatNoble 教学中心 - 大学数学与工程计算教学平台
 breadcrumb: 教学首页
 titleTemplate: false
 description: MatNoble 教学中心：大学数学（离散数学、高等数学、线性代数、经济数学）与工程计算精品课件、章节大纲、3D互动几何实验与课堂工具。
