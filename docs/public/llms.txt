@@ -33,6 +33,11 @@
 - Target Audience: Engineering & Applied Mathematics
 - Canonical URL: https://teach.matnoble.top/courses/matlab/
 
+### 5. Java Programming (Java程序设计)
+- Target Audience: Computer Science & Software Engineering majors
+- Syllabus: Object-oriented programming, syntax fundamentals (data types, console I/O, control flow, loops, methods, arrays, ArrayList), OOP core, and project practice.
+- Canonical Active Semester: https://teach.matnoble.top/courses/java-programming-2026-fall
+
 ## Interactive Demonstrations & Pedagogical Tools
 
 - Space Geometry 3D Lab (Three.js WebGL): https://teach.matnoble.top/teaching/space-geometry-lab

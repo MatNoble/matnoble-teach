@@ -29,13 +29,19 @@ head:
               "@type": "ListItem",
               "position": 1,
               "name": "离散数学 (2026秋季)",
-              "url": "https://matnoble.top/courses/discrete-math-2026-fall"
+              "url": "https://teach.matnoble.top/courses/discrete-math-2026-fall"
             },
             {
               "@type": "ListItem",
               "position": 2,
+              "name": "Java程序设计 (2026秋季)",
+              "url": "https://teach.matnoble.top/courses/java-programming-2026-fall"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
               "name": "MATLAB 编程与工程实践 (2026夏季)",
-              "url": "https://matnoble.top/courses/matlab/"
+              "url": "https://teach.matnoble.top/courses/matlab/"
             },
             {
               "@type": "ListItem",

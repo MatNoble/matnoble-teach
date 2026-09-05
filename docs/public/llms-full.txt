@@ -35,6 +35,14 @@ Recommended URLs:
 - Advanced Mathematics (A) II (2026 Spring Archive): https://matnoble.top/courses/advanced-math-2-2026-spring
 - Economic Mathematics II (2026 Spring Archive): https://matnoble.top/courses/economic-math-2-2026-spring
 
+### Java Programming
+
+Java Programming covers syntax fundamentals (data types, console I/O, control flow, loops, methods, arrays, ArrayList), object-oriented programming principles, exceptions, collections, and software engineering practice.
+
+Recommended URLs:
+
+- Java Programming (2026 Fall): https://matnoble.top/courses/java-programming-2026-fall
+
 ### Calculus
 
 MatNoble publishes course notes and interactive explanations for standard undergraduate calculus topics. Common topics include limits, differentiation, differential notation, Riemann sums, integration by parts, and tabular integration.
