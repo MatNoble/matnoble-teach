@@ -112,19 +112,19 @@ export default defineConfig({
     server: {
       proxy: {
         "^/(r2-assets)/.*": {
-          target: "https://matnoble.top",
+          target: "https://teach.matnoble.top",
           changeOrigin: true,
           headers: {
-            Referer: "https://matnoble.top",
-            Origin: "https://matnoble.top",
+            Referer: "https://teach.matnoble.top",
+            Origin: "https://teach.matnoble.top",
           },
         },
         "^/pdf/.*": {
-          target: "https://matnoble.top",
+          target: "https://teach.matnoble.top",
           changeOrigin: true,
           headers: {
-            Referer: "https://matnoble.top",
-            Origin: "https://matnoble.top",
+            Referer: "https://teach.matnoble.top",
+            Origin: "https://teach.matnoble.top",
           },
         },
       },

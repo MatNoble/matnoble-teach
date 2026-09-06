@@ -7,7 +7,7 @@ structuredData:
     description: "Step-by-step solver for integration by parts using the DI Method."
     potentialAction:
       - type: "SolveMathAction"
-        target: "https://matnoble.top/tools/di-method"
+        target: "https://teach.matnoble.top/tools/di-method"
   softwareApp:
     name: "DI Method Interactive Solver"
     category: "EducationalApplication"

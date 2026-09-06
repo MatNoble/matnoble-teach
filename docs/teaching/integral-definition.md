@@ -15,7 +15,7 @@ structuredData:
     description: "直观演示黎曼和分割与极限过程，辅助理解定积分与二重积分。"
     potentialAction:
       - type: "SolveAction"
-        target: "https://matnoble.top/teaching/integral-definition"
+        target: "https://teach.matnoble.top/teaching/integral-definition"
 head:
   - - script
     - type: application/ld+json

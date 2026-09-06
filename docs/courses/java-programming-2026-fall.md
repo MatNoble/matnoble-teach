@@ -12,7 +12,7 @@ next: false
 ---
 
 <script setup>
-const CDN_BASE = 'https://matnoble.top/pdf/java/2026_fall'
+const CDN_BASE = '/pdf/java/2026_fall'
 
 const part1Lectures = [
   { chap: '1.1', topic: 'Java 语言入门与开发环境搭建', filename: 'lec01-java-intro.pdf' },

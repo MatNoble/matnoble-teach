@@ -15,7 +15,7 @@ head:
         "@context": "https://schema.org",
         "@type": "CollectionPage",
         "name": "课程中心 | MatNoble",
-        "url": "https://matnoble.top/courses/",
+        "url": "https://teach.matnoble.top/courses/",
         "description": "提供大学数学（离散数学、高等数学、线性代数、经济数学）与工程计算章节化精品课件与期末复习资源发布。",
         "author": {
           "@type": "Person",
@@ -45,21 +45,21 @@ head:
             },
             {
               "@type": "ListItem",
-              "position": 3,
-              "name": "高等数学(A)II (2026春季归档)",
-              "url": "https://matnoble.top/courses/advanced-math-2-2026-spring"
-            },
-            {
-              "@type": "ListItem",
               "position": 4,
-              "name": "离散数学 (2026春季归档)",
-              "url": "https://matnoble.top/courses/discrete-math-2026-spring"
+              "name": "高等数学(A)II (2026春季归档)",
+              "url": "https://teach.matnoble.top/courses/advanced-math-2-2026-spring"
             },
             {
               "@type": "ListItem",
               "position": 5,
+              "name": "离散数学 (2026春季归档)",
+              "url": "https://teach.matnoble.top/courses/discrete-math-2026-spring"
+            },
+            {
+              "@type": "ListItem",
+              "position": 6,
               "name": "经济数学II (2026春季归档)",
-              "url": "https://matnoble.top/courses/economic-math-2-2026-spring"
+              "url": "https://teach.matnoble.top/courses/economic-math-2-2026-spring"
             }
           ]
         }

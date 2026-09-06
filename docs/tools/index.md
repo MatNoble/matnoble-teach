@@ -10,7 +10,7 @@ head:
         "@type": "CollectionPage",
         "name": "数学辅助工具箱",
         "description": "数学学习辅助工具集，包含 Memorize 助手与 DI 表格法演示。",
-        "url": "https://matnoble.top/tools/",
+        "url": "https://teach.matnoble.top/tools/",
         "hasPart": [
           {
             "@type": "SoftwareApplication",
