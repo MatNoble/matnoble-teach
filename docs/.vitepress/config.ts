@@ -447,6 +447,7 @@ export default defineConfig({
       ["meta", { name: "author", content: "MatNoble" }],
       ["meta", { name: "keywords", content: keywords }],
       // Open Graph
+      ["meta", { property: "og:locale", content: "zh_CN" }],
       ["meta", { property: "og:url", content: url }],
       ["meta", { property: "og:title", content: title }],
       ["meta", { property: "og:description", content: description }],
@@ -460,6 +461,8 @@ export default defineConfig({
       ["meta", { name: "twitter:description", content: description }],
       ["meta", { name: "twitter:image", content: imageUrl }],
       ["meta", { name: "twitter:card", content: "summary_large_image" }],
+      ["meta", { name: "twitter:site", content: "@MatNoble" }],
+      ["meta", { name: "twitter:creator", content: "@MatNoble" }],
       // JSON-LD Scripts
       ...schemas.map(schema => ["script", { type: "application/ld+json" }, JSON.stringify(schema)])
     ] as any;
@@ -535,8 +538,10 @@ export default defineConfig({
             },
             "sameAs": [
               "https://matnoble.top",
-              "https://github.com/matnoble",
-              "https://blog.matnoble.top"
+              "https://blog.matnoble.top",
+              "https://speak.matnoble.top",
+              "https://album.matnoble.top",
+              "https://github.com/matnoble"
             ]
           },
           {

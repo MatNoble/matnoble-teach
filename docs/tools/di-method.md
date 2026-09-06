@@ -1,6 +1,6 @@
 ---
-title: DI 表格法交互演示
-description: 用交互方式学习 DI Method。通过逐步推演，理解表格积分法如何组织分部积分计算。
+title: DI 表格积分法交互演算工具 - 高等数学分部积分求解器
+description: DI 表格积分法 (Differentiate & Integrate Method) 在线交互推演工具。通过求导列与积分列逐步演示复杂分部积分求解过程，提供清晰公式推导与步骤解析。
 structuredData:
   mathSolver:
     name: "DI Method Integration Solver"

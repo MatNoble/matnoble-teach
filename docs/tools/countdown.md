@@ -1,7 +1,7 @@
 ---
 layout: page
-title: 课堂倒计时
-description: 为课堂练习、限时答题和教学展示设计的全屏倒计时工具，支持快速设置时间并用于投屏课堂节奏控制。
+title: 课堂倒计时与限时练习大屏工具 - 互动教学辅助
+description: 面向大学课堂练习、限时答题与教学展示的全屏倒计时网页工具。支持快速预设时间、全屏投屏显示与提示音，便于教师把控课堂互动节奏与课堂测试。
 navbar: false
 sidebar: false
 aside: false

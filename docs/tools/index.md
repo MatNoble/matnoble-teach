@@ -1,6 +1,6 @@
 ---
-title: 数学辅助工具 - MatNoble Portal
-description: MatNoble 开发的数学学习辅助工具集，包含间隔重复记忆、DI 表格法演示和若干可视化组件。
+title: 数学辅助工具箱 - 间隔重复记忆、DI表格法与课堂计时器
+description: MatNoble 教学中心数学学习辅助工具集。包含面向公式背诵的 Memorize 间隔重复记忆助手、分部积分 DI 表格法交互推演工具、课堂限时答题倒计时器与学术资源索引。
 head:
   - - script
     - type: application/ld+json

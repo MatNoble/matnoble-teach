@@ -1,7 +1,7 @@
 ---
-title: 矩阵化简的三种形态
-titleTemplate: ":title | MatNoble"
-description: 说明行阶梯形(REF)、行最简形(RREF)与标准型(Normal Form)之间的关系，并用动画辅助理解矩阵秩的变化过程。
+title: 矩阵化简的三种形态 - 行阶梯形、行最简形与标准形全解析
+titleTemplate: ":title | MatNoble 教学中心"
+description: 系统梳理线性代数中行阶梯形(REF)、行最简形(RREF)与等价标准形(Normal Form)的定义与性质。结合初等行变换与矩阵秩(Rank)概念，深入分析解线性方程组与矩阵对角化基础。
 keywords: 矩阵化简, 矩阵秩, 行最简形, 线性代数几何直观, Manim 动画教学, 矩阵标准型推导
 structuredData:
   course:
