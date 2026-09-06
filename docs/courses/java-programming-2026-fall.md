@@ -139,6 +139,19 @@ const part4Lectures = [
   </tbody>
 </table>
 
+---
+
+## 开发环境配置
+
+课程实践推荐统一配置 JDK 21+ 与相关构建工具。关于标准化安装路径规划（避免空格路径陷阱）、Windows / Linux / macOS 环境变量配置、`JAVA_HOME` 多版本切换及国内镜像加速，可参考专属图文教程：
+
+::: tip 📖 推荐阅读
+👉 **[开发环境配置备忘录：Java / JVM 生态安装与配置指南](https://blog.matnoble.top/tech/programming/dev-env/#1-java--jvm-%e7%94%9f%e6%80%81)**
+- **目录规范**：避开系统盘与路径空格隐患，统一管理 JDK 8 / 17 / 21
+- **环境配置**：Windows 系统属性图形化配置、`JAVA_HOME` 与 `Path` 正确设置
+- **验证调试**：`java --version`、`javac` 与 `jshell` 交互式测试
+:::
+
 <style scoped>
 .subtitle {
   display: block;
