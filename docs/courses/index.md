@@ -28,36 +28,42 @@ head:
             {
               "@type": "ListItem",
               "position": 1,
+              "name": "高等数学(A)I (2026秋季)",
+              "url": "https://teach.matnoble.top/courses/advanced-math-1-2026-fall"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
               "name": "离散数学 (2026秋季)",
               "url": "https://teach.matnoble.top/courses/discrete-math-2026-fall"
             },
             {
               "@type": "ListItem",
-              "position": 2,
+              "position": 3,
               "name": "Java程序设计 (2026秋季)",
               "url": "https://teach.matnoble.top/courses/java-programming-2026-fall"
             },
             {
               "@type": "ListItem",
-              "position": 3,
+              "position": 4,
               "name": "MATLAB 编程与工程实践 (2026夏季)",
               "url": "https://teach.matnoble.top/courses/matlab/"
             },
             {
               "@type": "ListItem",
-              "position": 4,
+              "position": 5,
               "name": "高等数学(A)II (2026春季归档)",
               "url": "https://teach.matnoble.top/courses/advanced-math-2-2026-spring"
             },
             {
               "@type": "ListItem",
-              "position": 5,
+              "position": 6,
               "name": "离散数学 (2026春季归档)",
               "url": "https://teach.matnoble.top/courses/discrete-math-2026-spring"
             },
             {
               "@type": "ListItem",
-              "position": 6,
+              "position": 7,
               "name": "经济数学II (2026春季归档)",
               "url": "https://teach.matnoble.top/courses/economic-math-2-2026-spring"
             }

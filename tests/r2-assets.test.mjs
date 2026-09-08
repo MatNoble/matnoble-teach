@@ -103,6 +103,7 @@ test("HEAD returns object headers without a body", async () => {
 
 test("download pages use the same-origin R2 proxy", async () => {
   const files = [
+    "docs/courses/advanced-math-1-2026-fall.md",
     "docs/courses/discrete-math-2026-fall.md",
     "docs/.vitepress/theme/components/ManimVideo.vue",
   ];

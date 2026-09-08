@@ -22,6 +22,7 @@
 ### 2. Advanced Mathematics / Calculus (高等数学 / 微积分)
 - Target Audience: Science & Engineering majors
 - Syllabus: Differential calculus, universal differential formula, integral calculus, Riemann sums, tabular integration by parts (DI Method), differential equations.
+- Canonical Active Semester: https://teach.matnoble.top/courses/advanced-math-1-2026-fall
 - Historical Archive: https://teach.matnoble.top/courses/advanced-math-2-2026-spring
 
 ### 3. Economic Mathematics & Linear Algebra (经济数学 / 线性代数)

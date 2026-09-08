@@ -44,7 +44,7 @@ const semesterGroups = ref<SemesterGroup[]>([
         category: 'stem',
         semester: '2026 秋季',
         description: '理工科核心基础必修课。涵盖函数与极限、一元函数导数与微分、微分中值定理与导数应用、不定积分与定积分及其应用，为后续课程奠定坚实数理基础。',
-        link: '',
+        link: '/courses/advanced-math-1-2026-fall',
         status: 'active'
       },
       {

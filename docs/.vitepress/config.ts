@@ -9,6 +9,7 @@ const SITE_DESCRIPTION =
 
 const ROUTE_LABELS: Record<string, string> = {
   "courses": "课程中心",
+  "courses/advanced-math-1-2026-fall": "高等数学(A)I (2026秋季)",
   "courses/discrete-math-2026-fall": "离散数学 (2026秋季)",
   "courses/discrete-math-2026-spring": "离散数学 (2026春季归档)",
   "courses/java-programming-2026-fall": "Java程序设计 (2026秋季)",
@@ -34,6 +35,7 @@ const ROUTE_LABELS: Record<string, string> = {
 };
 
 const REDIRECT_ROUTES = new Set([
+  "/courses/advanced-math-1",
   "/courses/discrete-math",
   "/courses/java-programming",
   "/courses/advanced-math-2",
