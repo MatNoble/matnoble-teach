@@ -19,6 +19,7 @@ import FloatingTimerIcon from "./components/FloatingTimerIcon.vue";
 const ManimVideo = defineAsyncComponent(() => import("./components/ManimVideo.vue"));
 const ComparisonGrid = defineAsyncComponent(() => import("./components/ComparisonGrid.vue"));
 const CramerRuleVisualizer = defineAsyncComponent(() => import("../../components/math/CramerRuleVisualizer.vue"));
+const PracticeCard = defineAsyncComponent(() => import("../../components/PracticeCard.vue"));
 const LearningPathHeader = defineAsyncComponent(() => import("./components/LearningPathHeader.vue"));
 const ScrollTelling = defineAsyncComponent(() => import("./components/ScrollTelling.vue"));
 const ThreeOneQuote = defineAsyncComponent(() => import("./components/ThreeOneQuote.vue"));
@@ -149,6 +150,7 @@ export default {
     app.component("ComparisonGrid", ComparisonGrid);
     app.component("ThreeOneQuote", ThreeOneQuote);
     app.component("CramerRuleVisualizer", CramerRuleVisualizer);
+    app.component("PracticeCard", PracticeCard);
     app.component("CourseList", CourseList);
     app.component("ImmersiveMode", ImmersiveMode);
     if (typeof window !== "undefined") {

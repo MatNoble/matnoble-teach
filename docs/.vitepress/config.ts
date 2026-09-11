@@ -96,6 +96,10 @@ export default defineConfig({
 
   markdown: {
     math: true,
+    theme: {
+      light: "github-light",
+      dark: "one-dark-pro",
+    },
   },
 
   router: {

@@ -15,14 +15,14 @@ next: false
 const CDN_BASE = '/pdf/java/2026_fall'
 
 const part1Lectures = [
-  { chap: '1.1', topic: 'Java 语言入门与开发环境搭建', filename: 'lec01-java-intro.pdf' },
-  { chap: '1.2', topic: '数据类型、变量、常量与运算表达式', filename: 'lec02-data-types.pdf' },
-  { chap: '1.3', topic: '控制台交互、格式化 I/O 与 Math 库', filename: 'lec03-console-io.pdf' },
-  { chap: '1.4', topic: '流程控制与分支结构（if-else 与 switch）', filename: 'lec04-flow-control.pdf' },
-  { chap: '1.5', topic: '循环结构与算法控制（for, while 与转向控制）', filename: 'lec05-loops.pdf' },
-  { chap: '1.6', topic: '方法设计、JVM 栈帧与参数值传递机制', filename: 'lec06-methods.pdf' },
-  { chap: '1.7', topic: '数组、矩阵操作与 Arrays 工具库', filename: 'lec07-arrays.pdf' },
-  { chap: '1.8', topic: '经典排序算法与 ArrayList 动态列表', filename: 'lec08-sort-arraylist.pdf' }
+  { chap: '1.1', topic: 'Java 语言入门与开发环境搭建', filename: 'lec01-java-intro.pdf', practice: 'lec01' },
+  { chap: '1.2', topic: '数据类型、变量、常量与运算表达式', filename: 'lec02-data-types.pdf', practice: 'lec02' },
+  { chap: '1.3', topic: '控制台交互、格式化 I/O 与 Math 库', filename: 'lec03-console-io.pdf', practice: 'lec03' },
+  { chap: '1.4', topic: '流程控制与分支结构（if-else 与 switch）', filename: 'lec04-flow-control.pdf', practice: 'lec04' },
+  { chap: '1.5', topic: '循环结构与算法控制（for, while 与转向控制）', filename: 'lec05-loops.pdf', practice: 'lec05' },
+  { chap: '1.6', topic: '方法设计、JVM 栈帧与参数值传递机制', filename: 'lec06-methods.pdf', practice: 'lec06' },
+  { chap: '1.7', topic: '数组、矩阵操作与 Arrays 工具库', filename: 'lec07-arrays.pdf', practice: 'lec07' },
+  { chap: '1.8', topic: '经典排序算法与 ArrayList 动态列表', filename: 'lec08-sort-arraylist.pdf', practice: 'lec08' }
 ]
 
 const part2Lectures = [
@@ -66,9 +66,10 @@ const part4Lectures = [
 <table class="academic-table">
   <thead>
     <tr>
-      <th style="width: 12%">章节</th>
-      <th style="width: 73%">知识要点</th>
+      <th style="width: 10%">章节</th>
+      <th style="width: 60%">知识要点</th>
       <th style="width: 15%; text-align: center;">授课课件</th>
+      <th style="width: 15%; text-align: center;">随堂实操</th>
     </tr>
   </thead>
   <tbody>
@@ -77,6 +78,9 @@ const part4Lectures = [
       <td class="chap-title">{{ item.topic }}</td>
       <td class="download-cell">
         <a :href="CDN_BASE + '/' + item.filename" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a>
+      </td>
+      <td class="download-cell">
+        <a :href="'/courses/java-programming-2026-fall/practice/' + item.practice" class="btn-dl btn-practice">实操 💻</a>
       </td>
     </tr>
   </tbody>
@@ -87,9 +91,10 @@ const part4Lectures = [
 <table class="academic-table">
   <thead>
     <tr>
-      <th style="width: 12%">章节</th>
-      <th style="width: 73%">知识要点</th>
+      <th style="width: 10%">章节</th>
+      <th style="width: 60%">知识要点</th>
       <th style="width: 15%; text-align: center;">授课课件</th>
+      <th style="width: 15%; text-align: center;">随堂实操</th>
     </tr>
   </thead>
   <tbody>
@@ -97,6 +102,7 @@ const part4Lectures = [
       <td class="chap-num">{{ item.chap }}</td>
       <td class="chap-title">{{ item.topic }}</td>
       <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="download-cell"><span class="btn-lock">待开放 🔒</span></td>
     </tr>
   </tbody>
 </table>
@@ -106,9 +112,10 @@ const part4Lectures = [
 <table class="academic-table">
   <thead>
     <tr>
-      <th style="width: 12%">章节</th>
-      <th style="width: 73%">知识要点</th>
+      <th style="width: 10%">章节</th>
+      <th style="width: 60%">知识要点</th>
       <th style="width: 15%; text-align: center;">授课课件</th>
+      <th style="width: 15%; text-align: center;">随堂实操</th>
     </tr>
   </thead>
   <tbody>
@@ -116,6 +123,7 @@ const part4Lectures = [
       <td class="chap-num">{{ item.chap }}</td>
       <td class="chap-title">{{ item.topic }}</td>
       <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="download-cell"><span class="btn-lock">待开放 🔒</span></td>
     </tr>
   </tbody>
 </table>
@@ -125,9 +133,10 @@ const part4Lectures = [
 <table class="academic-table">
   <thead>
     <tr>
-      <th style="width: 12%">章节</th>
-      <th style="width: 73%">知识要点</th>
+      <th style="width: 10%">章节</th>
+      <th style="width: 60%">知识要点</th>
       <th style="width: 15%; text-align: center;">授课课件</th>
+      <th style="width: 15%; text-align: center;">随堂实操</th>
     </tr>
   </thead>
   <tbody>
@@ -135,6 +144,7 @@ const part4Lectures = [
       <td class="chap-num">{{ item.chap }}</td>
       <td class="chap-title">{{ item.topic }}</td>
       <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="download-cell"><span class="btn-lock">待开放 🔒</span></td>
     </tr>
   </tbody>
 </table>
@@ -265,6 +275,7 @@ const part4Lectures = [
   text-decoration: none !important;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 1px 2px rgba(56, 189, 248, 0.05);
+  white-space: nowrap;
 }
 
 .btn-dl:hover {
@@ -274,9 +285,40 @@ const part4Lectures = [
   box-shadow: 0 4px 12px var(--mn-primary-ring);
 }
 
+/* 随堂实操专属高质感微光样式 (紫蓝渐变) */
+.btn-practice {
+  background: rgba(99, 102, 241, 0.08);
+  color: #4f46e5 !important;
+  border-color: rgba(99, 102, 241, 0.28);
+  box-shadow: 0 1px 2px rgba(99, 102, 241, 0.06);
+}
+
+.btn-practice:hover {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-color: transparent;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+}
+
+.dark .btn-practice {
+  background: rgba(129, 140, 248, 0.12);
+  color: #a5b4fc !important;
+  border-color: rgba(129, 140, 248, 0.28);
+}
+
+.dark .btn-practice:hover {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-color: transparent;
+  color: #ffffff !important;
+  box-shadow: 0 4px 16px rgba(129, 140, 248, 0.45);
+}
+
 /* 暂未开放状态样式 */
 .btn-lock {
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 4px 12px;
   font-size: 0.82rem;
   font-weight: 500;
@@ -284,6 +326,7 @@ const part4Lectures = [
   border: 1px dashed rgba(0, 0, 0, 0.12);
   border-radius: 20px;
   background: transparent;
+  white-space: nowrap;
 }
 
 .dark .btn-lock {

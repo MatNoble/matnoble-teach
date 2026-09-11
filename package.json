@@ -6,7 +6,8 @@
   "main": "index.js",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "docs:markdown": "node scripts/generate-agent-markdown.mjs",
+    "sync:java": "node scripts/sync-java-practice.mjs",
+    "docs:markdown": "node scripts/generate-agent-markdown.mjs && node scripts/sync-java-practice.mjs",
     "docs:dev": "vitepress dev docs --port 5174",
     "docs:build": "npm run docs:markdown && vitepress build docs && node scripts/submit-indexnow.mjs --auto",
     "docs:preview": "vitepress preview docs --port 4174",
