@@ -227,17 +227,8 @@ const CDN_BASE = '/pdf/calculus/2026_fall'
   </tbody>
 </table>
 
+
 <style scoped>
-.subtitle {
-  display: block;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--mn-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-top: -10px;
-  margin-bottom: 24px;
-}
 
 /* 高颜值学术表格样式 */
 .academic-table {

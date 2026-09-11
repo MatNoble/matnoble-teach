@@ -894,3 +894,27 @@ mjx-container:not([display]) {
 .immersive-mode .vp-doc [class*='language-'] {
   font-size: 1.1rem !important;
 }
+
+/* ===========================================
+   § Course Page — Subtitle & Section Label
+   =========================================== */
+
+.vp-doc .subtitle {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--mn-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 2px;
+  margin-bottom: 24px;
+}
+
+.vp-doc .sec-eng {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--mn-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-left: 8px;
+}

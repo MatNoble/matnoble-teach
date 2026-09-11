@@ -276,25 +276,7 @@ const CDN_BASE = '/pdf/calculus/II'
 </table>
 
 <style scoped>
-.subtitle {
-  display: block;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--mn-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-top: -10px;
-  margin-bottom: 24px;
-}
 
-.sec-eng {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--mn-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-left: 8px;
-}
 
 /* 高颜值学术表格样式 */
 .academic-table {
