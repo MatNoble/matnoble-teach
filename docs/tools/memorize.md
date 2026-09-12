@@ -1,6 +1,6 @@
 ---
 title: Memorize 记忆助手 - 基于间隔重复算法的 LaTeX 数学公式记忆工具
-description: 面向大学数学公式背诵与复习的在线间隔重复记忆工具 (Anki/SuperMemo 算法启发)。全面支持 LaTeX 实时公式渲染，帮助学生高效巩固微积分与线性代数核心公式。
+description: Memorize 记忆助手是一款面向大学数学公式背诵与周期复习的在线间隔重复记忆 Web 工具（受 Anki 与 SuperMemo 算法启发）。深度支持 LaTeX 实时公式渲染与卡片自测，内置微积分导数积分表、泰勒展开、三角恒等式与线性代数核心公式集，助你利用艾宾浩斯记忆遗忘曲线高效突破数学公式记忆瓶颈。
 structuredData:
   softwareApp:
     name: "Memorize 记忆助手"

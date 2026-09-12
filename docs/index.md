@@ -3,7 +3,7 @@ layout: page
 title: MatNoble 教学中心 - 大学数学与工程计算教学平台
 breadcrumb: 教学首页
 titleTemplate: false
-description: MatNoble 教学中心：大学数学（离散数学、高等数学、线性代数、经济数学）与工程计算精品课件、章节大纲、3D互动几何实验与课堂工具。
+description: MatNoble 教学中心是面向高校理工科与经管类专业的一站式大学数学与工程计算精品教学平台。系统整合提供《离散数学》《高等数学》《线性代数》《经济数学》《MATLAB编程与实践》及《Java程序设计》的章节授课课件、期末复习讲义、3D交互式空间几何实验室与 DI 表格积分法等高质量课堂教学辅助工具。
 head:
   - - script
     - type: application/ld+json

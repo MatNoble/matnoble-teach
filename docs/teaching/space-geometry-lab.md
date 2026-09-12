@@ -2,13 +2,13 @@
 title: 空间解析几何 3D 实验室 - 数学交互式教学工具 | MatNoble
 breadcrumb: 3D 实验室
 titleTemplate: 空间几何专题
-description: 基于 Stewart Calculus 内容，使用 WebGL 演示空间平面、空间直线、空间曲面（旋转面、椭球面）与空间曲线投影。
+description: 高等数学空间解析几何交互式 3D 实验室。基于经典教材 James Stewart 微积分体系，使用 WebGL 与 Three.js 实时渲染空间平面方程、空间直线、旋转曲面、典型二次曲面及空间曲线投影柱面。支持旋转缩放与参数动态调节，帮助理工科学生理清空间方程构造与截痕法，构建直观立体的三维几何直觉。
 sidebar: false
 layout: doc
 head:
   - - meta
     - name: description
-      content: 高等数学空间解析几何交互式实验室。基于 Stewart Calculus 内容，使用 WebGL 演示空间平面、空间直线、旋转曲面、二次曲面及空间曲线投影。
+      content: 高等数学空间解析几何交互式 3D 实验室。基于经典教材 James Stewart 微积分体系，使用 WebGL 与 Three.js 实时渲染空间平面方程、空间直线、旋转曲面、典型二次曲面及空间曲线投影柱面。支持旋转缩放与参数动态调节，帮助理工科学生理清空间方程构造与截痕法，构建直观立体的三维几何直觉。
   - - meta
     - name: keywords
       content: 空间解析几何, 3D交互, 数学可视化, Stewart Calculus, 平面方程, 直线方程, 旋转面, 投影, 投射柱面, 高等数学

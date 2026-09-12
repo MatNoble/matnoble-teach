@@ -2,7 +2,7 @@
 layout: doc
 title: MATLAB 数据可视化与绘图
 breadcrumb: 数据可视化
-description: MATLAB 二维绘图基础、多条曲线对比、分块子图 (subplot)、散点图与柱状图。
+description: MATLAB 数据可视化与工程绘图基础全指南。详解二维曲线绘制基础 plot 规范流程、线型颜色与数据点标记配置、多曲线对比与 hold on/off 机制，以及分块子图 subplot 高效布局。涵盖散点图 scatter、柱状图 bar、坐标轴标签与图例配置实操，帮助学生快速掌握科研学术图表绘制规范与排版技巧。
 ---
 
 # MATLAB 数据可视化与绘图

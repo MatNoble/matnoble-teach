@@ -2,7 +2,7 @@
 title: 积分的定义：从一元到多元 | 黎曼和与几何直观
 breadcrumb: 积分定义
 titleTemplate: 微积分专题
-description: 说明定积分与二重积分的正式定义。通过 Manim 动画演示黎曼和（Riemann Sum）的分割、近似、求和与取极限过程。
+description: 定积分与二重积分严格数学定义与几何直观教学解析。通过 Manim 动画生动演示黎曼和（Riemann Sum）从一维区间到二维区域的“分割、近似、求和、取极限”四步推导全过程。对比一元定积分求曲边梯形面积与二重积分求曲顶柱体体积的对应法则，讲透网格细度趋于零与极限收敛机制，攻克积分学核心概念理解难关。
 keywords: 黎曼和, 定积分定义, 二重积分定义, 微积分教学, 可视化数学, Riemann Sum, Double Integral, 极限思想, 分割近似求和取极限
 tags: ["微积分", "定积分", "二重积分", "黎曼和"]
 structuredData:

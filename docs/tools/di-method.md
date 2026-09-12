@@ -1,6 +1,6 @@
 ---
 title: DI 表格积分法交互演算工具 - 高等数学分部积分求解器
-description: DI 表格积分法 (Differentiate & Integrate Method) 在线交互推演工具。通过求导列与积分列逐步演示复杂分部积分求解过程，提供清晰公式推导与步骤解析。
+description: DI 表格积分法 (Differentiate and Integrate) 在线交互推演工具与求解器。针对大学微积分与考研数学中的分部积分难题，提供标准求导列与积分列交替运算法则。支持多项式与三角函数、指数函数及反三角函数乘积快速求解，动态展示表格构建与符号交替步骤，极大提高分部积分准确率与解题效率。
 structuredData:
   mathSolver:
     name: "DI Method Integration Solver"
