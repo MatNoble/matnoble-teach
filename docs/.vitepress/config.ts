@@ -32,6 +32,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "tools/countdown": "课堂倒计时",
   "tools/di-method": "DI 表格积分法",
   "tools/memorize": "间隔重复记忆",
+  "tools/elementary-functions": "基本初等函数",
 };
 
 const REDIRECT_ROUTES = new Set([
