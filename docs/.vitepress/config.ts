@@ -2,6 +2,8 @@ import { defineConfig } from "vitepress";
 import webfontDl from "vite-plugin-webfont-dl";
 import { genFeed } from "./genFeed";
 import { VitePWA } from "vite-plugin-pwa";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 const SITE_ORIGIN = "https://teach.matnoble.top";
 const SITE_DESCRIPTION =
@@ -166,6 +168,25 @@ export default defineConfig({
       }
     },
     plugins: [
+      {
+        name: "local-redirects",
+        configureServer(server) {
+          server.middlewares.use((req, res, next) => {
+            if (req.url === "/feed.xml" || req.url === "/atom.xml") {
+              const distFile = resolve("docs/.vitepress/dist", req.url.slice(1));
+              if (existsSync(distFile)) {
+                res.setHeader("Content-Type", "application/xml; charset=utf-8");
+                res.end(readFileSync(distFile));
+                return;
+              }
+              res.writeHead(302, { Location: "https://teach.matnoble.top" + req.url });
+              res.end();
+              return;
+            }
+            next();
+          });
+        }
+      },
       webfontDl([
         "https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700&display=swap",
       ]),

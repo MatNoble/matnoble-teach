@@ -11,7 +11,9 @@
     "docs:dev": "vitepress dev docs --port 5174",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs --port 4174",
-    "indexnow": "node scripts/submit-indexnow.mjs"
+    "indexnow": "node scripts/submit-indexnow.mjs",
+    "check:theme": "node scripts/sync-shared-theme.mjs",
+    "sync:theme": "node scripts/sync-shared-theme.mjs --sync"
   },
   "keywords": [
     "math",

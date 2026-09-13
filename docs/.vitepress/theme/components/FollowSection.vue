@@ -4,7 +4,7 @@ const socialLinks = [
   { icon: 'github', link: 'https://github.com/matnoble', label: 'GitHub' },
   { icon: 'telegram', link: 'https://t.me/HUSTMatNoble', label: 'Telegram' },
   { icon: 'mail', link: 'mailto:me@matnoble.top', label: 'Email' },
-  { icon: 'rss', link: '/atom.xml', label: 'RSS' }
+  { icon: 'rss', link: '/feed.xml', label: 'RSS' }
 ]
 </script>
 
