@@ -15,6 +15,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "courses/discrete-math-2026-fall": "离散数学 (2026秋季)",
   "courses/discrete-math-2026-spring": "离散数学 (2026春季归档)",
   "courses/java-programming-2026-fall": "Java程序设计 (2026秋季)",
+  "courses/linear-algebra-b-2026-fall": "线性代数(B) (2026秋季)",
   "courses/advanced-math-2-2026-spring": "高等数学(A)II (2026春季归档)",
   "courses/economic-math-2-2026-spring": "经济数学II (2026春季归档)",
   "courses/matlab": "MATLAB 编程与实践",
@@ -41,6 +42,7 @@ const REDIRECT_ROUTES = new Set([
   "/courses/advanced-math-1",
   "/courses/discrete-math",
   "/courses/java-programming",
+  "/courses/linear-algebra-b",
   "/courses/advanced-math-2",
   "/courses/economic-math-2",
 ]);

@@ -46,24 +46,30 @@ head:
             {
               "@type": "ListItem",
               "position": 4,
+              "name": "线性代数(B) (2026秋季)",
+              "url": "https://teach.matnoble.top/courses/linear-algebra-b-2026-fall"
+            },
+            {
+              "@type": "ListItem",
+              "position": 5,
               "name": "MATLAB 编程与工程实践 (2026夏季)",
               "url": "https://teach.matnoble.top/courses/matlab/"
             },
             {
               "@type": "ListItem",
-              "position": 5,
+              "position": 6,
               "name": "高等数学(A)II (2026春季归档)",
               "url": "https://teach.matnoble.top/courses/advanced-math-2-2026-spring"
             },
             {
               "@type": "ListItem",
-              "position": 6,
+              "position": 7,
               "name": "离散数学 (2026春季归档)",
               "url": "https://teach.matnoble.top/courses/discrete-math-2026-spring"
             },
             {
               "@type": "ListItem",
-              "position": 7,
+              "position": 8,
               "name": "经济数学II (2026春季归档)",
               "url": "https://teach.matnoble.top/courses/economic-math-2-2026-spring"
             }

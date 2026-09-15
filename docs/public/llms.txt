@@ -26,8 +26,9 @@
 - Historical Archive: https://teach.matnoble.top/courses/advanced-math-2-2026-spring
 
 ### 3. Economic Mathematics & Linear Algebra (经济数学 / 线性代数)
-- Target Audience: Economics & Management majors
-- Syllabus: Matrix arithmetic, elementary transformations, matrix reduction, determinants, Cramer's rule visualizer, vector spaces.
+- Target Audience: Engineering, Science, Economics & Management majors
+- Syllabus: Matrix arithmetic, elementary transformations, matrix reduction, determinants, Cramer's rule visualizer, vector spaces, eigenvalues and eigenvectors, quadratic forms.
+- Canonical Active Semester: https://teach.matnoble.top/courses/linear-algebra-b-2026-fall
 - Historical Archive: https://teach.matnoble.top/courses/economic-math-2-2026-spring
 
 ### 4. Engineering Practice with MATLAB (MATLAB 编程与工程实践)

@@ -77,7 +77,7 @@ const semesterGroups = ref<SemesterGroup[]>([
         category: 'stem',
         semester: '2026 秋季',
         description: '理工及经管类专业核心工具课。课程涵盖行列式、矩阵运算、线性方程组求解、向量组线性相关性、特征值与特征向量及二次型，为科学计算构建代数基础。',
-        link: '',
+        link: '/courses/linear-algebra-b-2026-fall',
         status: 'active'
       }
     ]
