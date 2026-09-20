@@ -3,7 +3,7 @@ layout: doc
 title: 高等数学(A)I (2026秋季)
 breadcrumb: 高等数学(A)I (2026秋季)
 description: 理工科核心基础必修课《高等数学(A)I》（2026秋季学期）教学大纲、章节课件与授课讲义。涵盖函数与极限、一元函数导数与微分、微分中值定理与导数应用、不定积分与定积分及其应用。
-keywords: 高等数学I, 高等数学AI, 微积分, 函数与极限, 初等函数, 数列极限, 函数极限, 无穷小与无穷大, 极限运算法则, 重要极限, 无穷小比较, 函数连续性, 导数与微分, 微分中值定理, 不定积分, 定积分, 高数课件, 课件下载, MatNoble
+keywords: 高等数学I, 高等数学AI, 微积分, 函数与极限, 初等函数, 数列极限, 函数极限, 无穷小与无穷大, 极限存在准则, 两个重要极限, 无穷小比较, 函数连续性, 导数与微分, 微分中值定理, 不定积分, 定积分, 高数课件, 课件下载, MatNoble
 prev: false
 next: false
 ---
@@ -55,12 +55,12 @@ const CDN_BASE = '/pdf/calculus/2026_fall'
     </tr>
     <tr>
       <td class="chap-num">1.4</td>
-      <td class="chap-title">极限运算法则</td>
+      <td class="chap-title">极限存在准则</td>
       <td class="download-cell"><a :href="CDN_BASE + '/1-4_limit_criteria.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">1.5</td>
-      <td class="chap-title">极限存在准则与重要极限</td>
+      <td class="chap-title">两个重要极限</td>
       <td class="download-cell"><a :href="CDN_BASE + '/1-5_important_limits.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
