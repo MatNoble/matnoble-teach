@@ -61,6 +61,11 @@ const CDN_BASE = '/pdf/discrete/2026-2027-1'
       <td class="chap-title">命题逻辑推理理论</td>
       <td class="download-cell"><a :href="CDN_BASE + '/1-5_Inference_Theory.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
+    <tr>
+      <td class="chap-num">1.6</td>
+      <td class="chap-title">第一章习题课</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/1-6_Chapter1_Practice_Session.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
+    </tr>
   </tbody>
 </table>
 
@@ -77,23 +82,23 @@ const CDN_BASE = '/pdf/discrete/2026-2027-1'
   <tbody>
     <tr>
       <td class="chap-num">2.1</td>
-      <td class="chap-title">一阶逻辑的基本概念</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">一阶逻辑基本概念</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/2-1_First_Order_Logic_Basic_Concepts.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">2.2</td>
       <td class="chap-title">合式公式与解释</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="download-cell"><a :href="CDN_BASE + '/2-2_WFFs_and_Interpretations.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">2.3</td>
-      <td class="chap-title">一阶逻辑等值演算与前束范式</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">一阶等值式与前束范式</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/2-3_First_Order_Equivalence_Prenex_NF.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">2.4</td>
-      <td class="chap-title">一阶逻辑形式推理理论</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">一阶逻辑推理理论</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/2-4_First_Order_Inference_Theory.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
   </tbody>
 </table>
