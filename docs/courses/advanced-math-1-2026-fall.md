@@ -89,28 +89,23 @@ const CDN_BASE = '/pdf/calculus/2026_fall'
   <tbody>
     <tr>
       <td class="chap-num">2.1</td>
-      <td class="chap-title">导数概念与几何意义</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">导数的概念与函数的微分</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/2-1_derivative_and_differential.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">2.2</td>
-      <td class="chap-title">函数的求导法则与基本初等函数求导</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">导数的求导法则与求导技巧</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/2-2_differentiation_rules.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">2.3</td>
-      <td class="chap-title">高阶导数</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">非显式函数求导：隐函数与参数方程</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/2-3_implicit_and_parametric.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">2.4</td>
-      <td class="chap-title">隐函数及由参数方程所确定的函数求导法</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
-    </tr>
-    <tr>
-      <td class="chap-num">2.5</td>
-      <td class="chap-title">函数的微分及其应用</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">高阶导数与全章总结</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/2-4_higher_derivatives_and_summary.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
   </tbody>
 </table>
