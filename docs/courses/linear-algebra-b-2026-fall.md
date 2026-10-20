@@ -77,23 +77,18 @@ const CDN_BASE = '/pdf/linear_algebra/2026-fall'
   <tbody>
     <tr>
       <td class="chap-num">2.1</td>
-      <td class="chap-title">线性方程组和矩阵</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">矩阵的运算</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/2-1_Matrix_Operations.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">2.2</td>
-      <td class="chap-title">矩阵的运算（加法、数乘、乘法、转置）</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">可逆矩阵</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/2-2_Inverse_Matrix.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">2.3</td>
-      <td class="chap-title">逆矩阵与伴随矩阵</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
-    </tr>
-    <tr>
-      <td class="chap-num">2.4</td>
-      <td class="chap-title">分块矩阵及其运算</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">分块矩阵</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/2-3_Block_Matrix.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
   </tbody>
 </table>
