@@ -26,12 +26,12 @@ const part1Lectures = [
 ]
 
 const part2Lectures = [
-  { chap: '2.1', topic: '面向对象世界观、类与封装性' },
-  { chap: '2.2', topic: 'static 静态成员与单例设计模式' },
-  { chap: '2.3', topic: '继承性、方法重写与 super 关键字' },
-  { chap: '2.4', topic: '多态性、动态绑定与类型转换' },
-  { chap: '2.5', topic: '接口设计规范与策略模式' },
-  { chap: '2.6', topic: '期中综合实战——智能网联设备中台设计' }
+  { chap: '2.1', topic: '类、对象与封装性', filename: 'lec09-oop-class.pdf' },
+  { chap: '2.2', topic: 'static 静态成员与单例设计模式', filename: 'lec10-static-singleton.pdf' },
+  { chap: '2.3', topic: '类的继承、方法重写与 super 关键字', filename: 'lec11-inheritance.pdf' },
+  { chap: '2.4', topic: '多态性、动态绑定与类型转换', filename: 'lec12-polymorphism.pdf' },
+  { chap: '2.5', topic: '接口与策略模式', filename: 'lec13-interface-strategy.pdf' },
+  { chap: '2.6', topic: '期中综合实操——面向对象设计与排错', filename: 'lec14-midterm-practice.pdf' }
 ]
 
 const part3Lectures = [
@@ -101,8 +101,23 @@ const part4Lectures = [
     <tr v-for="item in part2Lectures" :key="item.chap">
       <td class="chap-num">{{ item.chap }}</td>
       <td class="chap-title">{{ item.topic }}</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
-      <td class="download-cell"><span class="btn-lock">待开放 🔒</span></td>
+      <td class="download-cell">
+        <a :href="CDN_BASE + '/' + item.filename" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a>
+      </td>
+      <td class="download-cell">
+        <a v-if="item.practice" :href="'/courses/java-programming-2026-fall/practice/' + item.practice" class="btn-dl btn-practice">实操 💻</a>
+        <span v-else class="btn-lock">待开放 🔒</span>
+      </td>
+    </tr>
+    <tr class="bundle-row">
+      <td class="chap-num">合辑</td>
+      <td class="chap-title font-bundle">第二篇合辑总册 (第 9 ~ 14 讲总控)</td>
+      <td class="download-cell">
+        <a :href="CDN_BASE + '/part2-oop-comm.pdf'" target="_blank" rel="noopener" class="btn-dl btn-bundle">总册 📚</a>
+      </td>
+      <td class="download-cell">
+        <span class="btn-lock">-</span>
+      </td>
     </tr>
   </tbody>
 </table>
@@ -294,6 +309,49 @@ const part4Lectures = [
   border-color: transparent;
   color: #ffffff !important;
   box-shadow: 0 4px 16px rgba(129, 140, 248, 0.45);
+}
+
+/* 合辑总册特殊行样式 */
+.bundle-row td {
+  background: rgba(56, 189, 248, 0.04);
+}
+
+.dark .bundle-row td {
+  background: rgba(56, 189, 248, 0.02);
+}
+
+.font-bundle {
+  font-weight: 600;
+  color: var(--mn-text);
+}
+
+.bundle-row .chap-num {
+  color: var(--mn-accent) !important;
+}
+
+.btn-bundle {
+  background: rgba(14, 165, 233, 0.1);
+  color: #0284c7 !important;
+  border-color: rgba(14, 165, 233, 0.3);
+}
+
+.btn-bundle:hover {
+  background: #0284c7;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+}
+
+.dark .btn-bundle {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8 !important;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.dark .btn-bundle:hover {
+  background: #0284c7;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4);
 }
 
 /* 暂未开放状态样式 */
