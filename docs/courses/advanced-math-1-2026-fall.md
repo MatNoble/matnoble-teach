@@ -123,28 +123,38 @@ const CDN_BASE = '/pdf/calculus/2026_fall'
   <tbody>
     <tr>
       <td class="chap-num">3.1</td>
-      <td class="chap-title">微分中值定理（罗尔、拉格朗日、柯西定理）</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">微分中值定理</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/3-1_mean_value_theorem.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">3.2</td>
       <td class="chap-title">洛必达法则</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="download-cell"><a :href="CDN_BASE + '/3-2_lhopital.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">3.3</td>
-      <td class="chap-title">泰勒公式与展开式</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">泰勒公式与近似计算</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/3-3_taylor.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">3.4</td>
-      <td class="chap-title">函数单调性、极值与最大最小值</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">函数的单调性与曲线的凹凸性</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/3-4_monotonicity_concavity.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">3.5</td>
-      <td class="chap-title">曲线凹凸性、拐点与渐近线</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">函数的极值与最大最小值</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/3-5_extrema.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
+    </tr>
+    <tr>
+      <td class="chap-num">3.6</td>
+      <td class="chap-title">函数图形的描绘</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/3-6_curve_sketching.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
+    </tr>
+    <tr>
+      <td class="chap-num">3.7</td>
+      <td class="chap-title">曲率</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/3-7_curvature.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
   </tbody>
 </table>
