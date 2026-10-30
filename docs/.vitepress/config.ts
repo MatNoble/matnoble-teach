@@ -1,6 +1,7 @@
 import { defineConfig } from "vitepress";
 import webfontDl from "vite-plugin-webfont-dl";
 import { genFeed } from "./genFeed";
+import { genPdfSitemap } from "./genPdfSitemap";
 import { VitePWA } from "vite-plugin-pwa";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -111,7 +112,10 @@ export default defineConfig({
     prefetchLinks: false,
   },
 
-  buildEnd: genFeed,
+  buildEnd: async (config) => {
+    await genFeed(config);
+    await genPdfSitemap(config);
+  },
   srcExclude: [
     "agents/**/*.md",
     "audits/**/*.md",
@@ -384,7 +388,13 @@ export default defineConfig({
     const pageTitle = pageData.title;
     const title = pageTitle ? `${pageTitle} | ${siteTitle}` : siteTitle;
 
-    const description = pageData.description || SITE_DESCRIPTION;
+    // 缺 description 时不要回退到整站介绍（会出现多页共用同一段描述）：
+    // 用页面标题拼一条各页不同的兜底描述；标题也没有时才用整站介绍。
+    const description =
+      pageData.description ||
+      (pageTitle
+        ? `${pageTitle} - MatNoble 教学中心：大学数学与 Java 程序设计课程课件、复习讲义与交互式教学工具。`
+        : SITE_DESCRIPTION);
 
     const image = pageData.frontmatter.image || "/social-card.png";
     const imageUrl = image.startsWith("http")
