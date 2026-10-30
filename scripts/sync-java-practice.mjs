@@ -26,6 +26,21 @@ export const LECTURE_ORDER = {
 };
 
 /**
+ * 每讲实操页的 meta description（SEO 用，避免多页共用整站介绍作为描述）。
+ * 新增讲座时在此补一条；未收录的讲座由 generateLecturePracticeMarkdown 用通用句式兜底。
+ */
+export const LECTURE_DESCRIPTIONS = {
+  lec01: '《Java程序设计》第 1 讲课堂实操任务：HelloWorld 入门程序、命令行参数传递与注释规范练习，含可复制的代码模板与预期控制台输出。',
+  lec02: '《Java程序设计》第 2 讲课堂实操任务：基本数据类型取值范围、类型转换与温度转换器练习，含可复制的代码模板与预期控制台输出。',
+  lec03: '《Java程序设计》第 3 讲课堂实操任务：Scanner 控制台输入陷阱、健壮输入处理与成绩评定系统练习，含可复制的代码模板与预期控制台输出。',
+  lec04: '《Java程序设计》第 4 讲课堂实操任务：位掩码运算、现代 switch 表达式与折扣计算器练习，含可复制的代码模板与预期控制台输出。',
+  lec05: '《Java程序设计》第 5 讲课堂实操任务：循环结构练习——九九乘法表、素数筛法与猜数字游戏，含可复制的代码模板与预期控制台输出。',
+  lec06: '《Java程序设计》第 6 讲课堂实操任务：方法的参数值传递、方法重载与递归练习，含可复制的代码模板与预期控制台输出。',
+  lec07: '《Java程序设计》第 7 讲课堂实操任务：数组内存模型、矩阵转置与成绩统计练习，含可复制的代码模板与预期控制台输出。',
+  lec08: '《Java程序设计》第 8 讲课堂实操任务：ArrayList 集合、冒泡排序与学生名单管理综合练习，含可复制的代码模板与预期控制台输出。'
+};
+
+/**
  * 对单讲内的实操任务进行排序
  * 排序逻辑：
  * 1. 优先遵循经典从基础演练到综合实操的合理顺序表；
@@ -94,10 +109,14 @@ export function escapeHtmlAttr(str) {
  */
 export function generateLecturePracticeMarkdown(lecName, tasks) {
   const lecNum = parseInt(lecName.replace(/[^0-9]/g, ''), 10);
+  const description =
+    LECTURE_DESCRIPTIONS[lecName.toLowerCase()] ||
+    `《Java程序设计》第 ${lecNum} 讲课堂实操任务：含可复制的代码模板与预期控制台输出，可在 IDE 中跟做自测。`;
 
   let md = `---
 layout: doc
 title: 第 ${lecNum} 讲 课堂实操任务
+description: ${description}
 breadcrumb: 课堂实操 (第 ${lecNum} 讲)
 ---
 

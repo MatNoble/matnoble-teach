@@ -1,6 +1,7 @@
 ---
 layout: doc
 title: 第 4 讲 课堂实操任务
+description: 《Java程序设计》第 4 讲课堂实操任务：位掩码运算、现代 switch 表达式与折扣计算器练习，含可复制的代码模板与预期控制台输出。
 breadcrumb: 课堂实操 (第 4 讲)
 ---
 

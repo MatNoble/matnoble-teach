@@ -1,6 +1,7 @@
 ---
 layout: doc
 title: 第 8 讲 课堂实操任务
+description: 《Java程序设计》第 8 讲课堂实操任务：ArrayList 集合、冒泡排序与学生名单管理综合练习，含可复制的代码模板与预期控制台输出。
 breadcrumb: 课堂实操 (第 8 讲)
 ---
 
