@@ -6,7 +6,7 @@ description: 计算机科学与技术等专业《离散数学》（2026秋季学
 head:
   - - meta
     - name: keywords
-      content: 离散数学, 命题逻辑, 命题符号化, 命题公式, 等值演算, 主范式, 推理理论, 一阶逻辑, 集合代数, 集合基本概念, 集合运算, 二元关系, 笛卡尔积, 关系的性质, 等价关系, 偏序关系, 图论, 通路, 最短路径, 关键路径, 图的着色, 离散数学课件, 课件下载
+      content: 离散数学, 命题逻辑, 命题符号化, 命题公式, 等值演算, 主范式, 推理理论, 一阶逻辑, 集合代数, 集合基本概念, 集合运算, 二元关系, 笛卡尔积, 关系的性质, 等价关系, 集合划分, 偏序关系, 哈斯图, 图论, 通路, 最短路径, 关键路径, 图的着色, 离散数学课件, 课件下载
 prev: false
 next: false
 ---
@@ -150,13 +150,18 @@ const CDN_BASE = '/pdf/discrete/2026-2027-1'
     </tr>
     <tr>
       <td class="chap-num">4.3</td>
-      <td class="chap-title">等价关系与偏序关系</td>
-      <td class="download-cell"><a :href="CDN_BASE + '/4-3_Equivalence_Partial_Order.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
+      <td class="chap-title">等价关系与集合划分</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/4-3_Equivalence_Relations.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">4.4</td>
-      <td class="chap-title">二元关系习题课</td>
-      <td class="download-cell"><a :href="CDN_BASE + '/4-4_Chapter4_Practice_Session.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
+      <td class="chap-title">偏序关系与哈斯图</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/4-4_Partial_Order_Hasse_Diagrams.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
+    </tr>
+    <tr>
+      <td class="chap-num">4.5</td>
+      <td class="chap-title">二元关系综合实践课</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/4-5_Chapter4_Practice_Session.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
   </tbody>
 </table>
