@@ -2,11 +2,11 @@
 layout: doc
 title: 离散数学 (2026秋季)
 breadcrumb: 离散数学 (2026秋季)
-description: 计算机科学与技术等专业《离散数学》（2026秋季学期）教学大纲、章节课件与授课讲义。内容涵盖命题逻辑、一阶逻辑、二元关系、等价与偏序、图论及代数结构。
+description: 计算机科学与技术等专业《离散数学》（2026秋季学期）教学大纲、章节课件与授课讲义。内容涵盖命题逻辑、一阶逻辑、集合代数、二元关系、等价与偏序、图论及代数结构。
 head:
   - - meta
     - name: keywords
-      content: 离散数学, 命题逻辑, 命题符号化, 命题公式, 等值演算, 主范式, 推理理论, 一阶逻辑, 二元关系, 笛卡尔积, 关系的性质, 等价关系, 偏序关系, 图论, 通路, 最短路径, 关键路径, 图的着色, 离散数学课件, 课件下载
+      content: 离散数学, 命题逻辑, 命题符号化, 命题公式, 等值演算, 主范式, 推理理论, 一阶逻辑, 集合代数, 集合基本概念, 集合运算, 二元关系, 笛卡尔积, 关系的性质, 等价关系, 偏序关系, 图论, 通路, 最短路径, 关键路径, 图的着色, 离散数学课件, 课件下载
 prev: false
 next: false
 ---
@@ -17,7 +17,7 @@ const CDN_BASE = '/pdf/discrete/2026-2027-1'
 
 # 离散数学 <span class="subtitle">2026 秋季学期</span>
 
-《离散数学》是计算机类专业常见的基础课程，内容包括命题逻辑、一阶逻辑、二元关系和图论基础等。本页面提供 2026 秋季学期授课课件下载，随教学进度逐步开放更新。
+《离散数学》是计算机类专业常见的基础课程，内容包括命题逻辑、一阶逻辑、集合代数、二元关系和图论基础等。本页面提供 2026 秋季学期授课课件下载，随教学进度逐步开放更新。
 
 <p class="mobile-desktop-hint">建议使用电脑桌面端访问，以获得更佳的课件浏览与下载体验。</p>
 
@@ -103,6 +103,30 @@ const CDN_BASE = '/pdf/discrete/2026-2027-1'
   </tbody>
 </table>
 
+### 第 3 章：集合代数
+
+<table class="academic-table">
+  <thead>
+    <tr>
+      <th style="width: 12%">章节</th>
+      <th style="width: 73%">知识要点</th>
+      <th style="width: 15%; text-align: center;">授课课件</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="chap-num">3.1</td>
+      <td class="chap-title">集合的基本概念和运算</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/3-1_Set_Basic_Concepts_and_Operations.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
+    </tr>
+    <tr>
+      <td class="chap-num">3.2</td>
+      <td class="chap-title">有序对与集合的笛卡尔积</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/3-2_Cartesian_Product.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
+    </tr>
+  </tbody>
+</table>
+
 ### 第 4 章：二元关系与函数
 
 <table class="academic-table">
@@ -116,18 +140,23 @@ const CDN_BASE = '/pdf/discrete/2026-2027-1'
   <tbody>
     <tr>
       <td class="chap-num">4.1</td>
-      <td class="chap-title">笛卡尔积与二元关系</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">集合的笛卡尔积与二元关系</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/4-1_Cartesian_Product_Binary_Relations.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">4.2</td>
-      <td class="chap-title">关系的运算、性质与闭包</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">二元关系的性质与运算</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/4-2_Relation_Ops_Props_Closures.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">4.3</td>
       <td class="chap-title">等价关系与偏序关系</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="download-cell"><a :href="CDN_BASE + '/4-3_Equivalence_Partial_Order.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
+    </tr>
+    <tr>
+      <td class="chap-num">4.4</td>
+      <td class="chap-title">二元关系习题课</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/4-4_Chapter4_Practice_Session.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
   </tbody>
 </table>
