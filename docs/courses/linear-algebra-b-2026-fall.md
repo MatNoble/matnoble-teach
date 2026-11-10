@@ -3,7 +3,7 @@ layout: doc
 title: 线性代数(B) (2026秋季)
 breadcrumb: 线性代数(B) (2026秋季)
 description: 理工及经管类专业核心工具课《线性代数(B)》（2026秋季学期）教学大纲、章节课件与授课讲义。涵盖行列式、矩阵运算、初等变换与线性方程组、向量组线性相关性、相似矩阵及二次型。
-keywords: 线性代数, 线性代数B, 行列式, 行列式定义, 行列式性质, 行列式展开, 克拉默法则, 矩阵运算, 逆矩阵, 初等变换, 线性方程组, 向量组相关性, 基础解系, 特征值, 特征向量, 相似对角化, 二次型, 线代课件, 课件下载, MatNoble
+keywords: 线性代数, 线性代数B, 行列式, 行列式定义, 行列式性质, 行列式展开, 克拉默法则, 矩阵运算, 逆矩阵, 初等变换, 矩阵的秩, 线性方程组, 向量组相关性, 基础解系, 特征值, 特征向量, 相似对角化, 二次型, 线代课件, 课件下载, MatNoble
 prev: false
 next: false
 ---
@@ -106,18 +106,18 @@ const CDN_BASE = '/pdf/linear_algebra/2026-fall'
   <tbody>
     <tr>
       <td class="chap-num">3.1</td>
-      <td class="chap-title">矩阵的初等变换与初等方阵</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">矩阵的初等变换</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/3-1_Elementary_Transformations.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">3.2</td>
       <td class="chap-title">矩阵的秩</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="download-cell"><a :href="CDN_BASE + '/3-2_Matrix_Rank.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">3.3</td>
-      <td class="chap-title">线性方程组的解（齐次与非齐次方程组判定与求解）</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">线性方程组的解</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/3-3_Linear_Systems.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
   </tbody>
 </table>
