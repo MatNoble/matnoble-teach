@@ -166,7 +166,7 @@ const CDN_BASE = '/pdf/discrete/2026-2027-1'
   </tbody>
 </table>
 
-### 第 5 章：图论基础
+### 第 5 章：图论
 
 <table class="academic-table">
   <thead>
@@ -179,28 +179,28 @@ const CDN_BASE = '/pdf/discrete/2026-2027-1'
   <tbody>
     <tr>
       <td class="chap-num">5.1</td>
-      <td class="chap-title">图的基本概念</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">无向图与有向图的基本概念</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/5-1_Basic_Concepts_of_Graphs.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">5.2</td>
-      <td class="chap-title">通路、连通性与矩阵表示</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">通路、回路与图的连通性及矩阵表示</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/5-2_Paths_Connectivity_Representation.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">5.3</td>
-      <td class="chap-title">最短路径算法</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">最短路径问题与 Dijkstra 算法</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/5-3_Shortest_Paths_Algorithms.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">5.4</td>
-      <td class="chap-title">关键路径法</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">关键路径问题</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/5-4_Critical_Path_Method.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
     <tr>
       <td class="chap-num">5.5</td>
-      <td class="chap-title">图的着色问题</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
+      <td class="chap-title">图的着色理论</td>
+      <td class="download-cell"><a :href="CDN_BASE + '/5-5_Graph_Coloring.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
     </tr>
   </tbody>
 </table>
