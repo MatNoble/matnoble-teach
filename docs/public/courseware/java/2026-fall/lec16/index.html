@@ -1,0 +1,3746 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="engineering-whiteprint">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>第 16 讲｜TCP 与 Java Socket</title>
+<meta name="description" content="第 16 讲：让两个程序说上话。TCP 与 Java Socket，本机文字对话与原始字节收发。">
+<style>
+/* ===== html-ppt assets/base.css (verbatim) ===== */
+/* html-ppt :: base.css — reset + shared tokens + layout primitives */
+/* Default tokens. Themes in assets/themes/*.css override the :root block. */
+:root {
+  --bg: #ffffff;
+  --bg-soft: #f7f7f8;
+  --surface: #ffffff;
+  --surface-2: #f2f2f4;
+  --border: rgba(0,0,0,.08);
+  --border-strong: rgba(0,0,0,.16);
+  --text-1: #111216;
+  --text-2: #55596a;
+  --text-3: #8a8f9e;
+  --accent: #3b6cff;
+  /* Text drawn on top of an --accent fill. Every theme in assets/themes/
+   * and every full-deck style.css overrides this with whichever of white /
+   * near-black clears WCAG AA against its own accent — a hardcoded ink
+   * cannot, because accents here range from #ffffff to #000000.
+   * This default is black rather than white on purpose: against the default
+   * --accent #3b6cff, white measures 4.40:1 and black 4.77:1, so only black
+   * clears AA for normal text. Reached by any deck that links no theme. */
+  --accent-ink: #000000;
+  --accent-2: #7a5cff;
+  --accent-3: #ff5c8a;
+  --good: #1aaf6c;
+  --warn: #f5a524;
+  --bad:  #e0445a;
+  --grad: linear-gradient(135deg,#3b6cff,#7a5cff 55%,#ff5c8a);
+  --grad-soft: linear-gradient(135deg,#eef2ff,#f5ecff 55%,#ffeef5);
+  --radius: 18px;
+  --radius-sm: 12px;
+  --radius-lg: 26px;
+  --shadow: 0 10px 30px rgba(18,24,40,.08), 0 2px 6px rgba(18,24,40,.04);
+  --shadow-lg: 0 24px 60px rgba(18,24,40,.14), 0 6px 16px rgba(18,24,40,.06);
+  --font-sans: 'Inter','Noto Sans SC',-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;
+  --font-serif: 'Playfair Display','Noto Serif SC',Georgia,serif;
+  --font-mono: 'JetBrains Mono','IBM Plex Mono',SFMono-Regular,Menlo,monospace;
+  --font-display: var(--font-sans);
+  --letter-tight: -.03em;
+  --letter-normal: -.01em;
+  --ease: cubic-bezier(.4,0,.2,1);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text-1);
+  font-family:var(--font-sans);font-weight:400;line-height:1.6;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  letter-spacing:var(--letter-normal)}
+
+/* Viewport host: centres the fixed-size design canvas and letterboxes the rest.
+   Every px in a slide therefore means the same thing in the browser, in the
+   presenter preview, in the overview thumbnail and in a headless render. */
+body{width:100vw;height:100vh;overflow:hidden;
+  display:flex;align-items:center;justify-content:center}
+img,svg,video{max-width:100%;display:block}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code,kbd,pre,samp{font-family:var(--font-mono)}
+
+/* ================= SLIDE SYSTEM ================= */
+/* ================= DESIGN CANVAS =================
+   Slides are authored against a FIXED 1920x1080 canvas and scaled to fit the
+   viewport by runtime.js (--deck-scale). Before this, .deck was 100vw/100vh
+   while type and spacing stayed in absolute px, so a 1512x850 laptop window
+   and a 1920x1080 render produced visibly different pages (issue #20).
+
+   Escape hatches:
+     <body data-fit="fluid">      -> old behaviour, canvas follows the viewport
+     <div class="deck" data-w=".." data-h="..">  -> custom canvas (e.g. 1080x1440 for 3:4)
+*/
+.deck{position:relative;flex:none;
+  width:var(--deck-w,1920px);height:var(--deck-h,1080px);
+  overflow:hidden;background:var(--bg);
+  transform:scale(var(--deck-scale,1));transform-origin:center center}
+
+/* Opt out: fluid canvas, exactly what the deck did before. */
+body[data-fit="fluid"]{display:block}
+body[data-fit="fluid"] .deck{width:100vw;height:100vh;transform:none}
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:72px 96px;
+  box-sizing:border-box;
+  opacity:0;pointer-events:none;
+  transition:opacity .5s var(--ease), transform .5s var(--ease);
+  transform:translateX(30px);
+  overflow:hidden;
+}
+.slide.is-active{opacity:1;pointer-events:auto;transform:translateX(0);z-index:2}
+.slide.is-prev{transform:translateX(-30px)}
+
+/* single-page standalone (used when a layout file is opened directly) */
+body.single .slide{position:relative;width:100%;height:100%;opacity:1;transform:none;pointer-events:auto}
+body[data-fit="fluid"].single .slide{width:100vw;height:100vh}
+
+/* ================= TYPOGRAPHY ================= */
+.eyebrow{font-size:13px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--text-3)}
+.kicker{font-size:14px;font-weight:600;color:var(--accent);letter-spacing:.08em;text-transform:uppercase}
+h1.title,.h1{font-family:var(--font-display);font-size:72px;line-height:1.05;font-weight:800;letter-spacing:var(--letter-tight);margin:0 0 18px;color:var(--text-1)}
+h2.title,.h2{font-family:var(--font-display);font-size:54px;line-height:1.1;font-weight:700;letter-spacing:var(--letter-tight);margin:0 0 14px}
+h3,.h3{font-size:32px;line-height:1.2;font-weight:600;letter-spacing:var(--letter-normal);margin:0 0 10px}
+h4,.h4{font-size:22px;line-height:1.3;font-weight:600;margin:0 0 8px}
+.lede{font-size:22px;line-height:1.55;color:var(--text-2);font-weight:300;max-width:62ch}
+.dim{color:var(--text-2)}
+.dim2{color:var(--text-3)}
+.mono{font-family:var(--font-mono)}
+.serif{font-family:var(--font-serif)}
+.gradient-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+
+/* ================= LAYOUT PRIMITIVES ================= */
+.stack>*+*{margin-top:14px}
+.row{display:flex;gap:24px;align-items:center}
+.row.wrap{flex-wrap:wrap}
+.grid{display:grid;gap:24px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.center{display:flex;align-items:center;justify-content:center;text-align:center}
+.fill{flex:1}
+.sp-t{padding-top:24px}.sp-b{padding-bottom:24px}
+.mt-s{margin-top:8px}.mt-m{margin-top:18px}.mt-l{margin-top:32px}
+.mb-s{margin-bottom:8px}.mb-m{margin-bottom:18px}.mb-l{margin-bottom:32px}
+
+/* ================= CARDS ================= */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:26px 28px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.card-soft{background:var(--surface-2);border:1px solid var(--border)}
+.card-outline{background:transparent;border:1.5px solid var(--border-strong);box-shadow:none}
+.card-accent{background:var(--surface);border-top:3px solid var(--accent)}
+.card-hover{transition:transform .3s var(--ease),box-shadow .3s var(--ease)}
+.card-hover:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+
+.pill{display:inline-block;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:500;
+  background:var(--surface-2);color:var(--text-2);border:1px solid var(--border)}
+.pill-accent{background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 28%,transparent)}
+
+/* ================= BARS / DIVIDERS ================= */
+.divider{height:1px;background:var(--border);width:100%}
+.divider-accent{height:3px;width:72px;background:var(--accent);border-radius:2px}
+
+/* ================= IMAGES (issue #17) =================
+ * Framing primitives shared by every image-* layout. The frame owns the
+ * aspect ratio and the crop; the <img> just fills it. That's what lets you
+ * swap in a photo of any shape without touching the layout.
+ *   <figure class="img-frame"><img src="…" alt=""></figure>
+ *   .img-frame.contain  -> letterbox instead of crop (screenshots, diagrams,
+ *                          logos — anything where cropping loses information)
+ *   --img-ratio         -> aspect ratio of the frame (default 16/10)
+ *   --img-pos           -> object-position, e.g. "top" to protect a headline
+ */
+.img-frame{position:relative;margin:0;overflow:hidden;
+  border-radius:var(--radius);box-shadow:var(--shadow);background:var(--surface-2);
+  aspect-ratio:var(--img-ratio,16/10)}
+.img-frame > img{width:100%;height:100%;object-fit:cover;object-position:var(--img-pos,center)}
+.img-frame.contain{background:var(--bg-soft);box-shadow:none;border:1px solid var(--border)}
+.img-frame.contain > img{object-fit:contain}
+.img-frame.fill{height:100%;aspect-ratio:auto}
+.img-scrim{position:absolute;inset:0;
+  background:linear-gradient(180deg,transparent 42%,rgba(8,10,20,.72))}
+.img-cap{margin:10px 2px 0;font-size:14px;line-height:1.5;color:var(--text-3)}
+.img-tag{position:absolute;top:14px;left:14px;padding:5px 12px;border-radius:999px;
+  background:rgba(10,12,20,.55);color:#fff;font-size:12px;letter-spacing:.06em;
+  text-transform:uppercase;backdrop-filter:blur(6px)}
+
+/* ================= CHROME (header/footer/progress) ================= */
+.deck-header{position:absolute;top:24px;left:40px;right:40px;display:flex;align-items:center;justify-content:space-between;
+  font-size:12px;color:var(--text-3);letter-spacing:.12em;text-transform:uppercase;z-index:10;pointer-events:none}
+.deck-footer{position:absolute;bottom:24px;left:40px;right:40px;display:flex;align-items:center;justify-content:space-between;
+  font-size:12px;color:var(--text-3);z-index:10;pointer-events:none}
+.slide-number::before{content:attr(data-current)}
+.slide-number::after{content:" / " attr(data-total)}
+.progress-bar{position:fixed;left:0;right:0;bottom:0;height:3px;background:transparent;z-index:20}
+.progress-bar > span{display:block;height:100%;width:0;background:var(--accent);transition:width .3s var(--ease)}
+
+/* ---- custom logo (issue #11) ----
+ * One logo per deck, drawn over the slide area. Two ways in, same CSS:
+ *   1. hand-author it  -> <img class="deck-logo" data-pos="bottom-right" src="…">
+ *   2. declare it once -> <body data-logo="…" data-logo-position="bottom-right">
+ * (1) needs no JS at all; (2) is created by runtime.js. It lives inside .deck
+ * so it scales with the deck. On an exported PDF it is painted per page by the
+ * @media print block below, not by this element — see the note there. */
+.deck-logo{position:absolute;z-index:11;pointer-events:none;
+  height:var(--logo-size,44px);width:auto;max-width:30%;object-fit:contain;
+  opacity:var(--logo-opacity,.9)}
+.deck-logo[data-pos="top-left"]     {top:var(--logo-inset-y,28px);left:var(--logo-inset-x,40px)}
+.deck-logo[data-pos="top-right"]    {top:var(--logo-inset-y,28px);right:var(--logo-inset-x,40px)}
+.deck-logo[data-pos="bottom-left"]  {bottom:var(--logo-inset-y,28px);left:var(--logo-inset-x,40px)}
+.deck-logo[data-pos="bottom-right"] {bottom:var(--logo-inset-y,28px);right:var(--logo-inset-x,40px)}
+.deck-logo:not([data-pos])          {top:28px;right:40px}
+
+/* ================= PRESENTER / OVERVIEW ================= */
+/* Keep this list in sync with NOTE_SEL in assets/runtime.js — the runtime
+ * reads speaker notes from all of these, so all of them must be hidden
+ * from the audience. */
+.notes,.speaker-notes{display:none!important}
+.notes-overlay{position:fixed;inset:auto 0 0 0;max-height:42vh;background:rgba(20,22,30,.95);color:#e8ebf4;
+  padding:20px 32px;font-size:16px;line-height:1.6;border-top:1px solid rgba(255,255,255,.1);transform:translateY(100%);
+  transition:transform .3s var(--ease);z-index:40;overflow:auto;font-family:var(--font-sans)}
+.notes-overlay.open{transform:translateY(0)}
+.overview{position:fixed;inset:0;background:rgba(10,12,18,.92);backdrop-filter:blur(12px);z-index:50;
+  display:none;padding:40px;overflow:auto}
+.overview.open{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;align-content:start}
+.overview .thumb{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  aspect-ratio:16/9;overflow:hidden;cursor:pointer;position:relative;color:var(--text-1);padding:16px;
+  font-size:11px;transition:transform .2s var(--ease)}
+.overview .thumb:hover{transform:scale(1.04)}
+.overview .thumb .n{position:absolute;top:8px;left:10px;font-weight:700;font-size:14px;color:var(--text-3)}
+.overview .thumb .t{position:absolute;bottom:10px;left:14px;right:14px;font-weight:600;color:var(--text-1)}
+
+/* ================= PRESENTER VIEW ================= */
+/* Presenter view opens in a separate popup window (S key).
+ * All presenter styles are self-contained in the popup HTML generated by runtime.js.
+ * The audience window (this file) is NOT affected — it stays as normal deck view.
+ * Only the .notes class below is needed to hide speaker notes from audience. */
+
+/* ================= UTILITY ================= */
+.hidden{display:none!important}
+.nowrap{white-space:nowrap}
+.tr{text-align:right}.tc{text-align:center}.tl{text-align:left}
+.uppercase{text-transform:uppercase;letter-spacing:.12em}
+
+/* ================= PRINT ================= */
+@media print{
+  /* Every declaration here is !important on purpose. A template stylesheet
+   * scopes its rules as `.tpl-name .slide`, which is specificity (0,2,0) and
+   * beats a bare `.slide` at (0,1,0) — so without !important a template
+   * silently keeps its screen layout in print. That is how dir-key-nav-minimal
+   * (position:absolute) printed 8 slides onto 1 page and xhs-post printed 9
+   * onto 2: only the opacity/transform declarations on this rule carried
+   * !important, and the ones that decide pagination did not. */
+  body{display:block!important;width:auto!important;height:auto!important;overflow:visible!important}
+  .deck{transform:none!important;width:100%!important;height:auto!important;
+        min-height:0!important;display:block!important}
+  .slide{position:relative!important;inset:auto!important;
+         opacity:1!important;transform:none!important;
+         page-break-after:always;break-after:page;
+         width:100%!important;height:100vh!important;max-height:100vh!important}
+  .slide:last-child{page-break-after:auto;break-after:auto}
+  .deck-header,.deck-footer,.progress-bar,.notes-overlay,.overview{display:none!important}
+
+  /* Logo in print. The .deck-logo element is position:absolute inside .deck,
+   * and print collapses .deck to height:auto with every slide stacked — so the
+   * element can only anchor ONCE against the whole document and lands on a
+   * single page (or none). Hide it and paint the logo per slide instead: in
+   * print one .slide is exactly one page. runtime.js mirrors the image URL and
+   * placement onto .deck (--logo-print / data-logo-print), so this only kicks
+   * in when the runtime is present; a JS-less deck keeps the element. */
+  .deck[data-logo-print] > .deck-logo{display:none!important}
+  .deck[data-logo-print] .slide:not([data-no-logo])::after{
+    content:"";position:absolute;z-index:11;pointer-events:none;
+    width:30%;height:var(--logo-size,44px);
+    background-image:var(--logo-print);background-repeat:no-repeat;
+    background-size:contain;opacity:var(--logo-opacity,.9)}
+  .deck[data-logo-print="top-left"]     .slide:not([data-no-logo])::after{top:var(--logo-inset-y,28px);left:var(--logo-inset-x,40px);background-position:left top}
+  .deck[data-logo-print="top-right"]    .slide:not([data-no-logo])::after{top:var(--logo-inset-y,28px);right:var(--logo-inset-x,40px);background-position:right top}
+  .deck[data-logo-print="bottom-left"]  .slide:not([data-no-logo])::after{bottom:var(--logo-inset-y,28px);left:var(--logo-inset-x,40px);background-position:left bottom}
+  .deck[data-logo-print="bottom-right"] .slide:not([data-no-logo])::after{bottom:var(--logo-inset-y,28px);right:var(--logo-inset-x,40px);background-position:right bottom}
+}
+
+</style>
+<style>
+/* ===== html-ppt theme: engineering-whiteprint (verbatim) ===== */
+/* theme: engineering-whiteprint — 工程白图 */
+:root{
+  --bg:#ffffff;--bg-soft:#f8fafc;--surface:#ffffff;--surface-2:#f4f7fb;
+  --border:rgba(10,30,70,.22);--border-strong:#0a1e46;
+  --text-1:#0a1e46;--text-2:#3a4a6a;--text-3:#8090a8;
+  --accent:#0a1e46;--accent-2:#1e5ac4;--accent-3:#c42a10;
+  --accent-ink:#ffffff;  /* text on --accent — 16.3:1 */
+  --good:#1a6a3a;--warn:#c47a10;--bad:#c42a10;
+  --grad:linear-gradient(135deg,#0a1e46,#1e5ac4);
+  --grad-soft:linear-gradient(135deg,#eaf0fb,#f4f7fb);
+  --radius:0px;--radius-sm:0px;--radius-lg:0px;
+  --shadow:none;
+  --shadow-lg:0 0 0 1px var(--border-strong);
+  --font-sans:'Inter','Noto Sans SC',sans-serif;
+  --font-mono:'JetBrains Mono','IBM Plex Mono',monospace;
+  --font-display:'JetBrains Mono','Inter',monospace;
+}
+body{background:
+  repeating-linear-gradient(0deg,rgba(10,30,70,.07) 0 1px,transparent 1px 40px),
+  repeating-linear-gradient(90deg,rgba(10,30,70,.07) 0 1px,transparent 1px 40px),
+  #ffffff}
+.card{border:1px solid var(--border-strong);box-shadow:none;background:rgba(255,255,255,.85)}
+.divider{background:var(--border-strong);height:1px}
+.divider-accent{background:var(--border-strong);height:1px;width:100%}
+.kicker{font-family:var(--font-mono);color:var(--accent-2);letter-spacing:.18em}
+h1.title,h2.title,.h1,.h2{font-weight:600}
+.pill{font-family:var(--font-mono);border:1px solid var(--border-strong);border-radius:0}
+
+</style>
+<style>
+/* ===== html-ppt assets/animations/animations.css (verbatim) ===== */
+/* html-ppt :: animations.css
+ * Apply by adding class="anim-<name>" or data-anim="<name>".
+ * Durations are deliberately snappy; tweak --anim-dur per element.
+ */
+:root{--anim-dur:.7s;--anim-ease:cubic-bezier(.4,0,.2,1)}
+
+/* ---------- FADE DIRECTIONALS ---------- */
+@keyframes kf-fade-up{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:none}}
+@keyframes kf-fade-down{from{opacity:0;transform:translateY(-32px)}to{opacity:1;transform:none}}
+@keyframes kf-fade-left{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:none}}
+@keyframes kf-fade-right{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+.anim-fade-up{animation:kf-fade-up var(--anim-dur) var(--anim-ease) both}
+.anim-fade-down{animation:kf-fade-down var(--anim-dur) var(--anim-ease) both}
+.anim-fade-left{animation:kf-fade-left var(--anim-dur) var(--anim-ease) both}
+.anim-fade-right{animation:kf-fade-right var(--anim-dur) var(--anim-ease) both}
+
+/* ---------- RISE / DROP / ZOOM / BLUR / GLITCH ---------- */
+@keyframes kf-rise{from{opacity:0;transform:translateY(60px) scale(.97);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@keyframes kf-drop{from{opacity:0;transform:translateY(-60px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes kf-zoom{0%{opacity:0;transform:scale(.6)}60%{transform:scale(1.04)}100%{opacity:1;transform:scale(1)}}
+@keyframes kf-blur{from{opacity:0;filter:blur(18px)}to{opacity:1;filter:none}}
+@keyframes kf-glitch{0%{opacity:0;transform:translateX(0);clip-path:inset(0 0 0 0)}
+  20%{opacity:1;transform:translateX(-6px);clip-path:inset(20% 0 30% 0)}
+  40%{transform:translateX(4px);clip-path:inset(50% 0 10% 0)}
+  60%{transform:translateX(-3px);clip-path:inset(10% 0 60% 0)}
+  80%{transform:translateX(2px);clip-path:inset(0 0 0 0)}
+  100%{opacity:1;transform:none}}
+.anim-rise-in{animation:kf-rise .9s var(--anim-ease) both}
+.anim-drop-in{animation:kf-drop .8s var(--anim-ease) both}
+.anim-zoom-pop{animation:kf-zoom .7s cubic-bezier(.22,1.3,.36,1) both}
+.anim-blur-in{animation:kf-blur .8s var(--anim-ease) both}
+.anim-glitch-in{animation:kf-glitch .8s steps(5,end) both}
+
+/* ---------- TYPEWRITER ---------- */
+.anim-typewriter{display:inline-block;overflow:hidden;white-space:nowrap;border-right:2px solid currentColor;
+  width:0;animation:kf-type 2.4s steps(40,end) forwards, kf-caret 1s step-end infinite}
+@keyframes kf-type{to{width:100%}}
+@keyframes kf-caret{50%{border-color:transparent}}
+
+/* ---------- GLOW / SHIMMER / GRADIENT-FLOW ---------- */
+@keyframes kf-neon{0%,100%{text-shadow:0 0 8px var(--accent),0 0 20px var(--accent)}
+  50%{text-shadow:0 0 16px var(--accent),0 0 40px var(--accent),0 0 80px var(--accent)}}
+.anim-neon-glow{animation:kf-neon 2s ease-in-out infinite}
+
+.anim-shimmer-sweep{position:relative;overflow:hidden}
+.anim-shimmer-sweep::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(110deg,transparent 40%,rgba(255,255,255,.55) 50%,transparent 60%);
+  transform:translateX(-100%);animation:kf-shimmer 2.4s var(--anim-ease) infinite}
+@keyframes kf-shimmer{to{transform:translateX(100%)}}
+
+.anim-gradient-flow{background:linear-gradient(90deg,var(--accent),var(--accent-2,var(--accent)),var(--accent-3,var(--accent)),var(--accent));
+  background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+  animation:kf-gradflow 4s linear infinite}
+@keyframes kf-gradflow{to{background-position:300% 0}}
+
+/* ---------- STAGGER LIST ---------- */
+.anim-stagger-list > *{opacity:0;animation:kf-rise .65s var(--anim-ease) both}
+.anim-stagger-list > *:nth-child(1){animation-delay:.05s}
+.anim-stagger-list > *:nth-child(2){animation-delay:.15s}
+.anim-stagger-list > *:nth-child(3){animation-delay:.25s}
+.anim-stagger-list > *:nth-child(4){animation-delay:.35s}
+.anim-stagger-list > *:nth-child(5){animation-delay:.45s}
+.anim-stagger-list > *:nth-child(6){animation-delay:.55s}
+.anim-stagger-list > *:nth-child(7){animation-delay:.65s}
+.anim-stagger-list > *:nth-child(8){animation-delay:.75s}
+.anim-stagger-list > *:nth-child(n+9){animation-delay:.85s}
+
+/* ---------- COUNTER-UP (JS-driven, marker class only) ---------- */
+.counter{font-variant-numeric:tabular-nums}
+
+/* ---------- SVG PATH DRAW ---------- */
+.anim-path-draw path,.anim-path-draw line,.anim-path-draw polyline,.anim-path-draw circle,.anim-path-draw rect{
+  stroke-dasharray:1000;stroke-dashoffset:1000;animation:kf-draw 2s var(--anim-ease) forwards}
+@keyframes kf-draw{to{stroke-dashoffset:0}}
+
+/* ---------- PARALLAX TILT (hover) ---------- */
+.anim-parallax-tilt{transform-style:preserve-3d;transition:transform .4s var(--anim-ease)}
+.anim-parallax-tilt:hover{transform:perspective(900px) rotateX(6deg) rotateY(-8deg) translateZ(10px)}
+
+/* ---------- CARD FLIP 3D ---------- */
+@keyframes kf-flip{from{transform:perspective(1200px) rotateY(-90deg);opacity:0}
+  to{transform:perspective(1200px) rotateY(0);opacity:1}}
+.anim-card-flip-3d{animation:kf-flip .9s var(--anim-ease) both;transform-style:preserve-3d;backface-visibility:hidden}
+
+/* ---------- CUBE ROTATE 3D ---------- */
+@keyframes kf-cube{from{transform:perspective(1200px) rotateX(20deg) rotateY(-90deg) translateZ(-200px);opacity:0}
+  to{transform:perspective(1200px) rotateX(0) rotateY(0) translateZ(0);opacity:1}}
+.anim-cube-rotate-3d{animation:kf-cube 1s var(--anim-ease) both}
+
+/* ---------- PAGE TURN 3D ---------- */
+@keyframes kf-pageturn{from{transform:perspective(1600px) rotateY(-85deg);transform-origin:left center;opacity:0}
+  to{transform:perspective(1600px) rotateY(0);opacity:1}}
+.anim-page-turn-3d{animation:kf-pageturn 1s var(--anim-ease) both;transform-origin:left center}
+
+/* ---------- PERSPECTIVE ZOOM ---------- */
+@keyframes kf-pzoom{from{opacity:0;transform:perspective(1400px) translateZ(-400px) rotateX(12deg)}
+  to{opacity:1;transform:none}}
+.anim-perspective-zoom{animation:kf-pzoom 1s var(--anim-ease) both}
+
+/* ---------- MARQUEE SCROLL ---------- */
+.anim-marquee-scroll{display:flex;gap:48px;white-space:nowrap;animation:kf-marquee 20s linear infinite}
+@keyframes kf-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ---------- KEN BURNS ---------- */
+@keyframes kf-kenburns{0%{transform:scale(1) translate(0,0)}100%{transform:scale(1.15) translate(-2%,-1%)}}
+.anim-kenburns{animation:kf-kenburns 14s ease-in-out infinite alternate}
+
+/* ---------- CONFETTI BURST (pseudo — pure CSS sparkles) ---------- */
+.anim-confetti-burst{position:relative}
+.anim-confetti-burst::before,.anim-confetti-burst::after{
+  content:"";position:absolute;top:50%;left:50%;width:8px;height:8px;border-radius:50%;
+  background:var(--accent);box-shadow:
+    20px -30px 0 var(--accent-2,var(--accent)),-25px -20px 0 var(--accent-3,var(--accent)),
+    30px 20px 0 var(--good,#1aaf6c),-30px 25px 0 var(--warn,#f5a524),
+    40px -10px 0 var(--bad,#e0445a),-45px 0 0 var(--accent),
+    10px 40px 0 var(--accent-2,var(--accent)),-15px -40px 0 var(--accent-3,var(--accent));
+  opacity:0;animation:kf-confetti 1.2s var(--anim-ease) forwards}
+.anim-confetti-burst::after{animation-delay:.15s;transform:rotate(45deg)}
+@keyframes kf-confetti{0%{opacity:0;transform:scale(.2)}30%{opacity:1}100%{opacity:0;transform:scale(2.2)}}
+
+/* ---------- SPOTLIGHT ---------- */
+@keyframes kf-spot{0%{clip-path:circle(0% at 50% 50%)}100%{clip-path:circle(140% at 50% 50%)}}
+.anim-spotlight{animation:kf-spot 1.1s var(--anim-ease) both}
+
+/* ---------- MORPH SHAPE (SVG) ---------- */
+.anim-morph-shape path{animation:kf-morph 6s ease-in-out infinite alternate}
+@keyframes kf-morph{0%{d:path("M60,120 Q120,20 180,120 T300,120")}
+  100%{d:path("M60,120 Q120,220 180,120 T300,120")}}
+
+/* ---------- RIPPLE REVEAL ---------- */
+@keyframes kf-ripple{0%{clip-path:circle(0% at 20% 80%);opacity:.4}
+  100%{clip-path:circle(160% at 20% 80%);opacity:1}}
+.anim-ripple-reveal{animation:kf-ripple 1.2s var(--anim-ease) both}
+
+/* reduced motion */
+@media (prefers-reduced-motion: reduce){
+  [class*="anim-"]{animation:none!important;transition:none!important}
+}
+
+</style>
+<style>
+/* ===== lec16 deck.css (verbatim) ===== */
+/* ==========================================================================
+   第 16 讲课件专用样式
+   建立在 html-ppt 的 base.css 与 engineering-whiteprint 主题之上。
+   颜色一律取自主题令牌；新增的几个变量是本讲自己的语义色。
+   色彩约定（全讲统一）：客户端 = 蓝，服务端 = 绿，当前步骤 = 琥珀，错误 = 红。
+   ========================================================================== */
+
+:root{
+  /* 离线字体栈：不加载 fonts.css 的网络字体，中文回退到系统黑体。 */
+  --font-sans:'Inter','Noto Sans SC','PingFang SC','Microsoft YaHei','Source Han Sans SC','Segoe UI',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono','Cascadia Code','SF Mono',Menlo,Consolas,'Microsoft YaHei','PingFang SC',monospace;
+  --font-display:var(--font-sans);
+  --c-client:var(--accent-2);
+  --c-server:#1a6a3a;
+  --c-now:var(--warn);
+  --c-bad:var(--accent-3);
+  /* 拟物电话的配色 */
+  --pc-ink:#0a1e46;
+  --pc-body-1:#fffef9;--pc-body-2:#f2ecdc;--pc-body-3:#d8ceb4;
+  --pc-lcd-1:#d6e9d9;--pc-lcd-2:#b4d3bd;
+}
+
+/* 画布透明，让主题的坐标纸网格铺满整个窗口 */
+.deck{background:transparent}
+
+/* ---------- 页面基础 ---------- */
+.slide{font-size:24px;line-height:1.5;justify-content:flex-start}
+.slide p{margin:0 0 12px}
+.slide p:last-child{margin-bottom:0}
+.slide ul,.slide ol{margin:0;padding-left:1.25em}
+.slide li{margin:8px 0}
+.slide code{font-family:var(--font-mono);font-size:.9em;background:var(--surface-2);border:1px solid var(--border);padding:0 6px;white-space:nowrap}
+.slide pre code{background:none;border:0;padding:0;white-space:inherit;font-size:inherit}
+.slide kbd{font:700 .82em var(--font-mono);border:1.5px solid var(--border-strong);border-bottom-width:3px;padding:1px 8px;background:var(--surface);white-space:nowrap}
+.slide strong,.slide b{font-weight:700;color:var(--text-1)}
+.slide :focus-visible{outline:3px solid var(--c-now);outline-offset:2px}
+.slide .kicker{font-size:20px;margin:0 0 6px;letter-spacing:.14em;text-transform:none}
+.slide .h2{font-size:52px;margin:0}
+.slide .h1{font-size:84px;line-height:1.08}
+.slide .lede{font-size:27px;font-weight:400}
+.slide .grid{gap:28px}
+.slide .card{padding:26px 30px}
+.slide .card h3{font-size:29px;margin:0 0 10px}
+.slide .card h4{font-size:24px;margin:0 0 8px}
+.slide .card p{font-size:24px}
+.slide .card.dim p,.slide p.dim{color:var(--text-2)}
+
+/* ---------- 页眉、页脚（全讲共用一份） ---------- */
+.deck-header,.deck-footer{font-size:17px;letter-spacing:.1em;font-family:var(--font-mono)}
+.deck-header{transition:opacity .3s}
+.deck.no-chrome .deck-header{opacity:0}
+.deck-header .now{color:var(--accent-2);font-weight:700}
+
+/* ---------- 标题区 ---------- */
+.cw-head{margin:0 0 26px}
+.cw-head .lede{margin:10px 0 0;max-width:70ch}
+.cw-head.tight{margin-bottom:18px}
+.cw-head.tight .h2{font-size:46px}
+
+/* ---------- 角色：客户端 / 服务端 ---------- */
+.card.client{border-top:5px solid var(--c-client)}
+.card.server{border-top:5px solid var(--c-server)}
+.card.now{border-top:5px solid var(--c-now)}
+.card.bad{border-top:5px solid var(--c-bad)}
+.cw-role{font:700 16px/1.2 var(--font-mono);letter-spacing:.14em;color:var(--text-2);margin:0 0 8px}
+.cw-role.client{color:var(--c-client)}
+.cw-role.server{color:var(--c-server)}
+
+/* ---------- 提示条 ---------- */
+.cw-callout{border-left:6px solid var(--accent-2);background:var(--surface-2);padding:16px 24px;font-size:23px;line-height:1.5;margin:0}
+.cw-callout.server{border-left-color:var(--c-server)}
+.cw-callout.client{border-left-color:var(--c-client)}
+.cw-callout.now{border-left-color:var(--c-now);background:color-mix(in srgb,var(--c-now) 9%,var(--surface))}
+.cw-callout p+p{margin-top:8px}
+.cw-gap{margin-top:24px}
+
+/* ---------- 按钮 ---------- */
+.cw-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);
+  padding:10px 22px;font:700 21px/1.2 var(--font-sans);cursor:pointer;white-space:nowrap}
+.cw-btn.ghost{background:var(--surface);color:var(--text-1);border-color:var(--border-strong)}
+.cw-btn.sm{padding:5px 14px;font-size:18px}
+.cw-btn:disabled{opacity:.35;cursor:not-allowed}
+.cw-btn:not(:disabled):hover{filter:brightness(1.12)}
+.cw-btn:not(:disabled):active{transform:translateY(1px)}
+
+/* ---------- 分步控件（时序图、电话场景共用） ---------- */
+.cw-stepbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.cw-count{font:700 19px var(--font-mono);color:var(--text-2);min-width:74px;text-align:center;font-variant-numeric:tabular-nums}
+.cw-caption{margin:14px 0 0;font-size:23px;line-height:1.5;min-height:3em}
+.cw-caption b{color:var(--accent-2)}
+.cw-keyhint{color:var(--text-3);font-size:18px}
+
+/* ---------- 终端窗口 ---------- */
+.cw-term{font-family:var(--font-mono);font-size:21px;line-height:1.6;background:var(--accent);color:var(--accent-ink);
+  border:1px solid var(--border-strong);padding-bottom:14px;min-width:0}
+.cw-term-bar{display:flex;align-items:center;gap:8px;padding:11px 16px;margin-bottom:12px;
+  border-bottom:1px solid color-mix(in srgb,var(--accent-ink) 22%,transparent)}
+.cw-term-bar i{width:13px;height:13px;border-radius:50%;background:color-mix(in srgb,var(--accent-ink) 26%,transparent);flex:none}
+.cw-term-bar span{margin-left:10px;font-size:17px;opacity:.78;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cw-term pre{margin:0;padding:0 20px;white-space:pre-wrap;overflow-wrap:anywhere;font:inherit}
+.cw-term .cw-p{color:color-mix(in srgb,var(--accent-ink) 72%,var(--accent-2))}
+.cw-term .cw-o{opacity:.8}
+.cw-term .cw-err{color:#ffd0c4}
+.cw-term .cw-ok{color:#bfe6cc}
+.cw-term .cw-caret{display:inline-block;width:11px;height:1.05em;background:var(--accent-ink);vertical-align:-.18em;margin-left:2px}
+
+/* ---------- IDEA 示意：运行窗口 / 编辑配置对话框（不是截图） ---------- */
+.cw-ide{font-family:var(--font-mono);font-size:21px;line-height:1.6;background:var(--surface);color:var(--text-1);
+  border:1px solid var(--border-strong);min-width:0}
+.cw-ide-bar{display:flex;align-items:center;gap:8px;padding:11px 16px;border-bottom:1px solid var(--border)}
+.cw-ide-bar i{width:13px;height:13px;border-radius:50%;background:var(--border-strong);flex:none}
+.cw-ide-bar span{margin-left:10px;font-size:17px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cw-ide-tool{display:flex;align-items:center;gap:14px;padding:9px 16px;border-bottom:1px solid var(--border)}
+.cw-ide-tool b{display:inline-flex;align-items:center;gap:8px;padding:3px 14px;border:1px solid var(--border-strong);
+  background:var(--surface-2);font-size:18px;font-weight:600;line-height:1.5}
+.cw-ide-tool .rerun{color:var(--good)}
+.cw-ide-tool .stop{color:var(--accent-3)}
+.cw-ide-tool>span{margin-left:auto;font-size:17px;color:var(--text-3)}
+.cw-ide-tabs{display:flex;gap:6px;padding:10px 16px 0}
+.cw-ide-tabs button{font:600 19px/1.3 var(--font-mono);padding:7px 24px 9px;border:1px solid var(--border-strong);border-bottom:none;
+  border-radius:8px 8px 0 0;background:var(--surface-2);color:var(--text-2);cursor:pointer}
+.cw-ide-tabs button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);cursor:default}
+.cw-ide-tabs button:focus-visible{outline:3px solid var(--accent-2);outline-offset:-4px}
+.cw-ide>pre{display:none;margin:0;padding:14px 20px;min-height:calc(3 * 1.6em + 28px);background:var(--accent);color:var(--accent-ink);
+  white-space:pre-wrap;overflow-wrap:anywhere;font:inherit}
+.cw-ide>pre.on{display:block}
+.cw-ide .cw-o{opacity:.8}
+.cw-ide-form{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:10px 30px;align-items:center;padding:12px 20px 16px;font-size:21px}
+.cw-ide-form>span{color:var(--text-2);text-align:right}
+.cw-ide-field{display:flex;align-items:center;gap:18px;min-width:0;border:1px solid var(--border-strong);background:var(--surface-2);padding:5px 16px}
+.cw-ide-field code{font:700 22px var(--font-mono);color:var(--text-1)}
+.cw-ide-field em{font-style:normal;font-size:18px;color:var(--text-3);overflow-wrap:anywhere}
+.cw-ide-btns{grid-column:2;justify-self:end;display:flex;gap:12px}
+.cw-ide-btns span{border:1px solid var(--border-strong);padding:3px 22px;font-size:18px;line-height:1.5;background:var(--surface)}
+.cw-ide-btns .on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+/* ---------- 代码卡 ---------- */
+.cw-codegrid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:28px;align-items:start}
+.cw-code{padding:0;min-width:0}
+.cw-code-head{display:flex;align-items:center;gap:14px;padding:7px 12px 7px 20px;border-bottom:1px solid var(--border);background:var(--surface)}
+.cw-code-head .file{font:700 21px/1.2 var(--font-mono);color:var(--text-1)}
+.cw-code-head .meta{color:var(--text-3);font-size:17px;white-space:nowrap}
+.cw-code-head .cw-btn{margin-left:auto}
+.cw-code-scroll{overflow:auto;background:var(--surface);scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;max-height:var(--code-max,none)}
+.cw-code-scroll:focus-visible{outline-offset:-4px}
+.cw-code-status{margin:0;padding:9px 20px;font-size:18px;color:var(--text-2);border-top:1px solid var(--border);min-height:1.6em}
+.cw-src[hidden]{display:none}
+.cw-pre{margin:0;padding:6px 18px 10px 0;font:18px/24px var(--font-mono);tab-size:4;color:var(--text-1)}
+.cw-ln{display:flex;line-height:24px;white-space:pre;min-height:24px;padding-right:16px}
+.cw-ln>.mk{flex:0 0 36px;display:flex;align-items:center;justify-content:center}
+.cw-ln>.mk b{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;
+  border:1.5px solid var(--text-2);font:800 15px/1 var(--font-mono);color:var(--text-1);background:var(--surface)}
+.cw-ln>.no{flex:0 0 52px;text-align:right;padding-right:16px;color:var(--text-3);user-select:none;font-size:16px}
+.cw-ln.mark{background:color-mix(in srgb,var(--c-now) 13%,var(--surface));box-shadow:inset 5px 0 0 var(--c-now)}
+.cw-ln.mark>.mk b{background:var(--c-now);border-color:var(--c-now);color:var(--accent-ink)}
+.cw-imp-toggle{display:flex;align-items:center;gap:10px;width:100%;padding:0 16px;border:0;background:color-mix(in srgb,var(--accent-2) 7%,var(--surface));
+  color:var(--accent-2);font:600 18px/24px var(--font-mono);cursor:pointer;text-align:left}
+.cw-imp-toggle::before{content:'▸';font-size:15px}
+.cw-code.imports-open .cw-imp-toggle::before{content:'▾'}
+.cw-code.imports-open .cw-imp-toggle{background:none}
+.cw-code:not(.imports-open) .cw-ln.imp{display:none}
+/* 语法着色（浅色代码面板） */
+.tk-kw{color:var(--accent-2);font-weight:700}
+.tk-ty{color:var(--accent);font-weight:600}
+.tk-str{color:var(--c-server)}
+.tk-num{color:var(--c-bad)}
+.tk-cm{color:var(--text-2);font-style:italic}
+.tk-an{color:var(--c-bad)}
+.cw-code-side{display:flex;flex-direction:column;gap:20px;min-width:0}
+.cw-code-side .card{padding:22px 26px}
+.cw-map-list{list-style:none;padding:0;margin:0;display:grid;gap:12px}
+.cw-map-list li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;align-items:start;margin:0}
+.cw-map-list b.cw-b{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;border:1.5px solid var(--text-2);font:800 17px/1 var(--font-mono);margin-top:3px}
+.cw-map-list p{font-size:22px;line-height:1.45;margin:0}
+.cw-term.compact{font-size:19px}
+
+/* ---------- 流程步骤（来自 process-steps 布局） ---------- */
+.cw-steps{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:26px;margin-top:26px}
+.cw-step{position:relative;padding:30px 26px 24px;border:1px solid var(--border-strong);background:var(--surface)}
+.cw-step .num{position:absolute;top:-23px;left:24px;width:46px;height:46px;background:var(--accent);color:var(--accent-ink);
+  display:flex;align-items:center;justify-content:center;font:800 22px var(--font-mono)}
+.cw-step.client .num{background:var(--c-client)}
+.cw-step.server .num{background:var(--c-server)}
+.cw-step h4{margin:2px 0 10px;font-size:25px}
+.cw-step p{font-size:22px;line-height:1.48;color:var(--text-2)}
+.cw-step p b,.cw-step p strong{color:var(--text-1)}
+
+/* ---------- 两端连接图（来自 flow-diagram 布局） ---------- */
+.cw-flow{display:grid;grid-template-columns:minmax(0,1fr) 330px minmax(0,1fr);align-items:stretch}
+.cw-flow .node{padding:30px 34px}
+.cw-flow .node h3{font-family:var(--font-mono);font-size:30px;margin:0 0 12px}
+.cw-flow .node p{font-size:23px;margin:6px 0}
+.cw-flow .link{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--accent-2);text-align:center;padding:0 14px}
+.cw-flow .link .lbl{font-size:21px;font-weight:700}
+.cw-flow .link .arr{font-size:64px;line-height:.9}
+.cw-flow .link .wire{font:600 17px var(--font-mono);color:var(--text-2)}
+
+/* ---------- 表格（来自 table 布局） ---------- */
+.cw-table{width:100%;border-collapse:collapse;font-size:23px}
+.cw-table th,.cw-table td{padding:16px 18px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+.cw-table th{font-size:18px;letter-spacing:.08em;color:var(--text-3);font-weight:700;white-space:nowrap}
+.cw-table tr:last-child td{border-bottom:0}
+.cw-table td:first-child{white-space:nowrap;font-weight:700}
+
+/* ---------- 时序图 ---------- */
+.cw-seq{display:grid;grid-template-columns:minmax(0,1fr) 566px;gap:28px;align-items:stretch}
+.cw-seq-fig{margin:0;padding:14px 18px 10px;display:flex;align-items:center;min-width:0}
+.cw-seq-fig svg{width:100%;max-width:var(--fig-max,940px);height:auto;display:block;font-family:var(--font-sans);margin:0 auto}
+.cw-cover-art svg{width:100%;height:auto;display:block;font-family:var(--font-sans)}
+.cw-seq-side{display:flex;flex-direction:column;gap:16px;min-width:0}
+.cw-seq-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;flex:1}
+.cw-seq-steps button{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;width:100%;text-align:left;align-items:start;
+  padding:12px 16px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font:inherit;color:inherit;transition:opacity .25s,background .25s,border-color .25s}
+.cw-seq-steps .cw-n{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:1.5px solid var(--text-2);font:800 17px/1 var(--font-mono);margin-top:2px}
+.cw-seq-steps .cw-t{display:block;font-size:22px;font-weight:700;line-height:1.35}
+.cw-seq-steps .cw-d{display:block;font-size:19.5px;line-height:1.42;color:var(--text-2);margin-top:4px}
+.cw-seq-steps li.client .cw-n{border-color:var(--c-client);color:var(--c-client)}
+.cw-seq-steps li.server .cw-n{border-color:var(--c-server);color:var(--c-server)}
+.cw-seq.has-focus .cw-seq-steps button{opacity:.55}
+.cw-seq.has-focus .cw-seq-steps li.on button{opacity:1;background:color-mix(in srgb,var(--c-now) 12%,var(--surface));border-color:var(--c-now);box-shadow:inset 5px 0 0 var(--c-now)}
+.cw-seq-steps li.on .cw-n{background:var(--c-now);border-color:var(--c-now);color:var(--accent-ink)}
+.cw-seq-legend{font-size:17px;color:var(--text-3);line-height:1.5;margin:0}
+/* SVG 部分 */
+.sq-box{fill:var(--surface);stroke:var(--border-strong);stroke-width:2.5}
+.sq-box.client{stroke:var(--c-client)}
+.sq-box.server{stroke:var(--c-server)}
+.sq-name{font-size:25px;font-weight:700;fill:var(--text-1)}
+.sq-sub{font:18px var(--font-mono);fill:var(--text-2)}
+.sq-life{stroke:var(--text-3);stroke-width:2;stroke-dasharray:9 8}
+.sq-bar{stroke-width:2.5}
+.sq-bar.client{fill:color-mix(in srgb,var(--c-client) 17%,var(--surface));stroke:var(--c-client)}
+.sq-bar.server{fill:color-mix(in srgb,var(--c-server) 17%,var(--surface));stroke:var(--c-server)}
+.sq-barlab{font:600 17px var(--font-mono);fill:var(--text-2)}
+.sq-bar-group.on .sq-bar{stroke-width:4.5;fill:color-mix(in srgb,var(--c-now) 26%,var(--surface));stroke:var(--c-now)}
+.sq-step{transition:opacity .3s}
+.cw-seq.has-focus .sq-step{opacity:.42}
+.cw-seq.has-focus .sq-step.on{opacity:1}
+.sq-arrow{stroke-width:3.5;fill:none}
+.sq-step.client .sq-arrow{stroke:var(--c-client)}
+.sq-step.server .sq-arrow{stroke:var(--c-server)}
+.sq-step.neutral .sq-arrow{stroke:var(--text-2);stroke-dasharray:10 8}
+.sq-step.on .sq-arrow{stroke-width:6}
+.sq-step .sq-arrow.server{stroke:var(--c-server)}
+.sq-label{font-size:23px;font-weight:700;fill:var(--text-1)}
+.sq-label.code{font:600 21px var(--font-mono)}
+.sq-cap{font:17.5px var(--font-mono);fill:var(--text-2)}
+.sq-num{font:800 17px var(--font-mono);fill:var(--text-1)}
+.sq-numbg{fill:var(--surface);stroke:var(--text-3);stroke-width:1.5}
+.sq-step.on .sq-numbg{fill:var(--c-now);stroke:var(--c-now)}
+.sq-step.on .sq-num{fill:var(--accent-ink)}
+.sq-note{font-size:18px;fill:var(--text-2)}
+.sq-note.code{font:600 17px var(--font-mono)}
+.sq-end{font-size:19px;font-weight:700;fill:var(--text-2)}
+.sq-dot{opacity:0}
+.sq-axis{font:16px var(--font-mono);fill:var(--text-3);letter-spacing:.1em}
+
+/* ---------- 拟物场景：一通电话 ---------- */
+.cw-scene-card{margin:0;padding:4px 10px 0}
+.cw-call{display:block;width:100%;max-width:1320px;height:auto;margin:0 auto}
+.pc-line{stroke:var(--pc-ink);stroke-opacity:.3;stroke-width:2}
+.pc-hatch{stroke:var(--pc-ink);stroke-opacity:.18;stroke-width:1.5}
+.pc-cord{fill:none;stroke:var(--pc-ink);stroke-width:5;stroke-linecap:round;opacity:.75}
+.pc-link{fill:none;stroke:var(--c-client);stroke-width:5;stroke-linecap:round;stroke-dasharray:14 12;opacity:0;transition:opacity .5s}
+.cw-call.linked .pc-link{opacity:1;animation:pc-flow 1s linear infinite}
+@keyframes pc-flow{to{stroke-dashoffset:-26}}
+.pc-hub{fill:var(--surface);stroke:var(--pc-ink);stroke-width:2.5}
+.pc-hub-t{font:700 17px var(--font-mono);fill:var(--text-2)}
+.pc-chip-t{font-size:21px;font-weight:700}
+.pc-chip-s{font:16.5px var(--font-mono);opacity:.9}
+.pc-chip.c{fill:var(--c-client)}.pc-chip.s{fill:var(--c-server)}
+.pc-chip text{fill:var(--accent-ink)}
+.pc-edge{stroke:var(--pc-ink);stroke-opacity:.55;stroke-width:2;fill:none}
+.pc-hole{fill:var(--pc-ink);opacity:.28}
+.pc-led{fill:#b9b3a4;stroke:var(--pc-ink);stroke-opacity:.5;stroke-width:1.5;transition:fill .3s}
+.pc-lcd-t{font:700 19px var(--font-mono);fill:#173e2b}
+.pc-handset{transition:transform .75s cubic-bezier(.5,0,.2,1.15);transform-box:fill-box;transform-origin:center}
+.cw-call.offhook-c .pc-handset.c{transform:translate(-44px,-98px) rotate(-13deg)}
+.cw-call.offhook-s .pc-handset.s{transform:translate(44px,-98px) rotate(13deg)}
+.cw-call.lag .pc-handset.s{transition-delay:.45s}
+.cw-call .pc-ring{opacity:0}
+.cw-call.ringing .pc-ring{opacity:1}
+.pc-ring path{fill:none;stroke:var(--c-bad);stroke-width:5;stroke-linecap:round;opacity:.3;animation:pc-ring 1.3s ease-out infinite}
+.pc-ring path:nth-child(2){animation-delay:.22s}
+.pc-ring path:nth-child(3){animation-delay:.44s}
+@keyframes pc-ring{0%{opacity:.15}18%{opacity:1}75%{opacity:.15}100%{opacity:.15}}
+.cw-call.ringing .pc-handset.s{animation:pc-vibrate .14s linear infinite}
+@keyframes pc-vibrate{0%,100%{transform:translate(0,0) rotate(0)}25%{transform:translate(-2px,-1px) rotate(-.8deg)}75%{transform:translate(2px,-1px) rotate(.8deg)}}
+.pc-ring-t{font-size:22px;font-weight:900;fill:var(--c-bad);opacity:0}
+.cw-call.ringing .pc-ring-t{opacity:1;animation:pc-shake .5s linear infinite}
+@keyframes pc-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+.pc-bub{opacity:0}
+.cw-call.said .pc-bub.c,.cw-call.replied .pc-bub.s{opacity:1}
+.pc-bub path{fill:var(--surface);stroke-width:2.5}
+.pc-bub.c path{stroke:var(--c-client)}.pc-bub.s path{stroke:var(--c-server)}
+.pc-bub text{font:700 21px var(--font-mono);fill:var(--text-1)}
+.pc-bub .eol{fill:var(--c-bad);font-size:17px;font-weight:700}
+.pc-typing{font:600 17px var(--font-mono);fill:var(--text-2)}
+
+/* 电话 ↔ Java 对照 */
+.cw-map{margin-top:24px}
+.cw-map .card{padding:18px 22px}
+.cw-map .cw-t{font-size:22px;font-weight:700;margin:0 0 6px}
+.cw-map .cw-j{font:600 19px/1.4 var(--font-mono);color:var(--accent-2);margin:0;overflow-wrap:anywhere}
+.cw-map .cw-who{font-size:17px;font-weight:400;color:var(--text-3);margin:0 0 0 8px;white-space:nowrap}
+.cw-call-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.45fr) minmax(0,1fr);gap:24px;align-items:stretch;margin-top:20px}
+.cw-side{padding:18px 24px}
+.cw-side p{font:600 21px/1.4 var(--font-mono);margin:0;overflow-wrap:anywhere;min-height:2.9em}
+.cw-side.client p{color:var(--c-client)}
+.cw-side.server p{color:var(--c-server)}
+.cw-side .st{font:400 17px/1.3 var(--font-sans);color:var(--text-2);margin-top:6px}
+
+/* ---------- 自检折叠 ---------- */
+.cw-reveal{border:2px dashed var(--border-strong);background:var(--surface);padding:0;margin:0}
+.cw-reveal summary{cursor:pointer;padding:15px 22px;font-size:22px;font-weight:700;color:var(--accent-2);list-style:none;user-select:none}
+.cw-reveal summary::-webkit-details-marker{display:none}
+.cw-reveal summary::before{content:'▸ ';font-family:var(--font-mono)}
+.cw-reveal[open] summary::before{content:'▾ '}
+.cw-reveal .body{padding:0 22px 18px;font-size:23px;line-height:1.5}
+.cw-reveal .body p{margin:0 0 10px}
+.cw-reveal .body p:last-child{margin:0}
+
+/* ---------- 课堂检查 ---------- */
+.cw-quiz{padding:30px 34px}
+.cw-quiz .cw-q{font-size:27px;font-weight:700;line-height:1.4;margin:0 0 20px}
+.cw-quiz label{display:flex;align-items:flex-start;gap:16px;padding:16px 20px;border:1px solid var(--border-strong);margin-bottom:14px;cursor:pointer;font-size:25px;line-height:1.45;background:var(--surface);transition:background .2s,border-color .2s}
+.cw-quiz label:has(input:checked){background:color-mix(in srgb,var(--accent-2) 9%,var(--surface));border-color:var(--accent-2)}
+.cw-quiz input{width:24px;height:24px;margin:5px 0 0;accent-color:var(--accent-2);flex:none}
+.cw-quiz .cw-result{min-height:1.6em;font-weight:700;color:var(--accent-2);font-size:24px;margin:16px 0 0}
+
+/* ---------- 验收清单（来自 todo-checklist 布局） ---------- */
+.cw-todo{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.cw-todo li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:16px;align-items:start;padding:16px 20px;border:1px solid var(--border);background:var(--surface);margin:0;font-size:24px;line-height:1.45}
+.cw-todo .cw-b{width:26px;height:26px;border:2.5px solid var(--border-strong);margin-top:4px}
+.cw-todo .cw-tag{font:600 17px var(--font-mono);color:var(--text-3);white-space:nowrap;margin-top:4px}
+
+/* ---------- 字节带 ---------- */
+.cw-bytes{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0}
+.cw-byte{display:inline-flex;min-width:64px;height:54px;align-items:center;justify-content:center;border:2px solid var(--border-strong);background:var(--surface);font:700 23px var(--font-mono);padding:0 10px}
+.cw-byte.hot{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.cw-byte.old{border-style:dashed;border-color:var(--text-3);color:var(--text-3);background:none;font-weight:400}
+.cw-sep{color:var(--accent-2);font-weight:800;font-size:26px;padding:0 6px}
+.cw-reads{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.cw-reads li{display:grid;grid-template-columns:190px minmax(0,1fr) 300px;gap:18px;align-items:center;margin:0;font:600 20px var(--font-mono)}
+.cw-reads .cw-cap{color:var(--text-2)}
+.cw-reads .cw-tray{display:flex;gap:8px}
+.cw-reads .cw-out{color:var(--c-server);overflow-wrap:anywhere}
+
+/* ---------- 封面 ---------- */
+.cw-cover{justify-content:center}
+.cw-cover-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:70px;align-items:center}
+.cw-cover .h1{font-size:112px;line-height:1.06;margin:6px 0 26px;letter-spacing:-.02em}
+.cw-cover .lede{max-width:34ch;font-weight:400}
+.cw-cover .pill{font-size:19px;padding:8px 16px;font-family:var(--font-sans);letter-spacing:.02em}
+.cw-cover-art{padding:22px 24px 12px}
+.cw-cover-art figcaption{font-size:17px;color:var(--text-3);text-align:center;margin-top:4px}
+.cw-cover .anim-stagger-list>*{animation-duration:.7s}
+
+/* ---------- 动效偏好 ---------- */
+@media (prefers-reduced-motion:reduce){
+  .cw-call *,.cw-seq *,.cw-btn,.cw-seq-steps button,.deck-header{transition:none!important;animation:none!important}
+}
+
+/* 补充：指示灯状态、迷你时序图、气泡落点 */
+.pc-led.wait{fill:var(--c-server);animation:pc-breathe 1.8s ease-in-out infinite}
+.pc-led.ring{fill:var(--c-bad);animation:pc-blink .4s steps(2,end) infinite}
+.pc-led.on.c{fill:var(--c-client)}
+.pc-led.on.s{fill:var(--c-server)}
+@keyframes pc-breathe{50%{opacity:.3}}
+@keyframes pc-blink{50%{opacity:.12}}
+.pc-bub.c{transform:translate(1180px,44px)}
+.pc-bub.s{transform:translate(320px,44px)}
+.cw-seq svg.mini .sq-name{font-size:21px}
+.cw-seq svg.mini .sq-label{font-size:20px}
+.cw-seq svg.mini .sq-label.code{font-size:18px}
+.cw-seq svg.mini .sq-life{stroke-dasharray:7 6}
+.cw-seq svg.mini .sq-arrow{stroke-width:3}
+
+/* ---------- 代码片段（标明出自哪个类的节选） ---------- */
+.cw-snippet{margin:0 0 16px;padding:16px 20px;background:var(--surface-2);border:1px solid var(--border);font:21px/1.5 var(--font-mono);
+  color:var(--text-1);white-space:pre-wrap;overflow-wrap:anywhere;tab-size:4}
+.cw-snippet.sm{font-size:19px;padding:12px 16px}
+/* ---------- 电话场景的文字 ---------- */
+.pc-name{font-size:23px;font-weight:700;fill:var(--text-1)}
+.pc-sub{font:600 17px var(--font-mono);fill:var(--text-2)}
+.pc-legend{font:18px var(--font-mono);fill:var(--text-2)}
+
+.cw-seqbox{display:block}
+
+/* ---------- 正文在标题下方居中；文字较少的页用更大字号 ---------- */
+.cw-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:safe center}
+.slide.roomy{font-size:27px}
+.roomy .card p{font-size:27px}
+.roomy .card h3{font-size:33px}
+.roomy li{font-size:26px}
+.roomy .cw-snippet{font-size:24px;line-height:1.45}
+.roomy .cw-snippet.sm{font-size:20px}
+.roomy .cw-callout{font-size:26px;padding:20px 28px}
+.roomy .cw-term{font-size:26px}
+.roomy .cw-term.compact{font-size:21px}
+.roomy .cw-ide{font-size:26px}
+.roomy .cw-ide-form{font-size:21px}
+.roomy .cw-step p{font-size:25px}
+.roomy .cw-step h4{font-size:28px}
+.roomy .cw-table{font-size:26px}
+.roomy .cw-table th{font-size:19px}
+.roomy .cw-flow .node h3{font-size:34px}
+.roomy .cw-flow .node p{font-size:26px}
+.roomy .cw-flow .link .lbl{font-size:24px}
+.roomy .cw-quiz label{font-size:28px;padding:20px 24px}
+.roomy .cw-quiz .cw-q{font-size:30px}
+.roomy .cw-todo li{font-size:27px;padding:20px 24px}
+.roomy .cw-reveal summary{font-size:25px}
+.roomy .cw-reveal .body{font-size:26px}
+.roomy .cw-byte{min-width:72px;height:62px;font-size:26px}
+.roomy .cw-reads li{font-size:22px}
+.roomy .cw-map-list p{font-size:24px}
+.roomy .cw-keyhint{font-size:19px}
+.cw-stack{display:grid;gap:24px;align-content:center}
+/* 回看页：左边代码片段，右边静态时序图 */
+.cw-review{grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);align-items:center;gap:32px}
+.cw-review .cw-seq-fig{align-self:center;padding:12px 16px}
+.cw-review .cw-seq-fig svg{max-width:none}
+.cw-review .card{padding:22px 28px}
+.cw-review .cw-snippet{font-size:23px;line-height:1.42;margin-bottom:12px;padding:14px 18px}
+.cw-review .card p{font-size:24px}
+
+</style>
+</head>
+<body>
+<div class="deck">
+  <div class="deck-header"><span class="now" id="cw-section">第 16 讲</span><span>Java 程序设计 · 第三部分 · 第 16 讲</span></div>
+
+  <!-- 1 封面 -->
+  <section class="slide cw-cover" data-title="封面" data-section="第 16 讲" data-chrome="off">
+    <div class="cw-cover-grid">
+      <div class="anim-stagger-list" data-anim-target>
+        <p class="kicker">第三部分 · 第 16 讲</p>
+        <h1 class="h1">让两个程序<br>说上话</h1>
+        <p class="lede">TCP 和 Java Socket。沿用第 15 讲的 hello java：先让两个本机程序完成一次请求和回复，再直接发送原始字节。</p>
+        <div class="row wrap mt-l"><span class="pill pill-accent">任务一 · 文字对话</span><span class="pill">任务二 · 原始字节</span><span class="pill">JDK 21 · 本机回环</span></div>
+      </div>
+      <figure class="card cw-cover-art" data-seq="cover">
+        <figcaption>本讲主线：两个程序之间的一次对话</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- 2 从第 15 讲接过来 -->
+  <section class="slide roomy" data-title="同一句话，这次让另一个程序马上收到" data-section="开场">
+    <header class="cw-head">
+      <p class="kicker">从第 15 讲接过来</p>
+      <h2 class="h2">同一句话，这次让另一个程序马上收到</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="card">
+        <div class="cw-role">第 15 讲 · 写入文件</div>
+        <h3>数据留在文件里</h3>
+<pre class="cw-snippet"><code>out.write(data);
+// ReadGreeting 中
+byte[] data = in.readAllBytes();</code></pre>
+        <p class="dim">文件留在磁盘上，另一个程序之后再去读。</p>
+      </div>
+      <div class="card accent">
+        <div class="cw-role client">这一节课 · 连接另一个程序</div>
+        <h3>数据沿连接直接前往对方</h3>
+<pre class="cw-snippet"><code>socket.getOutputStream();
+socket.getInputStream();</code></pre>
+        <p class="dim">还是熟悉的输出流、输入流。服务端读到 <code>hello java</code>，客户端得到 <code>ECHO: hello java</code>。</p>
+      </div>
+    </div>
+    <div class="cw-callout cw-gap">第 15 讲是“一个程序写，另一个程序稍后读”。今天两个程序<strong>同时运行</strong>，中间是一条<strong>连接</strong>。怎样建立这条连接，是今天要学的新东西。</div>
+    </div>
+  </section>
+
+  <!-- 3 今天的两个任务 -->
+  <section class="slide roomy" data-title="两个任务，留下两个能运行的程序" data-section="开场">
+    <header class="cw-head">
+      <p class="kicker">今天要完成的两件事</p>
+      <h2 class="h2">两个任务，留下两个能运行的程序</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="card accent">
+        <div class="cw-role">TASK 01 · 文字对话</div>
+        <h3>hello java 换回一句 ECHO</h3>
+        <ul>
+          <li>在 IDEA 里先运行服务端，再运行客户端，两个程序同时跑。</li>
+          <li>认识 <code>connect()</code> 和 <code>accept()</code>：谁在拨号，谁在等。</li>
+          <li>解释一次“卡住”：去掉换行以后，两端各自在等什么。</li>
+        </ul>
+        <p class="dim cw-gap"><strong>完成标志：</strong>两端输出一致，并能指出程序停在哪一行等。</p>
+      </div>
+      <div class="card accent">
+        <div class="cw-role">TASK 02 · 原始字节</div>
+        <h3>直接发送 6 个字节</h3>
+        <ul>
+          <li>不用文字，直接使用 Socket 的字节流。</li>
+          <li>数一数：写了两次，对方读了几次？</li>
+          <li>改一个字节、换一个数组大小，再核对。</li>
+        </ul>
+        <p class="dim cw-gap"><strong>完成标志：</strong>拼出完整的字节序列，并解释读取次数为什么不固定。</p>
+      </div>
+    </div>
+    <div class="cw-callout cw-gap">每个任务都留下<strong>一个可运行的程序</strong>和<strong>一条你能解释的输出</strong>。全程只用本机，不需要联网。</div>
+    </div>
+  </section>
+
+  <!-- 4 拟物动画：把连接想成一通电话 -->
+  <section class="slide" data-title="把连接想成一通电话" data-section="任务一 · 文字对话">
+    <header class="cw-head tight">
+      <p class="kicker">先建立直觉 · connect() 和 accept() 各在做什么</p>
+      <h2 class="h2">把连接想成一通电话</h2>
+    </header>
+    <div class="cw-body">
+    <div class="cw-callbox" data-call data-stepper>
+      <figure class="card cw-scene-card">
+        <svg class="cw-call" viewBox="0 0 1500 492" role="img" aria-labelledby="call-t call-d">
+          <title id="call-t">把连接想成一通电话：客户端拨号，服务端等待并接听</title>
+          <desc id="call-d"></desc>
+          <defs>
+            <linearGradient id="pc-body" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#fffef9"/><stop offset=".6" stop-color="#f2ecdc"/><stop offset="1" stop-color="#d8ceb4"/>
+            </linearGradient>
+            <linearGradient id="pc-hand" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#f4eedf"/><stop offset="1" stop-color="#d2c7ab"/>
+            </linearGradient>
+            <linearGradient id="pc-lcd" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#d6e9d9"/><stop offset="1" stop-color="#b4d3bd"/>
+            </linearGradient>
+            <filter id="pc-soft" x="-15%" y="-20%" width="130%" height="150%">
+              <feDropShadow dx="0" dy="9" stdDeviation="7" flood-color="#0a1e46" flood-opacity="0.26"/>
+            </filter>
+            <pattern id="pc-hatch" width="16" height="12" patternUnits="userSpaceOnUse">
+              <path d="M0 0 L-12 12 M16 0 L4 12 M32 0 L20 12" class="pc-hatch"/>
+            </pattern>
+            <g id="pc-phone-body">
+              <rect x="0" y="176" width="360" height="144" rx="30" fill="url(#pc-body)" stroke="#0a1e46" stroke-width="2.5" filter="url(#pc-soft)"/>
+              <path d="M8 274 Q180 312 352 274 L352 288 Q352 316 322 316 L38 316 Q8 316 8 288 Z" fill="#0a1e46" opacity=".07"/>
+              <rect x="28" y="158" width="108" height="28" rx="12" fill="url(#pc-body)" stroke="#0a1e46" stroke-width="2.5"/>
+              <rect x="224" y="158" width="108" height="28" rx="12" fill="url(#pc-body)" stroke="#0a1e46" stroke-width="2.5"/>
+              <rect x="40" y="198" width="140" height="50" rx="8" fill="url(#pc-lcd)" stroke="#0a1e46" stroke-opacity=".55" stroke-width="2"/>
+              <g fill="#fffef9" stroke="#0a1e46" stroke-opacity=".45" stroke-width="1.5">
+                <rect x="196" y="198" width="40" height="20" rx="5"/><rect x="246" y="198" width="40" height="20" rx="5"/><rect x="296" y="198" width="40" height="20" rx="5"/>
+                <rect x="196" y="226" width="40" height="20" rx="5"/><rect x="246" y="226" width="40" height="20" rx="5"/><rect x="296" y="226" width="40" height="20" rx="5"/>
+                <rect x="196" y="254" width="40" height="20" rx="5"/><rect x="246" y="254" width="40" height="20" rx="5"/><rect x="296" y="254" width="40" height="20" rx="5"/>
+                <rect x="196" y="282" width="40" height="20" rx="5"/><rect x="246" y="282" width="40" height="20" rx="5"/><rect x="296" y="282" width="40" height="20" rx="5"/>
+              </g>
+              <path d="M74 268 H176 M74 280 H176 M74 292 H176" fill="none" stroke="#0a1e46" stroke-opacity=".28" stroke-width="4" stroke-linecap="round"/>
+            </g>
+            <g id="pc-phone-handset">
+              <rect x="62" y="98" width="236" height="56" rx="28" fill="url(#pc-hand)" stroke="#0a1e46" stroke-width="2.5"/>
+              <rect x="10" y="70" width="116" height="112" rx="36" fill="url(#pc-hand)" stroke="#0a1e46" stroke-width="2.5"/>
+              <rect x="234" y="70" width="116" height="112" rx="36" fill="url(#pc-hand)" stroke="#0a1e46" stroke-width="2.5"/>
+              <rect x="24" y="80" width="58" height="14" rx="7" fill="#ffffff" opacity=".6"/>
+              <rect x="248" y="80" width="58" height="14" rx="7" fill="#ffffff" opacity=".6"/>
+              <path d="M150 114 H210 M150 126 H210 M150 138 H210" fill="none" stroke="#0a1e46" stroke-opacity=".22" stroke-width="3" stroke-linecap="round"/>
+            </g>
+          </defs>
+
+          <!-- 桌面 -->
+          <line class="pc-line" x1="40" y1="422" x2="1460" y2="422"/>
+          <rect x="40" y="422" width="1420" height="12" fill="url(#pc-hatch)"/>
+
+          <!-- 接通后亮起的连线 -->
+          <path class="pc-link" d="M300 104 Q750 34 1200 104"/>
+          <path class="pc-link" d="M480 416 C480 466, 610 476, 675 452 M825 452 C890 476, 1020 466, 1020 416"/>
+
+          <!-- 电话线与接线盒：两端都接在同一台机器上 -->
+          <path class="pc-cord" d="M480 416 C480 462, 600 470, 675 450"/>
+          <path class="pc-cord" d="M1020 416 C1020 462, 900 470, 825 450"/>
+          <rect class="pc-hub" x="675" y="424" width="150" height="42"/>
+          <text class="pc-hub-t" x="750" y="451" text-anchor="middle">本机 127.0.0.1</text>
+
+          <!-- 客户端的电话 -->
+          <g transform="translate(150,96)">
+            <use href="#pc-phone-body"/>
+            <circle class="pc-led c" cx="50" cy="280" r="9"/>
+            <text class="pc-lcd-t" data-lcd="client" x="110" y="229" text-anchor="middle">待机</text>
+            <g class="pc-handset c"><use href="#pc-phone-handset"/></g>
+          </g>
+          <!-- 服务端的电话 -->
+          <g transform="translate(990,96)">
+            <use href="#pc-phone-body"/>
+            <circle class="pc-led s" cx="50" cy="280" r="9"/>
+            <text class="pc-lcd-t" data-lcd="server" x="110" y="229" text-anchor="middle">等待来电</text>
+            <g class="pc-handset s"><use href="#pc-phone-handset"/></g>
+            <g class="pc-ring">
+              <path d="M370 128 a30 30 0 0 1 0 44"/>
+              <path d="M384 114 a50 50 0 0 1 0 72"/>
+              <path d="M398 100 a70 70 0 0 1 0 100"/>
+            </g>
+            <text class="pc-ring-t" x="342" y="62" text-anchor="end">铃铃铃…</text>
+          </g>
+
+          <!-- 两端身份 -->
+          <text class="pc-name" x="150" y="458">客户端</text>
+          <text class="pc-sub" x="150" y="484">TcpGreetingClient · 主动拨号的一方</text>
+          <text class="pc-name" x="990" y="458">服务端</text>
+          <text class="pc-sub" x="990" y="484">TcpGreetingServer · 号码 127.0.0.1:16016</text>
+          <text class="pc-legend" x="750" y="486" text-anchor="middle">↵ 表示换行</text>
+
+          <!-- 说话的内容：沿连线从一端飞到另一端 -->
+          <g class="pc-bub c">
+            <path d="M-82 -24 H82 A8 8 0 0 1 90 -16 V16 A8 8 0 0 1 82 24 H12 L0 40 L-12 24 H-82 A8 8 0 0 1 -90 16 V-16 A8 8 0 0 1 -82 -24 Z"/>
+            <text x="-70" y="8">hello java<tspan class="eol" dx="6">↵</tspan></text>
+          </g>
+          <g class="pc-bub s">
+            <path d="M-117 -24 H117 A8 8 0 0 1 125 -16 V16 A8 8 0 0 1 117 24 H12 L0 40 L-12 24 H-117 A8 8 0 0 1 -125 16 V-16 A8 8 0 0 1 -117 -24 Z"/>
+            <text x="-106" y="8">ECHO: hello java<tspan class="eol" dx="6">↵</tspan></text>
+          </g>
+        </svg>
+      </figure>
+      <div class="cw-call-row">
+        <div class="card client cw-side">
+          <div class="cw-role client">CLIENT · 客户端正在执行</div>
+          <p data-call-now="client">尚未启动</p>
+        </div>
+        <div class="cw-stepper-ui">
+          <div class="cw-stepbar">
+            <button type="button" class="cw-btn ghost" data-step-prev>← 上一步</button>
+            <button type="button" class="cw-btn" data-step-next>下一步 →</button>
+            <button type="button" class="cw-btn ghost sm" data-step-reset>重置</button>
+            <span class="cw-count" data-step-count>0 / 6</span>
+          </div>
+          <p class="cw-caption" data-step-caption aria-live="polite"></p>
+        </div>
+        <div class="card server cw-side">
+          <div class="cw-role server">SERVER · 服务端正在执行</div>
+          <p data-call-now="server">accept() 等待中</p>
+        </div>
+      </div>
+    </div>
+    <div class="grid g4 cw-map">
+      <div class="card client"><p class="cw-t">拨号 <span class="cw-who">客户端</span></p><p class="cw-j">socket.connect(地址, 端口)</p></div>
+      <div class="card server"><p class="cw-t">守着号码，接听 <span class="cw-who">服务端</span></p><p class="cw-j">listener.accept() → peer</p></div>
+      <div class="card"><p class="cw-t">说 / 听 <span class="cw-who">两端各一个 Socket</span></p><p class="cw-j">getOutputStream() · getInputStream()</p></div>
+      <div class="card"><p class="cw-t">挂断 <span class="cw-who">try 结束时自动调用</span></p><p class="cw-j">close()</p></div>
+    </div>
+    </div>
+  </section>
+
+  <!-- 5 时序图：两个程序怎样完成一次对话 -->
+  <section class="slide" data-title="两个程序怎样完成一次对话？" data-section="任务一 · 文字对话">
+    <header class="cw-head tight">
+      <p class="kicker">先看任务 · 时序图</p>
+      <h2 class="h2">两个程序怎样完成一次对话？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="cw-seqbox" data-seq="dialogue" data-stepper style="--fig-max:1000px" data-intro="整张图始终可见。竖条是“正在执行、还在等”的调用，箭头是应用数据的方向（不代表 TCP 报文边界）；按 <kbd>→</kbd> 或点击右侧步骤，逐步讲解。">
+      <div class="cw-seq">
+        <div class="cw-seq-side">
+          <div class="cw-stepbar">
+            <button type="button" class="cw-btn ghost" data-step-prev>← 上一步</button>
+            <button type="button" class="cw-btn" data-step-next>下一步 →</button>
+            <button type="button" class="cw-btn ghost sm" data-step-reset>重置</button>
+            <span class="cw-count" data-step-count>0 / 5</span>
+          </div>
+        </div>
+      </div>
+      <div class="cw-callout cw-gap" data-step-caption aria-live="polite"></div>
+    </div>
+    </div>
+  </section>
+
+  <!-- 6 机房实操：运行顺序 -->
+  <section class="slide roomy" data-title="先开服务端，再开客户端" data-section="任务一 · 文字对话">
+    <header class="cw-head tight">
+      <p class="kicker">机房实操 · IDEA · JDK 21</p>
+      <h2 class="h2">先开服务端，再开客户端</h2>
+      <p class="cw-lede">用本机回环地址 <code>127.0.0.1</code>。两端使用同一个端口，默认 <code>16016</code>。</p>
+    </header>
+    <div class="cw-body">
+    <div class="cw-steps" style="--n:3">
+      <div class="cw-step"><div class="num">1</div><h4>新建两个文件</h4><p>在 IDEA 的同一个项目里新建 <code>TcpGreetingServer.java</code> 和 <code>TcpGreetingClient.java</code>，用后两页的按钮复制完整代码。</p></div>
+      <div class="cw-step server"><div class="num">2</div><h4>先运行服务端</h4><p>打开 <code>TcpGreetingServer.java</code>，点类名左侧的绿色 ▶，选「运行」。看到<strong>「正在监听」</strong>后先别动：它停在 <code>accept()</code>，在等电话铃响。</p></div>
+      <div class="cw-step client"><div class="num">3</div><h4>再运行客户端</h4><p>对 <code>TcpGreetingClient.java</code> 做同样的操作。服务端不会被打断：<strong>运行窗口多出一个标签页</strong>，两边各有一个控制台。</p></div>
+    </div>
+    <div class="cw-ide cw-gap" data-ide>
+      <div class="cw-ide-bar"><i></i><i></i><i></i><span>IDEA 示意 · 底部的「运行」窗口：一个标签页就是一个程序</span></div>
+      <div class="cw-ide-tool"><b class="rerun">↻ 重新运行</b><b class="stop">■ 停止</b><span>只作用于选中的标签页</span></div>
+      <div class="cw-ide-tabs" role="tablist" aria-label="运行窗口的标签页">
+        <button type="button" role="tab" class="on" aria-selected="true" data-ide-tab="s">TcpGreetingServer</button>
+        <button type="button" role="tab" aria-selected="false" data-ide-tab="c">TcpGreetingClient</button>
+      </div>
+<pre class="on" role="tabpanel" data-ide-pane="s">正在监听 127.0.0.1:16016      <span class="cw-o">← 看到这一行，再运行客户端</span>
+服务端收到：hello java
+客户端已结束发送</pre>
+<pre role="tabpanel" data-ide-pane="c">客户端收到：ECHO: hello java   <span class="cw-o">← 看到这一行，第一次对话完成</span></pre>
+    </div>
+    <div class="cw-callout cw-gap">服务端处理完一次连接就退出，标签页里会多一行<strong>「进程已结束」</strong>的提示。<strong>每次重跑都先重新运行服务端</strong>：选中服务端标签页点 ↻，再选中客户端标签页点 ↻。</div>
+    </div>
+  </section>
+
+  <!-- 7 服务端完整代码 -->
+  <section class="slide" data-title="服务端：先等连接，再逐行回复" data-section="任务一 · 文字对话">
+    <header class="cw-head tight">
+      <p class="kicker">机房实操 · 服务端</p>
+      <h2 class="h2">服务端：先等连接，再逐行回复</h2>
+    </header>
+    <div class="cw-body">
+    <div class="cw-codegrid">
+      <div class="card cw-code" data-marks='[{"find":"try (ServerSocket listener","badge":"①","span":5},{"find":"try (Socket peer = listener.accept())","badge":"②"},{"find":"while ((line = in.readLine()) != null)","badge":"③"},{"find":"out.write(\"ECHO: \" + line","badge":"④","span":2},{"find":"客户端已结束发送","badge":"⑤"}]'>
+        <div class="cw-code-head">
+          <span class="file">TcpGreetingServer.java</span>
+          <span class="meta">完整程序 · 37 行</span>
+          <button type="button" class="cw-btn sm" data-copy="TcpGreetingServer.java">复制完整代码</button>
+        </div>
+        <div class="cw-code-scroll" tabindex="0" data-scroll aria-label="TcpGreetingServer.java 源代码，内容较长时可滚动">
+<pre class="cw-src" id="TcpGreetingServer.java">import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+
+public class TcpGreetingServer {
+    public static void main(String[] args) throws Exception {
+        int port = args.length == 0 ? 16016 : Integer.parseInt(args[0]);
+        try (ServerSocket listener = new ServerSocket()) {
+            // 本机实验，只监听回环地址。
+            listener.bind(new InetSocketAddress("127.0.0.1", port));
+            listener.setSoTimeout(90_000);
+            System.out.println("正在监听 127.0.0.1:" + port);
+
+            try (Socket peer = listener.accept()) {
+                peer.setSoTimeout(8_000);
+                BufferedReader in = new BufferedReader(new InputStreamReader(
+                        peer.getInputStream(), StandardCharsets.UTF_8));
+                BufferedWriter out = new BufferedWriter(new OutputStreamWriter(
+                        peer.getOutputStream(), StandardCharsets.UTF_8));
+
+                String line;
+                // 读到一行就回复，客户端关闭输出后读到 null。
+                while ((line = in.readLine()) != null) {
+                    System.out.println("服务端收到：" + line);
+                    out.write("ECHO: " + line + "\n");
+                    out.flush();
+                }
+                System.out.println("客户端已结束发送");
+            }
+        }
+    }
+}</pre>
+        </div>
+      </div>
+      <aside class="cw-code-side">
+        <div class="card server">
+          <div class="cw-role">SERVER · 对照左边的序号</div>
+          <ol class="cw-map-list">
+            <li><b class="cw-b">①</b><div><p>绑定 <code>127.0.0.1:16016</code>，打印「正在监听」。</p></div></li>
+            <li><b class="cw-b">②</b><div><p><code>accept()</code> 停在这里等客户端；连上后返回 <code>peer</code>，相当于接起电话后手里的听筒。</p></div></li>
+            <li><b class="cw-b">③</b><div><p><code>readLine()</code> 等到客户端发来一行才继续。</p></div></li>
+            <li><b class="cw-b">④</b><div><p>写回 <code>ECHO: </code> 加这一行和换行，再 <code>flush()</code>。</p></div></li>
+            <li><b class="cw-b">⑤</b><div><p><code>readLine()</code> 返回 <code>null</code>：客户端结束发送，服务端随后关闭。</p></div></li>
+          </ol>
+        </div>
+        <div class="cw-term compact">
+          <div class="cw-term-bar"><i></i><i></i><i></i><span>服务端启动后</span></div>
+<pre>正在监听 127.0.0.1:16016<span class="cw-caret"></span></pre>
+        </div>
+        <p class="cw-keyhint">保存为 TcpGreetingServer.java 后运行。import 默认折叠，复制时包含全部。</p>
+      </aside>
+    </div>
+    </div>
+  </section>
+
+  <!-- 8 客户端完整代码 -->
+  <section class="slide" data-title="客户端：连过去，发出一行文字" data-section="任务一 · 文字对话">
+    <header class="cw-head tight">
+      <p class="kicker">机房实操 · 客户端</p>
+      <h2 class="h2">客户端：连过去，发出一行文字</h2>
+    </header>
+    <div class="cw-body">
+    <div class="cw-codegrid">
+      <div class="card cw-code" data-marks='[{"find":"socket.connect(","badge":"②"},{"find":"out.write(message","badge":"③","span":2},{"find":"客户端收到","badge":"④"},{"after":"客户端收到","offset":1,"badge":"⑤"}]'>
+        <div class="cw-code-head">
+          <span class="file">TcpGreetingClient.java</span>
+          <span class="meta">完整程序 · 27 行</span>
+          <button type="button" class="cw-btn sm" data-copy="TcpGreetingClient.java">复制完整代码</button>
+        </div>
+        <div class="cw-code-scroll" tabindex="0" data-scroll aria-label="TcpGreetingClient.java 源代码">
+<pre class="cw-src" id="TcpGreetingClient.java">import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+
+public class TcpGreetingClient {
+    public static void main(String[] args) throws Exception {
+        int port = args.length == 0 ? 16016 : Integer.parseInt(args[0]);
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress("127.0.0.1", port), 3_000);
+            socket.setSoTimeout(8_000);
+            BufferedWriter out = new BufferedWriter(new OutputStreamWriter(
+                    socket.getOutputStream(), StandardCharsets.UTF_8));
+            BufferedReader in = new BufferedReader(new InputStreamReader(
+                    socket.getInputStream(), StandardCharsets.UTF_8));
+
+            String message = "hello java";
+            // 换行是本实验约定的消息结束标记。flush 把暂存文字交给下游。
+            out.write(message + "\n");
+            out.flush();
+            System.out.println("客户端收到：" + in.readLine());
+        }
+    }
+}</pre>
+        </div>
+      </div>
+      <aside class="cw-code-side">
+        <div class="card client">
+          <div class="cw-role">CLIENT · 对照左边的序号</div>
+          <ol class="cw-map-list">
+            <li><b class="cw-b">②</b><div><p><code>connect()</code> 像拨号：向 <code>127.0.0.1:16016</code> 发起连接，最多等 3 秒。</p></div></li>
+            <li><b class="cw-b">③</b><div><p>写出 <code>hello java</code> 和换行，<code>flush()</code> 交出去。</p></div></li>
+            <li><b class="cw-b">④</b><div><p><code>readLine()</code> 等服务端的一行回复，拿到后打印。</p></div></li>
+            <li><b class="cw-b">⑤</b><div><p><code>try</code> 结束，<code>socket</code> 自动关闭，相当于挂断。</p></div></li>
+          </ol>
+        </div>
+        <div class="cw-term compact">
+          <div class="cw-term-bar"><i></i><i></i><i></i><span>客户端运行后</span></div>
+<pre>客户端收到：ECHO: hello java</pre>
+        </div>
+        <p class="cw-keyhint">保存为 TcpGreetingClient.java 后运行。</p>
+      </aside>
+    </div>
+    </div>
+  </section>
+
+  <!-- 9 两边的控制台 -->
+  <section class="slide roomy" data-title="两边的控制台应该出现什么？" data-section="任务一 · 文字对话">
+    <header class="cw-head">
+      <p class="kicker">第一次通信 · 检查结果</p>
+      <h2 class="h2">两边的控制台应该出现什么？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="cw-term">
+        <div class="cw-term-bar"><i></i><i></i><i></i><span>运行窗口 · 标签页 TcpGreetingServer（服务端）</span></div>
+<pre>正在监听 127.0.0.1:16016
+服务端收到：hello java
+客户端已结束发送</pre>
+      </div>
+      <div class="cw-term">
+        <div class="cw-term-bar"><i></i><i></i><i></i><span>运行窗口 · 标签页 TcpGreetingClient（客户端）</span></div>
+<pre>客户端收到：ECHO: hello java</pre>
+      </div>
+    </div>
+    <p class="dim" style="margin-top:14px">IDEA 会在每个程序退出后自动加一行“进程已结束，退出代码 0”（英文界面为 <code>Process finished with exit code 0</code>），它不是程序打印的。</p>
+    <div class="card now cw-gap">
+      <div class="cw-role">动手 · 改一处再跑</div>
+      <p>把客户端的 <code>message</code> 改成 <code>"hello lab"</code>。<strong>先写下你预计两端会打印什么</strong>，再依次点两个标签页的 ↻ 重新运行：先服务端，后客户端。</p>
+      <p class="dim">两端的文字应该一起变化。</p>
+    </div>
+    </div>
+  </section>
+
+  <!-- 10 回看服务端 -->
+  <section class="slide roomy" data-title="从等待连接到回复：服务端做了什么？" data-section="任务一 · 文字对话">
+    <header class="cw-head">
+      <p class="kicker">回看刚才的程序 · 服务端</p>
+      <h2 class="h2">从等待连接到回复：服务端做了什么？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid cw-review">
+    <div class="cw-stack">
+      <div class="card server">
+        <div class="cw-role">① ② 等一个客户端</div>
+<pre class="cw-snippet">listener.bind(new InetSocketAddress("127.0.0.1", port));
+System.out.println("正在监听 127.0.0.1:" + port);
+Socket peer = listener.accept();</pre>
+        <p class="dim">先绑定端口再等待。<code>accept()</code> 返回后，<code>peer</code> 就是这次会话的听筒。</p>
+      </div>
+      <div class="card server">
+        <div class="cw-role">③ ④ 收到一行，再回复</div>
+<pre class="cw-snippet">while ((line = in.readLine()) != null) {
+    System.out.println("服务端收到：" + line);
+    out.write("ECHO: " + line + "\n");
+    out.flush();
+}</pre>
+        <p class="dim">先读一行，再写回带换行的回复；读不到下一行（<code>null</code>）就结束循环。</p>
+      </div>
+    </div>
+    <figure class="card cw-seq-fig" data-seq="dialogue" data-badges></figure>
+    </div>
+    <div class="cw-callout server cw-gap"><strong>为什么启动后暂时不往下走？</strong>因为 <code>accept()</code> 正在等客户端连接——电话还没响。</div>
+    </div>
+  </section>
+
+  <!-- 11 回看客户端 -->
+  <section class="slide roomy" data-title="发出消息后，客户端在哪里等回复？" data-section="任务一 · 文字对话">
+    <header class="cw-head">
+      <p class="kicker">回看刚才的程序 · 客户端</p>
+      <h2 class="h2">发出消息后，客户端在哪里等回复？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid cw-review">
+    <div class="cw-stack">
+      <div class="card client">
+        <div class="cw-role">③ 先发送</div>
+<pre class="cw-snippet">out.write(message + "\n");
+out.flush();</pre>
+        <p class="dim">发送一行文字；换行标记本实验中一行的结束。</p>
+      </div>
+      <div class="card client">
+        <div class="cw-role">④ 再接收</div>
+<pre class="cw-snippet">System.out.println(
+    "客户端收到：" + in.readLine());</pre>
+        <p class="dim"><code>readLine()</code> 等服务端的一行回复，拿到后才打印。</p>
+      </div>
+    </div>
+    <figure class="card cw-seq-fig" data-seq="dialogue" data-badges></figure>
+    </div>
+    <div class="cw-callout client cw-gap">两端都先准备自己的输出流和输入流，再按“客户端发送 → 服务端回复”的顺序工作。接通以后，<strong>谁先开口、谁在听，是由代码的先后决定的</strong>。</div>
+    </div>
+  </section>
+
+  <!-- 12 地址与端口 -->
+  <section class="slide roomy" data-title="连接的是哪一台电脑、哪个程序？" data-section="任务一 · 文字对话">
+    <header class="cw-head">
+      <p class="kicker">示意 · 地址与端口</p>
+      <h2 class="h2">连接的是哪一台电脑、哪个程序？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="cw-flow">
+      <div class="card client node">
+        <div class="cw-role client">CLIENT</div>
+        <h3>TcpGreetingClient</h3>
+<pre class="cw-snippet sm">socket.connect(
+    new InetSocketAddress("127.0.0.1", port),
+    3_000);</pre>
+        <p>目标地址：<code>127.0.0.1</code></p>
+        <p>目标端口：<code>16016</code></p>
+      </div>
+      <div class="link"><span class="lbl">连接请求</span><span class="arr">→</span><span class="wire">本机回环</span></div>
+      <div class="card server node">
+        <div class="cw-role server">SERVER</div>
+        <h3>TcpGreetingServer</h3>
+<pre class="cw-snippet sm">listener.bind(
+    new InetSocketAddress("127.0.0.1", port));</pre>
+        <p><code>ServerSocket</code> 监听</p>
+        <p>地址：<code>127.0.0.1:16016</code></p>
+      </div>
+    </div>
+    <div class="grid g2 cw-gap">
+      <div class="cw-callout"><strong>地址找主机，端口找入口。</strong>好比电话号码：<code>127.0.0.1</code> 是哪一台机器，<code>16016</code> 是这台机器上的哪个号码。</div>
+      <div class="cw-callout">两端现在在同一台电脑上。每台电脑的 <code>127.0.0.1</code> 都指向它自己，所以同桌的客户端连不到你的服务端。客户端自己的端口通常由系统选择。</div>
+    </div>
+    </div>
+  </section>
+
+  <!-- 13 ServerSocket 与 Socket -->
+  <section class="slide roomy" data-title="监听用 ServerSocket，收发用 Socket" data-section="任务一 · 文字对话">
+    <header class="cw-head tight">
+      <p class="kicker">回看程序 · 对照两端</p>
+      <h2 class="h2">监听用 ServerSocket，收发用 Socket</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="card server">
+        <div class="cw-role">服务端代码片段 · TcpGreetingServer.java</div>
+<pre class="cw-snippet">listener.bind(new InetSocketAddress(
+        "127.0.0.1", port));
+Socket peer = listener.accept();</pre>
+        <p class="dim"><code>accept()</code> 由服务端调用，在这里等待客户端连接；连接建立后返回这次会话的 <code>Socket</code>。</p>
+      </div>
+      <div class="card client">
+        <div class="cw-role">客户端代码片段 · TcpGreetingClient.java</div>
+<pre class="cw-snippet">socket.connect(new InetSocketAddress(
+        "127.0.0.1", port), 3_000);</pre>
+        <p class="dim"><code>connect()</code> 由客户端调用，向指定地址和端口发起连接；连接建立后，这个 <code>Socket</code> 就能读写。<code>3_000</code> 是最多等待的毫秒数。</p>
+      </div>
+    </div>
+    <div class="card cw-gap" style="padding:4px 20px">
+      <table class="cw-table">
+        <thead><tr><th>对象</th><th>谁使用</th><th>负责什么</th><th>用电话打比方</th></tr></thead>
+        <tbody>
+          <tr><td>ServerSocket</td><td>只有服务端</td><td>绑定端口、等待连接（<code>bind</code>、<code>accept</code>），本身不收发数据</td><td>桌上那部绑定了号码、守着等来电的电话</td></tr>
+          <tr><td>Socket</td><td>两端各一个</td><td>收发数据：<code>getInputStream()</code>、<code>getOutputStream()</code>，用完 <code>close()</code></td><td>接通后手里的听筒</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="cw-callout cw-gap">这里的服务端只处理一次连接，结束后连监听也一起关闭。</div>
+    </div>
+  </section>
+
+  <!-- 14 TCP 是什么 -->
+  <section class="slide roomy" data-title="TCP 是什么：一条可靠的字节流水线" data-section="任务一 · 文字对话">
+    <header class="cw-head">
+      <p class="kicker">概念 · 把名词说清楚</p>
+      <h2 class="h2">TCP 是什么：一条可靠的字节流水线</h2>
+    </header>
+    <div class="cw-body">
+    <div class="card accent cw-gap">
+      <div class="cw-role">定义</div>
+      <p><strong>TCP</strong>（Transmission Control Protocol，传输控制协议）：规定两个程序如何<strong>先建立连接、再可靠地交换字节流</strong>的通信协议。<code>Socket</code> / <code>ServerSocket</code> 是 Java 里使用它的入口。它建在 IP 之上：IP 只管把一个个数据包尽力送到对方机器，TCP 在这之上补足<strong>顺序</strong>和<strong>可靠</strong>。</p>
+    </div>
+    <div class="grid g2 cw-gap">
+      <div class="card now">
+        <div class="cw-role">TCP 保证</div>
+        <ul>
+          <li>先建立连接，再收发——下一页的<strong>三次握手</strong>。</li>
+          <li>字节<strong>不丢、不重、按发送顺序</strong>到达。</li>
+          <li>双向同时可用：两边都能发、也都能收。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="cw-role">TCP 不管</div>
+        <ul>
+          <li>不保留每次 <code>write</code> 的边界——任务二验证。</li>
+          <li>不管字节代表什么：数字、文字还是别的，<strong>含义由两端约定</strong>。</li>
+          <li>一行在哪里结束：换行是任务一里我们自己定的约定。</li>
+        </ul>
+      </div>
+    </div>
+    <div class="cw-callout cw-gap">任务一的换行、任务二的 2 字节数组，都是<strong>应用程序自己的约定</strong>；TCP 提供的只是这条可靠的字节流水线。</div>
+    </div>
+  </section>
+
+  <!-- 15 时序图：三次握手 -->
+  <section class="slide" data-title="为什么 connect 之后才开始收发？" data-section="任务一 · 文字对话">
+    <header class="cw-head tight">
+      <p class="kicker">放大时序图 · 三次握手 · 建立连接</p>
+      <h2 class="h2">为什么 connect 之后才开始收发？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="cw-seqbox" data-seq="handshake" data-stepper style="--fig-max:960px" data-intro="开始前：服务端已绑定端口并监听，两端都停在自己的调用里。按 <kbd>→</kbd> 或点击右侧步骤，逐步讲解。">
+      <div class="cw-seq">
+        <div class="cw-seq-side">
+          <div class="cw-stepbar">
+            <button type="button" class="cw-btn ghost" data-step-prev>← 上一步</button>
+            <button type="button" class="cw-btn" data-step-next>下一步 →</button>
+            <button type="button" class="cw-btn ghost sm" data-step-reset>重置</button>
+            <span class="cw-count" data-step-count>0 / 4</span>
+          </div>
+        </div>
+      </div>
+      <div class="cw-callout cw-gap" data-step-caption aria-live="polite"></div>
+    </div>
+    <div class="cw-callout cw-gap">SYN＝同步（synchronize）、ACK＝确认（acknowledgement），是 TCP 报文头里的标志位——操作系统里的 TCP 在做的事，Java 代码看不到。我们只看到结果：<strong>握手完成以后，<code>connect()</code> 和 <code>accept()</code> 才返回</strong>——电话接通了，才能开口说话。</div>
+    </div>
+  </section>
+
+  <!-- 16 换行和 flush -->
+  <section class="slide roomy" data-title="换行和 flush 各管什么？" data-section="任务一 · 文字对话">
+    <header class="cw-head">
+      <p class="kicker">回看程序 · 从字节到一行</p>
+      <h2 class="h2">换行和 flush 各管什么？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="card client">
+        <div class="cw-role">发送端 · 写的一侧</div>
+<pre class="cw-snippet">out.write(message + "\n");
+out.flush();</pre>
+        <p class="dim">换行约定了“这句说完了”。<code>flush()</code> 把暂存的文字交给下游输出流。</p>
+      </div>
+      <div class="card server">
+        <div class="cw-role">接收端 · 读的一侧</div>
+<pre class="cw-snippet">String line = in.readLine();</pre>
+        <p class="dim">读到行结束或流结束才返回。电话里的声音是连续的，<strong>“一句到哪里结束”是两个程序事先约定的</strong>。</p>
+      </div>
+    </div>
+    <div class="cw-callout cw-gap">和第 15 讲一样，两边使用 UTF-8。<code>flush()</code> 只是把数据交出去，<strong>不代表对方已经处理</strong>；要等对方读到并回复，这一句才算说完。</div>
+    </div>
+  </section>
+
+  <!-- 17 超时实验 -->
+  <section class="slide roomy" data-title="为什么会等到超时？" data-section="任务一 · 文字对话">
+    <header class="cw-head">
+      <p class="kicker">机房实操 · 只改一行</p>
+      <h2 class="h2">为什么会等到超时？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="card now">
+      <div class="cw-role">先预测，再让两个程序验证</div>
+      <ol>
+        <li>把客户端的 <code>out.write(message + "\n")</code> 改成 <code>out.write(message)</code>，保留 <code>flush()</code>。</li>
+        <li>重新运行两个程序，先服务端后客户端。<strong>先预测：</strong>两端各会停在哪一行？大约 8 秒后观察结果。</li>
+        <li>恢复换行重跑，确认原来的回声恢复。</li>
+      </ol>
+    </div>
+    <details class="cw-reveal cw-gap">
+      <summary>做完实验后核对</summary>
+      <div class="body">
+        <p>字节可以到达，但服务端仍在等行的结尾：<code>readLine()</code> 没有返回。客户端同时在等回复。<strong>两端都在等对方</strong>，直到 8 秒超时。</p>
+        <p>典型输出：两端各报 <code>java.net.SocketTimeoutException: Read timed out</code>，服务端指向第 28 行的 <code>readLine()</code>，客户端指向第 24 行。一端先关闭后，另一端也可能读到流结束而不是超时。</p>
+      </div>
+    </details>
+    <div class="cw-callout cw-gap">这就像拨通以后，一方一直没说“OVER”：对方不知道这句讲完没有，只能干等。</div>
+    </div>
+  </section>
+
+  <!-- 18 时序图：关闭连接 -->
+  <section class="slide" data-title="读到 null 表示什么？" data-section="任务一 · 文字对话">
+    <header class="cw-head tight">
+      <p class="kicker">放大时序图 · 四次挥手 · 关闭连接</p>
+      <h2 class="h2">读到 null 表示什么？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="cw-seqbox" data-seq="teardown" data-stepper style="--fig-max:940px" data-intro="开始前：客户端已收到回复，服务端停在 <code>readLine()</code> 等下一行。按 <kbd>→</kbd> 或点击右侧步骤，逐步讲解。">
+      <div class="cw-seq">
+        <div class="cw-seq-side">
+          <div class="cw-stepbar">
+            <button type="button" class="cw-btn ghost" data-step-prev>← 上一步</button>
+            <button type="button" class="cw-btn" data-step-next>下一步 →</button>
+            <button type="button" class="cw-btn ghost sm" data-step-reset>重置</button>
+            <span class="cw-count" data-step-count>0 / 4</span>
+          </div>
+        </div>
+      </div>
+      <div class="cw-callout cw-gap" data-step-caption aria-live="polite"></div>
+    </div>
+    <div class="cw-callout cw-gap">FIN＝结束发送（finish）、ACK＝确认，同为 TCP 报文头的标志位；两个方向各结束一次、各确认一次，共四步——「四次挥手」。<code>readLine()</code> 返回 <code>null</code> 的意思是<strong>对方结束了发送</strong>——电话那头挂机了。图里把 FIN 和 ACK 分开画，实际可能合并在一个报文里；示例的 <code>try</code> 结束时自动关闭套接字。</div>
+    </div>
+  </section>
+
+  <!-- 19 排错 -->
+  <section class="slide roomy" data-title="看到错误，先检查哪一端？" data-section="任务一 · 文字对话">
+    <header class="cw-head">
+      <p class="kicker">机房排错 · 从现象定位</p>
+      <h2 class="h2">看到错误，先检查哪一端？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="card bad">
+        <div class="cw-role">现象一 · 客户端刚启动就报错</div>
+        <div class="cw-term compact">
+<pre><span class="cw-err">Exception in thread "main"
+java.net.ConnectException: Connection refused</span>
+    …
+    at TcpGreetingClient.main(TcpGreetingClient.java:13)</pre>
+        </div>
+        <p class="dim cw-gap"><strong>连接被拒绝：</strong>那个端口上没有人在听。先看服务端是否还在运行，再核对两端的端口是否一致。</p>
+      </div>
+      <div class="card bad">
+        <div class="cw-role">现象二 · 服务端刚启动就报错</div>
+        <div class="cw-term compact">
+<pre><span class="cw-err">Exception in thread "main"
+java.net.BindException: Address already in use</span>
+    …
+    at TcpGreetingServer.main(TcpGreetingServer.java:15)</pre>
+        </div>
+        <p class="dim cw-gap"><strong>端口被占用：</strong>上一个服务端还没退出。选中它的标签页点 ■ 停止，或两端都换用另一个端口，例如 <code>16026</code>（在「运行 → 编辑配置…」的「程序实参」里填，做法见第 22 页）。</p>
+      </div>
+      <div class="card now">
+        <div class="cw-role">现象三 · 已连接，却没有回复</div>
+        <p>程序停着不动，约 8 秒后报 <code>SocketTimeoutException: Read timed out</code>。</p>
+        <p class="dim">检查发送端有没有写换行并 <code>flush()</code>，再看接收端是不是一直等在 <code>readLine()</code>。</p>
+      </div>
+      <div class="card">
+        <div class="cw-role">现象四 · 服务端等很久后退出</div>
+        <p>一直没人连接，约 90 秒后报 <code>SocketTimeoutException: Accept timed out</code>。</p>
+        <p class="dim">这是 <code>accept()</code> 的等待上限，属于正常保护。重新启动服务端即可。</p>
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <!-- 20 任务二：从文字到字节 -->
+  <section class="slide roomy" data-title="刚才发的是文字，现在试试直接发字节" data-section="任务二 · 原始字节">
+    <header class="cw-head">
+      <p class="kicker">任务二 · 从已有程序出发</p>
+      <h2 class="h2">刚才发的是文字，现在试试直接发字节</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="card">
+        <div class="cw-role">刚才 · 发一行文字</div>
+<pre class="cw-snippet">out.write(message + "\n");
+out.flush();</pre>
+        <p class="dim">字符流帮我们把文字编码成字节，服务端按行读取。</p>
+      </div>
+      <div class="card accent">
+        <div class="cw-role">现在 · 发原始字节</div>
+<pre class="cw-snippet">byte[] data = {0x68, 0x65, 0x6C,
+               0x6C, 0x6F, 0x21};</pre>
+        <p class="dim">这是第 15 讲熟悉的字节。按 UTF-8 解读是 <code>hello!</code>，这次先只看十六进制。</p>
+      </div>
+    </div>
+    <div class="cw-callout cw-gap">连接方式不变，仍是客户端连接服务端。这次<strong>直接使用 Socket 的字节输入流与输出流</strong>，不用 <code>readLine()</code>——于是没有一个现成的“一行”来告诉你数据到哪里结束。</div>
+    </div>
+  </section>
+
+  <!-- 21 先预测 -->
+  <section class="slide roomy" data-title="发送两次，接收端会读几次？" data-section="任务二 · 原始字节">
+    <header class="cw-head">
+      <p class="kicker">任务二 · 先预测</p>
+      <h2 class="h2">发送两次，接收端会读几次？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="card now">
+      <div class="cw-role">实验设置</div>
+      <p>客户端把 6 字节<strong>分两次写入</strong>，每次写 3 字节。服务端用<strong>长度为 2 的数组</strong>读取。</p>
+      <div class="cw-flow" style="margin-top:18px">
+        <div>
+          <div class="cw-role client">客户端 · 两次 write</div>
+          <div class="cw-bytes" style="margin:0"><span class="cw-byte">68</span><span class="cw-byte">65</span><span class="cw-byte">6C</span><span class="cw-sep">＋</span><span class="cw-byte">6C</span><span class="cw-byte">6F</span><span class="cw-byte">21</span></div>
+        </div>
+        <div class="link"><span class="arr">→</span></div>
+        <div>
+          <div class="cw-role server">服务端 · 每次最多装 2 字节的数组</div>
+          <div class="cw-bytes" style="margin:0"><span class="cw-byte">？</span><span class="cw-byte">？</span></div>
+        </div>
+      </div>
+      <p class="cw-gap" style="font-size:27px"><strong>先想一想，写下你的预测：</strong>至少需要几次“读到了数据”的读取？每次都一定读满 2 字节吗？</p>
+    </div>
+    <details class="cw-reveal cw-gap">
+      <summary>完成实验后核对</summary>
+      <div class="body"><p>至少 3 次。每次返回 1 或 2 字节都可能：上限 2 来自数组大小，返回 1 表示这一次确实读到了数据。实际分几次、每次多少，由运行时的情况决定。</p></div>
+    </details>
+    </div>
+  </section>
+
+  <!-- 22 字节版运行顺序 -->
+  <section class="slide roomy" data-title="保留刚才的程序，新建两个字节版" data-section="任务二 · 原始字节">
+    <header class="cw-head tight">
+      <p class="kicker">任务二 · 机房实操</p>
+      <h2 class="h2">保留刚才的程序，新建两个字节版</h2>
+    </header>
+    <div class="cw-body">
+    <div class="cw-steps" style="--n:2">
+      <div class="cw-step"><div class="num">1</div><h4>新建两个文件</h4><p>确认文字版服务端已经退出。在同一项目里新建 <code>TcpBytesServer.java</code> 和 <code>TcpBytesClient.java</code>，用后两页的按钮复制完整代码。文字版两个文件保留不动。</p></div>
+      <div class="cw-step client"><div class="num">2</div><h4>先服务端，后客户端</h4><p>点 ▶ 运行 <code>TcpBytesServer</code>，看到监听提示后再运行 <code>TcpBytesClient</code>。和任务一一样：两个标签页，先服务端后客户端。</p></div>
+      <div class="cw-step server"><div class="num">3</div><h4>记录每次读取</h4><p>把服务端<strong>每次读取的长度和字节</strong>按顺序抄下来，最后核对“共 6 字节”。</p></div>
+      <div class="cw-step"><div class="num">4</div><h4>端口被占用时</h4><p>选中旧程序的标签页点 ■ 停止；或给两端填同一个端口参数，例如 <code>16026</code>，填法见下方。每次重跑先运行服务端。</p></div>
+    </div>
+    <div class="cw-ide cw-gap">
+      <div class="cw-ide-bar"><i></i><i></i><i></i><span>IDEA 示意 · 菜单「运行 → 编辑配置…」：端口参数填在「程序实参」里</span></div>
+      <div class="cw-ide-form">
+        <span>名称</span><div class="cw-ide-field"><code>TcpBytesServer</code></div>
+        <span>程序实参</span><div class="cw-ide-field"><code>16026</code><em>服务端、客户端各填一次，两边相同；留空就用默认端口 16016</em></div>
+        <div class="cw-ide-btns"><span>取消</span><span>应用</span><span class="on">确定</span></div>
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <!-- 23 TcpBytesServer -->
+  <section class="slide" data-title="服务端：按实际长度读取" data-section="任务二 · 原始字节">
+    <header class="cw-head tight">
+      <p class="kicker">任务二 · 可运行的完整程序</p>
+      <h2 class="h2">服务端：按实际长度读取</h2>
+    </header>
+    <div class="cw-body">
+    <div class="cw-codegrid">
+      <div class="card cw-code" data-marks='[{"find":"new byte[2]","badge":"①"},{"find":"in.read(buffer)) != -1","badge":"②"},{"find":"formatHex(buffer, 0, count)","badge":"③"}]'>
+        <div class="cw-code-head">
+          <span class="file">TcpBytesServer.java</span>
+          <span class="meta">完整程序 · 30 行</span>
+          <button type="button" class="cw-btn sm" data-copy="TcpBytesServer.java">复制完整代码</button>
+        </div>
+        <div class="cw-code-scroll" tabindex="0" data-scroll aria-label="TcpBytesServer.java 源代码">
+<pre class="cw-src" id="TcpBytesServer.java">import java.io.InputStream;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.HexFormat;
+
+public class TcpBytesServer {
+    public static void main(String[] args) throws Exception {
+        int port = args.length == 0 ? 16016 : Integer.parseInt(args[0]);
+        try (ServerSocket listener = new ServerSocket()) {
+            listener.bind(new InetSocketAddress("127.0.0.1", port));
+            listener.setSoTimeout(90_000);
+            System.out.println("正在监听 127.0.0.1:" + port);
+            try (Socket peer = listener.accept()) {
+                peer.setSoTimeout(8_000);
+                InputStream in = peer.getInputStream();
+                byte[] buffer = new byte[2]; // 每次最多读 2 字节，便于观察。
+                int count;
+                int total = 0;
+                while ((count = in.read(buffer)) != -1) {
+                    System.out.println("本次 " + count + " 字节：" +
+                            HexFormat.ofDelimiter(" ").withUpperCase()
+                                    .formatHex(buffer, 0, count));
+                    total += count;
+                }
+                System.out.println("接收结束，共 " + total + " 字节");
+            }
+        }
+    }
+}</pre>
+        </div>
+      </div>
+      <aside class="cw-code-side">
+        <div class="card server">
+          <div class="cw-role">SERVER · 对照左边的序号</div>
+          <ol class="cw-map-list">
+            <li><b class="cw-b">①</b><div><p>数组装 2 格，所以<strong>每次最多读 2 字节</strong>。这是程序的设置，不是 TCP 的规定。</p></div></li>
+            <li><b class="cw-b">②</b><div><p><code>read()</code> 返回本次<strong>实际读到的数量</strong>，存进 <code>count</code>；返回 <code>-1</code> 表示对方结束发送。</p></div></li>
+            <li><b class="cw-b">③</b><div><p>只格式化前 <code>count</code> 个：数组里后面的格子是上一次留下的旧字节。</p></div></li>
+          </ol>
+        </div>
+        <p class="cw-keyhint">保存为 TcpBytesServer.java 后运行。监听和连接的写法与任务一相同。</p>
+      </aside>
+    </div>
+    </div>
+  </section>
+
+  <!-- 24 TcpBytesClient -->
+  <section class="slide" data-title="客户端：两次写入六个字节" data-section="任务二 · 原始字节">
+    <header class="cw-head tight">
+      <p class="kicker">任务二 · 可运行的完整程序</p>
+      <h2 class="h2">客户端：两次写入六个字节</h2>
+    </header>
+    <div class="cw-body">
+    <div class="cw-codegrid">
+      <div class="card cw-code" data-marks='[{"find":"out.write(data, 0, 3)","badge":"①","span":2},{"find":"socket.shutdownOutput()","badge":"②"}]'>
+        <div class="cw-code-head">
+          <span class="file">TcpBytesClient.java</span>
+          <span class="meta">完整程序 · 19 行</span>
+          <button type="button" class="cw-btn sm" data-copy="TcpBytesClient.java">复制完整代码</button>
+        </div>
+        <div class="cw-code-scroll" tabindex="0" data-scroll aria-label="TcpBytesClient.java 源代码">
+<pre class="cw-src" id="TcpBytesClient.java">import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+
+public class TcpBytesClient {
+    public static void main(String[] args) throws Exception {
+        int port = args.length == 0 ? 16016 : Integer.parseInt(args[0]);
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress("127.0.0.1", port), 3_000);
+            OutputStream out = socket.getOutputStream();
+            byte[] data = {0x68, 0x65, 0x6C, 0x6C, 0x6F, 0x21}; // hello!
+            out.write(data, 0, 3); // 前 3 字节
+            out.write(data, 3, 3); // 后 3 字节
+            out.flush();
+            socket.shutdownOutput(); // 告诉服务端：本次不再发送字节。
+            System.out.println("已发送 6 字节，结束发送");
+        }
+    }
+}</pre>
+        </div>
+      </div>
+      <aside class="cw-code-side">
+        <div class="card client">
+          <div class="cw-role">CLIENT · 对照左边的序号</div>
+          <ol class="cw-map-list">
+            <li><b class="cw-b">①</b><div><p><strong>分两次写</strong>，每次 3 字节：先 <code>68 65 6C</code>，再 <code>6C 6F 21</code>。</p></div></li>
+            <li><b class="cw-b">②</b><div><p><code>shutdownOutput()</code> 告诉服务端“我不再发送了”，对方的 <code>read()</code> 随后返回 <code>-1</code>。</p></div></li>
+          </ol>
+        </div>
+        <div class="cw-term compact">
+          <div class="cw-term-bar"><i></i><i></i><i></i><span>客户端运行后</span></div>
+<pre>已发送 6 字节，结束发送</pre>
+        </div>
+        <p class="cw-keyhint">保存为 TcpBytesClient.java 后运行。</p>
+      </aside>
+    </div>
+    </div>
+  </section>
+
+  <!-- 25 两次写入，接收端怎样装进数组 -->
+  <section class="slide roomy" data-title="两次写入，接收端怎样装进数组？" data-section="任务二 · 原始字节">
+    <header class="cw-head tight">
+      <p class="kicker">读取示意 · 与你的输出对照</p>
+      <h2 class="h2">两次写入，接收端怎样装进数组？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid" style="grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)">
+      <div class="card client">
+        <div class="cw-role">发送端 · 两次 write，各 3 字节</div>
+        <div class="cw-bytes"><span class="cw-byte">68</span><span class="cw-byte">65</span><span class="cw-byte">6C</span><span class="cw-sep">＋</span><span class="cw-byte">6C</span><span class="cw-byte">6F</span><span class="cw-byte">21</span></div>
+        <p class="dim">两次写入的字节进入同一条连接后<strong>首尾相接</strong>，中间没有“这是第几次写的”标记。</p>
+        <div class="cw-bytes"><span class="cw-byte hot">68</span><span class="cw-byte hot">65</span><span class="cw-byte hot">6C</span><span class="cw-byte hot">6C</span><span class="cw-byte hot">6F</span><span class="cw-byte hot">21</span></div>
+        <p class="dim">像一条连续的传送带：能保持先后顺序，不保留每次写入的格子。</p>
+      </div>
+      <div class="card server" data-readsim>
+        <div class="cw-role">接收端 · 每次最多读 2 字节</div>
+        <ol class="cw-reads"></ol>
+        <p class="dim" data-sim-note aria-live="polite" style="margin-top:14px"></p>
+        <div class="cw-stepbar cw-gap"><button type="button" class="cw-btn ghost sm" data-sim-again>换一种可能的读取结果</button></div>
+      </div>
+    </div>
+    <div class="cw-callout cw-gap">实心格是本次读到的字节，即数组的前 <code>count</code> 个；虚线格是数组里<strong>上一次留下的旧字节</strong>，所以代码只格式化前 <code>count</code> 个。右边的读取过程是<strong>按规则生成的模拟</strong>，你的程序输出以实际为准。</div>
+    </div>
+  </section>
+
+  <!-- 26 比较预测与实际输出 -->
+  <section class="slide roomy" data-title="把每次收到的有效字节接起来" data-section="任务二 · 原始字节">
+    <header class="cw-head">
+      <p class="kicker">任务二 · 比较结果</p>
+      <h2 class="h2">把每次收到的有效字节接起来</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="cw-term">
+        <div class="cw-term-bar"><i></i><i></i><i></i><span>服务端 · TcpBytesServer（一种可能的输出）</span></div>
+<pre>正在监听 127.0.0.1:16016
+本次 2 字节：68 65
+本次 2 字节：6C 6C
+本次 2 字节：6F 21
+接收结束，共 6 字节</pre>
+      </div>
+      <div class="card accent">
+        <div class="cw-role">你来检查</div>
+        <ol>
+          <li>每行输出的字节数量与 <code>count</code> 一致吗？</li>
+          <li>按顺序合并，是否为 <code>68 65 6C 6C 6F 21</code>？</li>
+          <li>若某次只读到 1 字节，为什么不能把整个数组都当成新数据？</li>
+        </ol>
+        <p class="dim cw-gap">你的读取次数和每次的字节数都可能和左边不同，只要按顺序拼起来是同样的 6 字节。</p>
+      </div>
+    </div>
+    <div class="cw-callout cw-gap">TCP 保持字节顺序，但<strong>不保留应用每次 <code>write()</code> 的边界</strong>。本例每次最多读 2 字节是程序的设置，不代表 TCP 按 2 字节传输。</div>
+    </div>
+  </section>
+
+  <!-- 27 改一个字节，再改变接收数组大小 -->
+  <section class="slide roomy" data-title="改一个字节，再改变接收数组大小" data-section="任务二 · 原始字节">
+    <header class="cw-head">
+      <p class="kicker">任务二 · 独立修改与验证</p>
+      <h2 class="h2">改一个字节，再改变接收数组大小</h2>
+    </header>
+    <div class="cw-body">
+    <div class="card">
+      <ol>
+        <li>客户端把最后的 <code>0x21</code> 改为 <code>0x3F</code>。<strong>先写出你预计的完整十六进制序列</strong>，再重启两端核对。</li>
+        <li>服务端把 <code>new byte[2]</code> 改为 <code>new byte[8]</code>，重启两端，记录每次实际读到的数量。</li>
+        <li>比较两次实验：字节内容和总数怎样变化？读取次数能由两次 <code>write</code> 唯一确定吗？</li>
+      </ol>
+    </div>
+    <details class="cw-reveal cw-gap">
+      <summary>核对思路</summary>
+      <div class="body"><p>末尾变为 <code>3F</code>，总数仍是 6 字节。数组变大只改变<strong>一次最多能读多少</strong>：可能一次读满 6 字节，也可能分几次，都算正确。</p></div>
+    </details>
+    <div class="cw-callout cw-gap">做完恢复原始代码。客户端的 <code>shutdownOutput()</code> 结束发送方向；服务端读完已有字节后，<code>read()</code> 返回 <code>-1</code>，循环结束。</div>
+    </div>
+  </section>
+
+  <!-- 28 走向下一讲 -->
+  <section class="slide roomy" data-title="接收了字节，怎样知道它代表什么？" data-section="任务二 · 原始字节">
+    <header class="cw-head">
+      <p class="kicker">从实验走向下一讲</p>
+      <h2 class="h2">接收了字节，怎样知道它代表什么？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="card">
+        <div class="cw-role">今天的约定</div>
+        <p>6 个字节按顺序组成 <code>hello!</code>；文字实验则用<strong>换行</strong>标记一行的结束。这些约定都由两个程序自己遵守，连接本身不管。</p>
+      </div>
+      <div class="card accent">
+        <div class="cw-role">如果发送的是设备记录</div>
+        <p>接收端还要知道哪些字节是设备编号、坐标或电量，以及<strong>一条记录到哪里结束</strong>。</p>
+      </div>
+    </div>
+    <div class="cw-callout cw-gap">下一讲仍用 <code>hello java</code>：换成 UDP 数据报，比较“数据报”与今天的“字节流”，再让数据报携带一条能解析的坐标记录。这些记录之后经过 TCP 时可能被分开或连在一起，留到第 18 讲处理。</div>
+    </div>
+  </section>
+
+  <!-- 29 课堂检查 -->
+  <section class="slide roomy" data-title="写了两次，对方一定要读两次吗？" data-section="任务二 · 原始字节">
+    <header class="cw-head">
+      <p class="kicker">课堂检查</p>
+      <h2 class="h2">写了两次，对方一定要读两次吗？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="card cw-quiz" data-quiz data-answer="1" data-explanation="TCP 提供的是字节流：不保留每次 write 的边界，边界要由应用程序自己约定。" data-hint="再想一想：接收数组的大小和发送次数，分别限制了什么？">
+      <p class="cw-q">用今天的眼光判断下面哪一句是对的。</p>
+      <label><input type="radio" name="tcp-boundary" value="0"> 一定，TCP 保留每次 write 的边界。</label>
+      <label><input type="radio" name="tcp-boundary" value="1"> 不一定，TCP 提供字节流，应用程序需自己判断边界。</label>
+      <button type="button" class="cw-btn ghost" data-check>检查答案</button>
+      <p class="cw-result" aria-live="polite"></p>
+    </div>
+    </div>
+  </section>
+
+  <!-- 30 本讲验收 -->
+  <section class="slide roomy" data-title="把 hello java 交给了另一个程序" data-section="本讲验收">
+    <header class="cw-head">
+      <p class="kicker">本讲验收</p>
+      <h2 class="h2">把 hello java 交给了另一个程序</h2>
+    </header>
+    <div class="cw-body">
+    <div class="card">
+      <div class="cw-role">自己完成一遍，每一项都能说出“为什么”</div>
+      <ul class="cw-todo cw-gap">
+        <li><span class="cw-b"></span><span>先启动文字版服务端，再启动客户端，收到正确的回声。</span><span class="cw-tag">任务一</span></li>
+        <li><span class="cw-b"></span><span>修改客户端消息，先预测两端输出，再重跑验证。</span><span class="cw-tag">任务一</span></li>
+        <li><span class="cw-b"></span><span>指出程序停在哪一行等，以及为什么漏掉换行会卡住。</span><span class="cw-tag">accept() · readLine()</span></li>
+        <li><span class="cw-b"></span><span>运行字节版，说出收到的内容和总长度，并解释读取次数为什么不等于写入次数。</span><span class="cw-tag">任务二</span></li>
+      </ul>
+    </div>
+    <div class="cw-callout cw-gap">回到开头的问题：不借文件，两个程序靠一条<strong>连接</strong>完成了对话——客户端 <code>connect()</code> 拨号，服务端 <code>accept()</code> 接听，然后说和听。</div>
+    </div>
+  </section>
+
+  <div class="deck-footer"><span>← → 翻页 · F 全屏 · O 总览</span><span class="slide-number" data-current="1" data-total="29"></span></div>
+</div>
+<script>
+/* ===== html-ppt runtime.js (verbatim except 1 x '</script' written as '<\/script' so it can live inline) ===== */
+/* html-ppt :: runtime.js
+ * Keyboard-driven deck runtime. Zero dependencies.
+ *
+ * Features:
+ *   ← → / space / PgUp PgDn / Home End  navigation
+ *   F  fullscreen
+ *   S  presenter mode (opens a NEW WINDOW with current/next slide preview + notes + timer)
+ *       The original window stays as audience view, synced via BroadcastChannel.
+ *       Slide previews use CSS transform:scale() at design resolution for pixel-perfect layout.
+ *   N  quick notes overlay (bottom drawer)
+ *   O  slide overview grid
+ *   T  cycle themes (reads data-themes on <html> or <body>)
+ *   A  cycle demo animation on current slide
+ *   URL hash #/N  deep-link to slide N (1-based)
+ *   Progress bar auto-managed
+ */
+(function () {
+  'use strict';
+
+  const ANIMS = ['fade-up','fade-down','fade-left','fade-right','rise-in','drop-in',
+    'zoom-pop','blur-in','glitch-in','typewriter','neon-glow','shimmer-sweep',
+    'gradient-flow','stagger-list','counter-up','path-draw','parallax-tilt',
+    'card-flip-3d','cube-rotate-3d','page-turn-3d','perspective-zoom',
+    'marquee-scroll','kenburns','confetti-burst','spotlight','morph-shape','ripple-reveal'];
+
+  /* Every class the runtime treats as speaker notes. base.css hides the same
+   * set from the audience — if you add one here, add it there too. */
+  const NOTE_SEL = '.notes, aside.notes, .speaker-notes';
+
+  function ready(fn){ if(document.readyState!='loading')fn(); else document.addEventListener('DOMContentLoaded',fn);}
+
+  /* ========== Parse URL for preview-only mode ==========
+   * When loaded as iframe.src = "index.html?preview=3", runtime enters a
+   * locked single-slide mode: only slide N is visible, no chrome, no keys,
+   * no hash updates. This is how the presenter window shows pixel-perfect
+   * previews — by loading the actual deck file in an iframe and telling it
+   * to display only a specific slide.
+   */
+  function getPreviewIdx() {
+    const m = /[?&]preview=(\d+)/.exec(location.search || '');
+    return m ? parseInt(m[1], 10) - 1 : -1;
+  }
+
+  /* ========== Design-canvas fit (issue #20) ==========
+   * Slides are authored against a fixed canvas (1920x1080 by default). The
+   * canvas is scaled — never reflowed — to fit whatever viewport it lands in,
+   * so the browser view, the presenter preview, the overview thumbnail and a
+   * headless PNG render are all the same picture.
+   *
+   * Opt out with <body data-fit="fluid">. Override the canvas per deck with
+   * <div class="deck" data-w="1080" data-h="1440"> (e.g. a 3:4 小红书 post).
+   */
+  function initCanvasFit(deck) {
+    if (document.body.getAttribute('data-fit') === 'fluid') return;
+
+    const w = parseInt(deck.getAttribute('data-w'), 10) || 1920;
+    const h = parseInt(deck.getAttribute('data-h'), 10) || 1080;
+    deck.style.setProperty('--deck-w', w + 'px');
+    deck.style.setProperty('--deck-h', h + 'px');
+
+    function fit() {
+      const scale = Math.min(window.innerWidth / w, window.innerHeight / h);
+      deck.style.setProperty('--deck-scale', String(scale));
+    }
+    fit();
+    window.addEventListener('resize', fit);
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
+    /* Webfonts can land after first paint; re-fit once they do. */
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit).catch(function(){});
+  }
+
+  ready(function () {
+    const deck = document.querySelector('.deck');
+    if (!deck) return;
+    const slides = Array.from(deck.querySelectorAll('.slide'));
+    if (!slides.length) return;
+
+    initCanvasFit(deck);
+
+    /* ===== custom logo (issue #11) =====
+     * Deliberately initialised BEFORE the preview-mode branch below: the
+     * presenter's "pixel-perfect" preview is the audience view, so it has to
+     * carry the logo too. A hand-authored <img class="deck-logo"> is left
+     * exactly where it is — base.css styles both paths identically, so a deck
+     * can have a logo with runtime.js absent entirely.
+     */
+    const logoEl = (function initLogo(){
+      const attr = (n) => document.body.getAttribute(n) || document.documentElement.getAttribute(n);
+      let el = deck.querySelector(':scope > .deck-logo');
+      if (!el) {
+        const src = attr('data-logo');
+        if (!src) return null;
+        el = document.createElement('img');
+        el.className = 'deck-logo';
+        el.src = src;
+        el.alt = attr('data-logo-alt') || '';
+        deck.appendChild(el);
+      }
+      if (!el.hasAttribute('data-pos')) {
+        el.setAttribute('data-pos', attr('data-logo-position') || 'top-right');
+      }
+      /* Custom props go on .deck, not on the element: the element inherits
+         them, and the print rules (which paint the logo per page on
+         .slide::after) can read them too. An inline --logo-* on a
+         hand-authored element wins for the element, so mirror it up. */
+      const mirror = (attrName, prop) => {
+        const v = (attrName && attr(attrName)) || el.style.getPropertyValue(prop);
+        if (v) deck.style.setProperty(prop, v.trim());
+      };
+      mirror('data-logo-size', '--logo-size');
+      mirror('data-logo-opacity', '--logo-opacity');
+      mirror(null, '--logo-inset-x');
+      mirror(null, '--logo-inset-y');
+
+      /* Print can't use the element itself — see the @media print note in
+         base.css. Hand the URL and the corner to the per-page painter.
+         Use el.src, not getAttribute('src'): a relative url() inside a custom
+         property is resolved against the stylesheet that *uses* the var()
+         (assets/base.css), not against the deck, so it must be absolute. */
+      const src = el.src;
+      if (src) {
+        deck.style.setProperty('--logo-print', 'url("' + src.replace(/["\\]/g, '\\$&') + '")');
+        deck.setAttribute('data-logo-print', el.getAttribute('data-pos'));
+      }
+      return el;
+    })();
+
+    /* Per-slide opt-out: <section class="slide" data-no-logo> — covers and
+       full-bleed image slides usually carry their own branding. */
+    function syncLogo(slide){
+      if (!logoEl) return;
+      logoEl.style.display = (slide && slide.hasAttribute('data-no-logo')) ? 'none' : '';
+    }
+
+    const previewOnlyIdx = getPreviewIdx();
+    const isPreviewMode = previewOnlyIdx >= 0 && previewOnlyIdx < slides.length;
+
+    /* ===== Preview-only mode: show one slide, hide everything else ===== */
+    if (isPreviewMode) {
+      function showSlide(i) {
+        slides.forEach((s, j) => {
+          const active = (j === i);
+          s.classList.toggle('is-active', active);
+          s.style.display = active ? '' : 'none';
+          if (active) {
+            s.style.opacity = '1';
+            s.style.transform = 'none';
+            s.style.pointerEvents = 'auto';
+          }
+        });
+      }
+      showSlide(previewOnlyIdx);
+      syncLogo(slides[previewOnlyIdx]);
+      /* Hide chrome that the presenter shouldn't see in preview */
+      const hideSel = '.progress-bar, .notes-overlay, .overview, ' + NOTE_SEL;
+      document.querySelectorAll(hideSel).forEach(el => { el.style.display = 'none'; });
+      document.documentElement.setAttribute('data-preview', '1');
+      document.body.setAttribute('data-preview', '1');
+      /* Auto-detect theme base path for theme switching in preview mode */
+      function getPreviewThemeBase() {
+        const base = document.documentElement.getAttribute('data-theme-base');
+        if (base) return base;
+        const tl = document.getElementById('theme-link');
+        if (tl) {
+          const raw = tl.getAttribute('href') || '';
+          const ls = raw.lastIndexOf('/');
+          if (ls >= 0) return raw.substring(0, ls + 1);
+        }
+        return 'assets/themes/';
+      }
+      const previewThemeBase = getPreviewThemeBase();
+
+      /* Listen for postMessage from parent presenter window:
+       *  - preview-goto: switch visible slide WITHOUT reloading
+       *  - preview-theme: switch theme CSS link to match audience window */
+      window.addEventListener('message', function(e) {
+        if (!e.data) return;
+        if (e.data.type === 'preview-goto') {
+          const n = parseInt(e.data.idx, 10);
+          if (n >= 0 && n < slides.length) { showSlide(n); syncLogo(slides[n]); }
+        } else if (e.data.type === 'preview-theme' && e.data.name) {
+          let link = document.getElementById('theme-link');
+          if (!link) {
+            link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.id = 'theme-link';
+            document.head.appendChild(link);
+          }
+          link.href = previewThemeBase + e.data.name + '.css';
+          document.documentElement.setAttribute('data-theme', e.data.name);
+        }
+      });
+      /* Signal to parent that preview iframe is ready */
+      try { window.parent && window.parent.postMessage({ type: 'preview-ready' }, '*'); } catch(e) {}
+      return;
+    }
+
+    let idx = 0;
+    const total = slides.length;
+
+    /* ===== BroadcastChannel for presenter sync ===== */
+    const CHANNEL_NAME = 'html-ppt-presenter-' + location.pathname;
+    let bc;
+    try { bc = new BroadcastChannel(CHANNEL_NAME); } catch(e) { bc = null; }
+
+    // Are we running inside the presenter popup? (legacy flag, now unused)
+    const isPresenterWindow = false;
+
+    /* ===== progress bar ===== */
+    let bar = document.querySelector('.progress-bar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.className = 'progress-bar';
+      bar.innerHTML = '<span></span>';
+      document.body.appendChild(bar);
+    }
+    const barFill = bar.querySelector('span');
+
+    /* ===== notes overlay (N key) ===== */
+    let notes = document.querySelector('.notes-overlay');
+    if (!notes) {
+      notes = document.createElement('div');
+      notes.className = 'notes-overlay';
+      document.body.appendChild(notes);
+    }
+
+    /* ===== overview grid (O key) ===== */
+    let overview = document.querySelector('.overview');
+    if (!overview) {
+      overview = document.createElement('div');
+      overview.className = 'overview';
+      slides.forEach((s, i) => {
+        const t = document.createElement('div');
+        t.className = 'thumb';
+        // Force 16:9 aspect ratio robustly
+        t.style.padding = '0 0 56.25% 0';
+        t.style.height = '0';
+        t.style.position = 'relative';
+        t.style.overflow = 'hidden';
+
+        const title = s.getAttribute('data-title') ||
+          (s.querySelector('h1,h2,h3')||{}).textContent || ('Slide '+(i+1));
+        
+        // Create a container for the mini-slide
+        const mini = document.createElement('div');
+        mini.className = 'mini-slide';
+        mini.style.position = 'absolute';
+        mini.style.top = '0';
+        mini.style.left = '0';
+        mini.style.width = '1920px';
+        mini.style.height = '1080px';
+        mini.style.transformOrigin = 'top left';
+        mini.style.pointerEvents = 'none';
+        mini.style.background = 'var(--bg)';
+        
+        // Clone the slide content
+        const clone = s.cloneNode(true);
+        clone.className = 'slide is-active'; // force active styles
+        clone.style.position = 'absolute';
+        clone.style.inset = '0';
+        clone.style.transform = 'none';
+        clone.style.opacity = '1';
+        clone.style.padding = '72px 96px'; // ensure padding is kept
+        
+        mini.appendChild(clone);
+        t.appendChild(mini);
+
+        // Add the number and title overlay
+        const overlay = document.createElement('div');
+        overlay.style.position = 'absolute';
+        overlay.style.inset = '0';
+        overlay.style.background = 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.8) 100%)';
+        overlay.style.color = '#fff';
+        overlay.style.zIndex = '10';
+        overlay.style.pointerEvents = 'none';
+        
+        const n = document.createElement('div');
+        n.className = 'n';
+        n.textContent = i + 1;
+        n.style.position = 'absolute';
+        n.style.top = '12px';
+        n.style.left = '16px';
+        n.style.fontWeight = '700';
+        n.style.fontSize = '16px';
+        n.style.color = '#fff';
+        n.style.textShadow = '0 1px 4px rgba(0,0,0,0.8)';
+        
+        const text = document.createElement('div');
+        text.className = 't';
+        text.textContent = title.trim().slice(0,80);
+        text.style.position = 'absolute';
+        text.style.bottom = '12px';
+        text.style.left = '16px';
+        text.style.right = '16px';
+        text.style.fontWeight = '600';
+        text.style.fontSize = '14px';
+        text.style.color = '#fff';
+        text.style.textShadow = '0 1px 4px rgba(0,0,0,0.8)';
+        
+        overlay.appendChild(n);
+        overlay.appendChild(text);
+        t.appendChild(overlay);
+
+        t.addEventListener('click', () => { go(i); toggleOverview(false); });
+        overview.appendChild(t);
+      });
+      document.body.appendChild(overview);
+    }
+
+    /* ===== navigation ===== */
+    function go(n, fromRemote){
+      n = Math.max(0, Math.min(total-1, n));
+      slides.forEach((s,i) => {
+        s.classList.toggle('is-active', i===n);
+        s.classList.toggle('is-prev', i<n);
+      });
+      idx = n;
+      syncLogo(slides[n]);
+      barFill.style.width = ((n+1)/total*100)+'%';
+      const numEl = document.querySelector('.slide-number');
+      if (numEl) { numEl.setAttribute('data-current', n+1); numEl.setAttribute('data-total', total); }
+
+      // notes (bottom overlay)
+      const note = slides[n].querySelector(NOTE_SEL);
+      notes.innerHTML = note ? note.innerHTML : '';
+
+      // hash
+      const hashTarget = '#/'+(n+1);
+      if (location.hash !== hashTarget && !isPresenterWindow) {
+        history.replaceState(null,'', hashTarget);
+      }
+
+      // re-trigger entry animations
+      slides[n].querySelectorAll('[data-anim]').forEach(el => {
+        const a = el.getAttribute('data-anim');
+        el.classList.remove('anim-'+a);
+        void el.offsetWidth;
+        el.classList.add('anim-'+a);
+      });
+
+      // counter-up
+      slides[n].querySelectorAll('.counter').forEach(el => {
+        const target = parseFloat(el.getAttribute('data-to')||el.textContent);
+        const dur = parseInt(el.getAttribute('data-dur')||'1200',10);
+        const start = performance.now();
+        const from = 0;
+        function tick(now){
+          const t = Math.min(1,(now-start)/dur);
+          const v = from + (target-from)*(1-Math.pow(1-t,3));
+          el.textContent = (target % 1 === 0) ? Math.round(v) : v.toFixed(1);
+          if (t<1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      });
+
+      // Broadcast to other window (audience ↔ presenter)
+      if (!fromRemote && bc) {
+        bc.postMessage({ type: 'go', idx: n });
+      }
+    }
+
+    /* ===== listen for remote navigation / theme changes ===== */
+    if (bc) {
+      bc.onmessage = function(e) {
+        if (!e.data) return;
+        if (e.data.type === 'go' && typeof e.data.idx === 'number') {
+          go(e.data.idx, true);
+        } else if (e.data.type === 'theme' && e.data.name) {
+          /* Sync theme across windows */
+          const i = themes.indexOf(e.data.name);
+          if (i >= 0) themeIdx = i;
+          applyTheme(e.data.name);
+        }
+      };
+    }
+
+    function toggleNotes(force){ notes.classList.toggle('open', force!==undefined?force:!notes.classList.contains('open')); }
+    function toggleOverview(force){
+      const isOpen = force!==undefined ? force : !overview.classList.contains('open');
+      overview.classList.toggle('open', isOpen);
+      if (isOpen) {
+        requestAnimationFrame(() => {
+          const thumbs = overview.querySelectorAll('.thumb');
+          if (thumbs.length) {
+            const scale = thumbs[0].clientWidth / 1920;
+            overview.querySelectorAll('.mini-slide').forEach(m => {
+              m.style.transform = 'scale(' + scale + ')';
+            });
+          }
+        });
+      }
+    }
+
+    /* ========== PRESENTER MODE — Magnetic-card popup window ========== */
+    /* Opens a new window with 4 draggable, resizable cards:
+     *   CURRENT  — iframe(?preview=N)   pixel-perfect preview of current slide
+     *   NEXT     — iframe(?preview=N+1) pixel-perfect preview of next slide
+     *   SCRIPT   — large speaker notes (逐字稿)
+     *   TIMER    — elapsed timer + page counter + controls
+     * Cards remember position/size in localStorage.
+     * Two windows sync via BroadcastChannel.
+     */
+    let presenterWin = null;
+
+    function openPresenterWindow() {
+      if (presenterWin && !presenterWin.closed) {
+        presenterWin.focus();
+        return;
+      }
+
+      // Build absolute URL of THIS deck file (without hash/query)
+      const deckUrl = location.protocol + '//' + location.host + location.pathname;
+
+      // Collect slide titles + notes (HTML strings)
+      const slideMeta = slides.map((s, i) => {
+        const note = s.querySelector(NOTE_SEL);
+        return {
+          title: s.getAttribute('data-title') ||
+            (s.querySelector('h1,h2,h3')||{}).textContent || ('Slide '+(i+1)),
+          notes: note ? note.innerHTML : ''
+        };
+      });
+
+      /* Capture current theme so presenter previews match the audience */
+      const currentTheme = root.getAttribute('data-theme') || (themes[themeIdx] || '');
+      const presenterHTML = buildPresenterHTML(deckUrl, slideMeta, total, idx, CHANNEL_NAME, currentTheme);
+
+      presenterWin = window.open('', 'html-ppt-presenter', 'width=1280,height=820,menubar=no,toolbar=no');
+      if (!presenterWin) {
+        alert('请允许弹出窗口以使用演讲者视图');
+        return;
+      }
+      presenterWin.document.open();
+      presenterWin.document.write(presenterHTML);
+      presenterWin.document.close();
+    }
+
+    function buildPresenterHTML(deckUrl, slideMeta, total, startIdx, channelName, currentTheme) {
+      /* Notes are authored HTML. Escaping "<" keeps a literal <\/script> in a
+         slide's notes from closing the inline script that carries this JSON —
+         which would kill the whole presenter init. */
+      const embed = (v) => JSON.stringify(v).replace(/</g, '\\u003c');
+      const metaJSON = embed(slideMeta);
+      const deckUrlJSON = embed(deckUrl);
+      const channelJSON = embed(channelName);
+      const themeJSON = embed(currentTheme || '');
+      const storageKey = 'html-ppt-presenter:' + location.pathname;
+
+      // Build the document as a single template string for clarity
+      return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Presenter View</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #1a1d24;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(88,166,255,.04), transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(188,140,255,.04), transparent 50%);
+    color: #e6edf3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+  }
+  /* Stage: positioned area where cards live */
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+
+  /* Magnetic card */
+  .pcard {
+    position: absolute;
+    background: #0d1117;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.02);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    min-width: 180px; min-height: 100px;
+    transition: box-shadow .2s, border-color .2s;
+  }
+
+  /* Default geometry. The cards used to get position and size ONLY from
+     applyLayout(), which runs at the very end of the init — so anything that
+     stopped that script (a blocked inline script under CSP, a stale layout in
+     localStorage, any throw in the wiring above it) left four cards collapsed
+     on top of each other and just the hint bar visible (#14). These rules make
+     the presenter usable with zero JS; applyLayout() overrides them with px. */
+  #card-cur   { left: 16px; top: 16px;
+                width: calc(55% - 24px);  height: calc((100% - 36px) * 0.62 - 16px); }
+  #card-nxt   { left: calc(55% + 8px); top: 16px;
+                width: calc(45% - 24px);  height: calc((100% - 36px) * 0.42 - 16px); }
+  #card-notes { left: calc(55% + 8px); top: calc((100% - 36px) * 0.42 + 8px);
+                width: calc(45% - 24px);  height: calc((100% - 36px) * 0.58 - 16px); }
+  #card-timer { left: 16px; top: calc((100% - 36px) * 0.62 + 8px);
+                width: calc(55% - 24px);  height: calc((100% - 36px) * 0.38 - 16px); }
+
+  .pcard.dragging { box-shadow: 0 16px 48px rgba(0,0,0,.6), 0 0 0 2px rgba(88,166,255,.5); border-color: #58a6ff; transition: none; z-index: 9999; }
+  .pcard.resizing { box-shadow: 0 16px 48px rgba(0,0,0,.6), 0 0 0 2px rgba(63,185,80,.5); border-color: #3fb950; transition: none; z-index: 9999; }
+  .pcard:hover { border-color: rgba(88,166,255,.3); }
+
+  /* Card header (drag handle) */
+  .pcard-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,.04);
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    cursor: move;
+    user-select: none;
+    flex-shrink: 0;
+  }
+  .pcard-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dot-color, #58a6ff); flex-shrink: 0; }
+  .pcard-title {
+    font-size: 11px; letter-spacing: .15em; text-transform: uppercase;
+    font-weight: 700; color: #8b949e; flex: 1;
+  }
+  .pcard-meta { font-size: 11px; color: #6e7681; }
+
+  /* Card body */
+  .pcard-body { flex: 1; position: relative; overflow: hidden; min-height: 0; }
+
+  /* Preview cards (CURRENT/NEXT) — iframe-based pixel-perfect render */
+  .pcard-preview .pcard-body { background: #000; }
+  .pcard-preview iframe {
+    position: absolute; top: 0; left: 0;
+    width: 1920px; height: 1080px;
+    border: none;
+    transform-origin: top left;
+    pointer-events: none;
+    background: transparent;
+  }
+  .pcard-preview .preview-end {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: #484f58; font-size: 14px; letter-spacing: .12em;
+  }
+
+  /* Notes card */
+  .pcard-notes .pcard-body {
+    padding: 14px 18px;
+    overflow-y: auto;
+    font-size: 18px; line-height: 1.75;
+    color: #d0d7de;
+    font-family: "Noto Sans SC", -apple-system, sans-serif;
+  }
+  .pcard-notes .pcard-body p { margin: 0 0 .7em 0; }
+  .pcard-notes .pcard-body strong { color: #f0883e; }
+  .pcard-notes .pcard-body em { color: #58a6ff; font-style: normal; }
+  .pcard-notes .pcard-body code {
+    font-family: "SF Mono", monospace; font-size: .9em;
+    background: rgba(255,255,255,.08); padding: 1px 6px; border-radius: 4px;
+  }
+  .pcard-notes .empty { color: #484f58; font-style: italic; }
+
+  /* Timer card */
+  .pcard-timer .pcard-body {
+    display: flex; flex-direction: column; gap: 14px;
+    padding: 18px 20px; justify-content: center;
+  }
+  .timer-display {
+    font-family: "SF Mono", "JetBrains Mono", monospace;
+    font-size: 42px; font-weight: 700;
+    color: #3fb950;
+    letter-spacing: .04em;
+    line-height: 1;
+  }
+  .timer-row {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 14px; color: #8b949e;
+  }
+  .timer-row .label { font-size: 10px; letter-spacing: .15em; text-transform: uppercase; color: #6e7681; }
+  .timer-row .val { color: #e6edf3; font-weight: 600; font-family: "SF Mono", monospace; }
+  .timer-controls { display: flex; gap: 8px; flex-wrap: wrap; }
+  .timer-btn {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    color: #e6edf3;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .timer-btn:hover { background: rgba(88,166,255,.15); border-color: #58a6ff; }
+  .timer-btn:active { transform: translateY(1px); }
+
+  /* Resize handle */
+  .pcard-resize {
+    position: absolute; right: 0; bottom: 0;
+    width: 18px; height: 18px;
+    cursor: nwse-resize;
+    background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,.25) 50%, rgba(255,255,255,.25) 60%, transparent 60%, transparent 70%, rgba(255,255,255,.25) 70%, rgba(255,255,255,.25) 80%, transparent 80%);
+    z-index: 5;
+  }
+  .pcard-resize:hover { background: linear-gradient(135deg, transparent 50%, #58a6ff 50%, #58a6ff 60%, transparent 60%, transparent 70%, #58a6ff 70%, #58a6ff 80%, transparent 80%); }
+
+  /* Bottom hint bar */
+  .hint-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,.6);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255,255,255,.08);
+    padding: 6px 16px;
+    font-size: 11px; color: #8b949e;
+    display: flex; gap: 18px; align-items: center;
+    z-index: 1000;
+  }
+  .hint-bar kbd {
+    background: rgba(255,255,255,.08);
+    padding: 1px 6px; border-radius: 3px;
+    font-family: "SF Mono", monospace;
+    font-size: 10px;
+    border: 1px solid rgba(255,255,255,.1);
+    color: #e6edf3;
+  }
+  .hint-bar .reset-layout {
+    margin-left: auto;
+    background: transparent; border: 1px solid rgba(255,255,255,.15);
+    color: #8b949e; padding: 3px 10px; border-radius: 4px;
+    font-size: 11px; cursor: pointer; font-family: inherit;
+  }
+  .hint-bar .reset-layout:hover { background: rgba(248,81,73,.15); border-color: #f85149; color: #f85149; }
+
+  body.is-dragging-card * { user-select: none !important; }
+  body.is-dragging-card iframe { pointer-events: none !important; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div class="pcard pcard-preview" id="card-cur" style="--dot-color:#58a6ff">
+    <div class="pcard-head" data-drag>
+      <span class="pcard-dot"></span>
+      <span class="pcard-title">CURRENT</span>
+      <span class="pcard-meta" id="cur-meta">—</span>
+    </div>
+    <div class="pcard-body"><iframe id="iframe-cur"></iframe></div>
+    <div class="pcard-resize" data-resize></div>
+  </div>
+
+  <div class="pcard pcard-preview" id="card-nxt" style="--dot-color:#bc8cff">
+    <div class="pcard-head" data-drag>
+      <span class="pcard-dot"></span>
+      <span class="pcard-title">NEXT</span>
+      <span class="pcard-meta" id="nxt-meta">—</span>
+    </div>
+    <div class="pcard-body"><iframe id="iframe-nxt"></iframe></div>
+    <div class="pcard-resize" data-resize></div>
+  </div>
+
+  <div class="pcard pcard-notes" id="card-notes" style="--dot-color:#f0883e">
+    <div class="pcard-head" data-drag>
+      <span class="pcard-dot"></span>
+      <span class="pcard-title">SPEAKER SCRIPT · 逐字稿</span>
+    </div>
+    <div class="pcard-body" id="notes-body"></div>
+    <div class="pcard-resize" data-resize></div>
+  </div>
+
+  <div class="pcard pcard-timer" id="card-timer" style="--dot-color:#3fb950">
+    <div class="pcard-head" data-drag>
+      <span class="pcard-dot"></span>
+      <span class="pcard-title">TIMER</span>
+    </div>
+    <div class="pcard-body">
+      <div class="timer-display" id="timer-display">00:00</div>
+      <div class="timer-row">
+        <span class="label">Slide</span>
+        <span class="val" id="timer-count">1 / ${total}</span>
+      </div>
+      <div class="timer-controls">
+        <button class="timer-btn" id="btn-prev">← Prev</button>
+        <button class="timer-btn" id="btn-next">Next →</button>
+        <button class="timer-btn" id="btn-reset">⏱ Reset</button>
+      </div>
+    </div>
+    <div class="pcard-resize" data-resize></div>
+  </div>
+</div>
+
+<div class="hint-bar">
+  <span><kbd>← →</kbd> 翻页</span>
+  <span><kbd>R</kbd> 重置计时</span>
+  <span><kbd>Esc</kbd> 关闭</span>
+  <span style="color:#6e7681">拖动卡片头部移动 · 拖动右下角调整大小</span>
+  <button class="reset-layout" id="reset-layout">重置布局</button>
+</div>
+
+<script>
+(function(){
+  var slideMeta = ${metaJSON};
+  var total = ${total};
+  var idx = ${startIdx};
+  var deckUrl = ${deckUrlJSON};
+  var STORAGE_KEY = ${embed(storageKey)};
+  var bc;
+  try { bc = new BroadcastChannel(${channelJSON}); } catch(e) {}
+
+  var iframeCur = document.getElementById('iframe-cur');
+  var iframeNxt = document.getElementById('iframe-nxt');
+  var notesBody = document.getElementById('notes-body');
+  var curMeta = document.getElementById('cur-meta');
+  var nxtMeta = document.getElementById('nxt-meta');
+  var timerDisplay = document.getElementById('timer-display');
+  var timerCount = document.getElementById('timer-count');
+
+  /* Lay the cards out before anything else. This used to be the LAST statement
+     of the init, so every line below it was a single point of failure for the
+     whole presenter's visibility (#14). Function declarations hoist, so this is
+     safe here. */
+  applyLayout(readLayout());
+
+  /* ===== Default card layout ===== */
+  var CARD_IDS = ['card-cur','card-nxt','card-notes','card-timer'];
+  var MIN_W = 180, MIN_H = 100;
+
+  function defaultLayout() {
+    /* A popup that opened minimised or in a background tab can report 0 here;
+       the old code turned that into negative widths, which CSS discards. */
+    var w = Math.max(640, window.innerWidth || 0);
+    var h = Math.max(400, (window.innerHeight || 0) - 36); /* room for hint bar */
+    return {
+      'card-cur':   { x: 16,        y: 16,            w: Math.round(w*0.55) - 24, h: Math.round(h*0.62) - 16 },
+      'card-nxt':   { x: Math.round(w*0.55) + 8, y: 16, w: w - Math.round(w*0.55) - 24, h: Math.round(h*0.42) - 16 },
+      'card-notes': { x: Math.round(w*0.55) + 8, y: Math.round(h*0.42) + 8, w: w - Math.round(w*0.55) - 24, h: h - Math.round(h*0.42) - 16 },
+      'card-timer': { x: 16,        y: Math.round(h*0.62) + 8, w: Math.round(w*0.55) - 24, h: h - Math.round(h*0.62) - 16 }
+    };
+  }
+
+  /* ===== Apply / save / restore layout ===== */
+  function applyLayout(layout) {
+    Object.keys(layout).forEach(function(id){
+      var el = document.getElementById(id);
+      var l = layout[id];
+      if (el && l) {
+        el.style.left = l.x + 'px';
+        el.style.top = l.y + 'px';
+        el.style.width = l.w + 'px';
+        el.style.height = l.h + 'px';
+      }
+    });
+    rescaleAll();
+  }
+  /* A layout restored from localStorage was written against whatever window
+     size the deck was last presented at. Replayed in a smaller window it puts
+     every card off-screen, and there is no way back because the layout is
+     sticky — so clamp it into view and reject anything malformed. */
+  function sanitizeLayout(layout) {
+    if (!layout || typeof layout !== 'object') return null;
+    var vw = Math.max(MIN_W, window.innerWidth || 0);
+    var vh = Math.max(MIN_H, window.innerHeight || 0);
+    var out = {};
+    for (var i = 0; i < CARD_IDS.length; i++) {
+      var l = layout[CARD_IDS[i]];
+      if (!l) return null;
+      var cw = Math.min(Math.max(+l.w || 0, MIN_W), vw);
+      var ch = Math.min(Math.max(+l.h || 0, MIN_H), vh);
+      var cx = Math.min(Math.max(+l.x || 0, 0), Math.max(0, vw - MIN_W));
+      var cy = Math.min(Math.max(+l.y || 0, 0), Math.max(0, vh - 40));
+      if (!isFinite(cw) || !isFinite(ch) || !isFinite(cx) || !isFinite(cy)) return null;
+      out[CARD_IDS[i]] = { x: cx, y: cy, w: cw, h: ch };
+    }
+    return out;
+  }
+  function readLayout() {
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch(e) {}
+    return sanitizeLayout(saved) || defaultLayout();
+  }
+  function saveLayout() {
+    var layout = {};
+    CARD_IDS.forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) {
+        layout[id] = {
+          x: parseInt(el.style.left,10) || 0,
+          y: parseInt(el.style.top,10) || 0,
+          w: parseInt(el.style.width,10) || 300,
+          h: parseInt(el.style.height,10) || 200
+        };
+      }
+    });
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(layout)); } catch(e) {}
+  }
+
+  /* ===== iframe rescale to fit card body ===== */
+  function rescaleIframe(iframe) {
+    if (!iframe || iframe.style.display === 'none') return;
+    var body = iframe.parentElement;
+    var cw = body.clientWidth, ch = body.clientHeight;
+    if (!cw || !ch) return;
+    var s = Math.min(cw / 1920, ch / 1080);
+    iframe.style.transform = 'scale(' + s + ')';
+    /* Center the scaled iframe in the body */
+    var sw = 1920 * s, sh = 1080 * s;
+    iframe.style.left = Math.max(0, (cw - sw) / 2) + 'px';
+    iframe.style.top = Math.max(0, (ch - sh) / 2) + 'px';
+  }
+  function rescaleAll() {
+    rescaleIframe(iframeCur);
+    rescaleIframe(iframeNxt);
+  }
+  window.addEventListener('resize', rescaleAll);
+
+  /* ===== Drag (move card by header) ===== */
+  document.querySelectorAll('[data-drag]').forEach(function(handle){
+    handle.addEventListener('mousedown', function(e){
+      if (e.button !== 0) return;
+      var card = handle.closest('.pcard');
+      if (!card) return;
+      e.preventDefault();
+      card.classList.add('dragging');
+      document.body.classList.add('is-dragging-card');
+      var startX = e.clientX, startY = e.clientY;
+      var startL = parseInt(card.style.left,10) || 0;
+      var startT = parseInt(card.style.top,10)  || 0;
+      function onMove(ev){
+        var nx = Math.max(0, Math.min(window.innerWidth - 100, startL + ev.clientX - startX));
+        var ny = Math.max(0, Math.min(window.innerHeight - 50, startT + ev.clientY - startY));
+        card.style.left = nx + 'px';
+        card.style.top = ny + 'px';
+      }
+      function onUp(){
+        card.classList.remove('dragging');
+        document.body.classList.remove('is-dragging-card');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        saveLayout();
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  });
+
+  /* ===== Resize (drag bottom-right corner) ===== */
+  document.querySelectorAll('[data-resize]').forEach(function(handle){
+    handle.addEventListener('mousedown', function(e){
+      if (e.button !== 0) return;
+      var card = handle.closest('.pcard');
+      if (!card) return;
+      e.preventDefault(); e.stopPropagation();
+      card.classList.add('resizing');
+      document.body.classList.add('is-dragging-card');
+      var startX = e.clientX, startY = e.clientY;
+      var startW = parseInt(card.style.width,10)  || card.offsetWidth;
+      var startH = parseInt(card.style.height,10) || card.offsetHeight;
+      function onMove(ev){
+        var nw = Math.max(180, startW + ev.clientX - startX);
+        var nh = Math.max(100, startH + ev.clientY - startY);
+        card.style.width = nw + 'px';
+        card.style.height = nh + 'px';
+        if (card.querySelector('iframe')) rescaleIframe(card.querySelector('iframe'));
+      }
+      function onUp(){
+        card.classList.remove('resizing');
+        document.body.classList.remove('is-dragging-card');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        rescaleAll();
+        saveLayout();
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  });
+
+  /* ===== Preview iframe ready tracking =====
+   * Each iframe loads the deck ONCE with ?preview=1 on init. Subsequent
+   * slide changes are sent via postMessage('preview-goto') so the iframe
+   * just toggles visibility of a different .slide — no reload, no flicker.
+   */
+  var iframeReady = { cur: false, nxt: false };
+  var currentTheme = ${themeJSON};
+  window.addEventListener('message', function(e) {
+    if (!e.data || e.data.type !== 'preview-ready') return;
+    var iframe = null;
+    if (e.source === iframeCur.contentWindow) {
+      iframeReady.cur = true;
+      iframe = iframeCur;
+      postPreviewGoto(iframeCur, idx);
+    } else if (e.source === iframeNxt.contentWindow) {
+      iframeReady.nxt = true;
+      iframe = iframeNxt;
+      postPreviewGoto(iframeNxt, idx + 1 < total ? idx + 1 : idx);
+    }
+    /* Sync current theme to the iframe */
+    if (iframe && currentTheme) {
+      try { iframe.contentWindow.postMessage({ type: 'preview-theme', name: currentTheme }, '*'); } catch(err) {}
+    }
+    if (iframe) rescaleIframe(iframe);
+  });
+
+  function postPreviewGoto(iframe, n) {
+    try {
+      iframe.contentWindow.postMessage({ type: 'preview-goto', idx: n }, '*');
+    } catch(e) {}
+  }
+
+  /* ===== Update content =====
+   * Smooth (no-reload) navigation: send postMessage to iframes instead of
+   * resetting src. Iframes stay loaded, just switch visible .slide.
+   */
+  function update(n) {
+    n = Math.max(0, Math.min(total - 1, n));
+    idx = n;
+
+    /* Current preview — postMessage (smooth) */
+    if (iframeReady.cur) postPreviewGoto(iframeCur, n);
+    curMeta.textContent = (n + 1) + '/' + total;
+
+    /* Next preview */
+    if (n + 1 < total) {
+      iframeNxt.style.display = '';
+      var endEl = document.querySelector('#card-nxt .preview-end');
+      if (endEl) endEl.remove();
+      if (iframeReady.nxt) postPreviewGoto(iframeNxt, n + 1);
+      nxtMeta.textContent = (n + 2) + '/' + total;
+    } else {
+      iframeNxt.style.display = 'none';
+      var body = document.querySelector('#card-nxt .pcard-body');
+      if (body && !body.querySelector('.preview-end')) {
+        var end = document.createElement('div');
+        end.className = 'preview-end';
+        end.textContent = '— END OF DECK —';
+        body.appendChild(end);
+      }
+      nxtMeta.textContent = 'END';
+    }
+
+    /* Notes */
+    var note = slideMeta[n].notes;
+    notesBody.innerHTML = note || '<span class="empty">（这一页还没有逐字稿）</span>';
+
+    /* Timer count */
+    timerCount.textContent = (n + 1) + ' / ' + total;
+  }
+
+  /* ===== Timer ===== */
+  var tStart = Date.now();
+  setInterval(function(){
+    var s = Math.floor((Date.now() - tStart) / 1000);
+    var mm = String(Math.floor(s/60)).padStart(2,'0');
+    var ss = String(s%60).padStart(2,'0');
+    timerDisplay.textContent = mm + ':' + ss;
+  }, 1000);
+  function resetTimer(){ tStart = Date.now(); timerDisplay.textContent = '00:00'; }
+
+  /* ===== BroadcastChannel sync ===== */
+  if (bc) {
+    bc.onmessage = function(e){
+      if (!e.data) return;
+      if (e.data.type === 'go') update(e.data.idx);
+      else if (e.data.type === 'theme' && e.data.name) {
+        currentTheme = e.data.name;
+        /* Forward theme change to preview iframes */
+        [iframeCur, iframeNxt].forEach(function(iframe){
+          try {
+            iframe.contentWindow.postMessage({ type: 'preview-theme', name: e.data.name }, '*');
+          } catch(err) {}
+        });
+      }
+    };
+  }
+  function go(n) {
+    update(n);
+    if (bc) bc.postMessage({ type: 'go', idx: idx });
+  }
+
+  /* ===== Buttons ===== */
+  document.getElementById('btn-prev').addEventListener('click', function(){ go(idx - 1); });
+  document.getElementById('btn-next').addEventListener('click', function(){ go(idx + 1); });
+  document.getElementById('btn-reset').addEventListener('click', resetTimer);
+  document.getElementById('reset-layout').addEventListener('click', function(){
+    if (confirm('恢复默认卡片布局？')) {
+      try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
+      applyLayout(defaultLayout());
+    }
+  });
+
+  /* ===== Keyboard ===== */
+  document.addEventListener('keydown', function(e){
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    switch(e.key) {
+      case 'ArrowRight': case ' ': case 'PageDown': go(idx + 1); e.preventDefault(); break;
+      case 'ArrowLeft':  case 'PageUp':   go(idx - 1); e.preventDefault(); break;
+      case 'Home': go(0); break;
+      case 'End':  go(total - 1); break;
+      case 'r': case 'R': resetTimer(); break;
+      case 'Escape': window.close(); break;
+    }
+  });
+
+  /* ===== Iframe load → rescale (catches initial size) ===== */
+  iframeCur.addEventListener('load', function(){ rescaleIframe(iframeCur); });
+  iframeNxt.addEventListener('load', function(){ rescaleIframe(iframeNxt); });
+
+  /* ===== Init =====
+   * Load each iframe ONCE with the deck file. After they post
+   * 'preview-ready', all subsequent navigation is via postMessage
+   * (smooth, no reload, no flicker).
+   */
+  try {
+    iframeCur.src = deckUrl + '?preview=' + (idx + 1);
+    if (idx + 1 < total) iframeNxt.src = deckUrl + '?preview=' + (idx + 2);
+    /* Initialize notes/timer/count without touching iframes */
+    var m = slideMeta[idx] || {};
+    notesBody.innerHTML = m.notes || '<span class="empty">（这一页还没有逐字稿）</span>';
+    curMeta.textContent = (idx + 1) + '/' + total;
+    nxtMeta.textContent = (idx + 2) + '/' + total;
+    timerCount.textContent = (idx + 1) + ' / ' + total;
+  } catch (e) {
+    /* Report it, but never let it blank the cards. */
+    if (window.console && console.error) console.error('[html-ppt] presenter init:', e);
+  }
+})();
+</` + `script>
+</body></html>`;
+    }
+
+    function fullscreen(){ const el=document.documentElement;
+      if (!document.fullscreenElement) el.requestFullscreen&&el.requestFullscreen();
+      else document.exitFullscreen&&document.exitFullscreen();
+    }
+
+    // theme cycling
+    const root = document.documentElement;
+    const themesAttr = root.getAttribute('data-themes') || document.body.getAttribute('data-themes');
+    const themes = themesAttr ? themesAttr.split(',').map(s=>s.trim()).filter(Boolean) : [];
+    let themeIdx = 0;
+
+    // Auto-detect theme base path from existing <link id="theme-link">
+    let themeBase = root.getAttribute('data-theme-base');
+    if (!themeBase) {
+      const existingLink = document.getElementById('theme-link');
+      if (existingLink) {
+        // el.getAttribute('href') gives the raw relative path written in HTML
+        const rawHref = existingLink.getAttribute('href') || '';
+        const lastSlash = rawHref.lastIndexOf('/');
+        themeBase = lastSlash >= 0 ? rawHref.substring(0, lastSlash + 1) : 'assets/themes/';
+      } else {
+        themeBase = 'assets/themes/';
+      }
+    }
+
+    function applyTheme(name) {
+      let link = document.getElementById('theme-link');
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.id = 'theme-link';
+        document.head.appendChild(link);
+      }
+      link.href = themeBase + name + '.css';
+      root.setAttribute('data-theme', name);
+      const ind = document.querySelector('.theme-indicator');
+      if (ind) ind.textContent = name;
+    }
+    function cycleTheme(fromRemote){
+      if (!themes.length) return;
+      themeIdx = (themeIdx+1) % themes.length;
+      const name = themes[themeIdx];
+      applyTheme(name);
+      /* Broadcast to other window (audience ↔ presenter) */
+      if (!fromRemote && bc) bc.postMessage({ type: 'theme', name: name });
+    }
+
+    // animation cycling on current slide
+    let animIdx = 0;
+    function cycleAnim(){
+      animIdx = (animIdx+1) % ANIMS.length;
+      const a = ANIMS[animIdx];
+      const target = slides[idx].querySelector('[data-anim-target]') || slides[idx];
+      ANIMS.forEach(x => target.classList.remove('anim-'+x));
+      void target.offsetWidth;
+      target.classList.add('anim-'+a);
+      target.setAttribute('data-anim', a);
+      const ind = document.querySelector('.anim-indicator');
+      if (ind) ind.textContent = a;
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.metaKey||e.ctrlKey||e.altKey) return;
+      switch (e.key) {
+        case 'ArrowRight': case ' ': case 'PageDown': case 'Enter': go(idx+1); e.preventDefault(); break;
+        case 'ArrowLeft': case 'PageUp': case 'Backspace': go(idx-1); e.preventDefault(); break;
+        case 'Home': go(0); break;
+        case 'End': go(total-1); break;
+        case 'f': case 'F': fullscreen(); break;
+        case 's': case 'S': openPresenterWindow(); break;
+        case 'n': case 'N': toggleNotes(); break;
+        case 'o': case 'O': toggleOverview(); break;
+        case 't': case 'T': cycleTheme(); break;
+        case 'a': case 'A': cycleAnim(); break;
+        case 'Escape': toggleOverview(false); toggleNotes(false); break;
+      }
+    });
+
+    /* ===== Touch navigation =====
+     * Phones have no arrow keys (#15). Swipe left for next, right for prev.
+     *
+     * Deliberately passive: we never call preventDefault, so pinch-zoom and
+     * any native scrolling keep working and the browser is free to scroll
+     * while we are still deciding. A gesture only counts as a swipe if it is
+     * single-finger, clearly horizontal, long enough and quick enough —
+     * otherwise it falls through untouched.
+     */
+    (function initTouchNav(){
+      /* No capability sniffing on purpose. Touch listeners cost nothing on a
+         device that never fires them, and `ontouchstart in window` /
+         maxTouchPoints both misreport on touchscreen laptops and some
+         tablets — a guard here would silently remove the feature on exactly
+         the devices that need it. */
+      var SWIPE_MIN_PX = 50;    // shorter than this is a tap or a wobble
+      var SWIPE_RATIO  = 1.5;   // must be this much more horizontal than vertical
+      var SWIPE_MAX_MS = 800;   // slower than this is a drag, not a swipe
+
+      var x0 = 0, y0 = 0, t0 = 0, tracking = false;
+
+      function interactive(target) {
+        if (!target || !target.closest) return false;
+        /* Don't steal the gesture from the overview grid, the notes drawer,
+           or anything the author made scrollable or tappable. */
+        return !!target.closest('.overview, .notes-overlay, a, button, input, textarea, select, [data-no-swipe]');
+      }
+
+      document.addEventListener('touchstart', function(e){
+        if (e.touches.length !== 1 || interactive(e.target)) { tracking = false; return; }
+        x0 = e.touches[0].clientX;
+        y0 = e.touches[0].clientY;
+        t0 = Date.now();
+        tracking = true;
+      }, { passive: true });
+
+      document.addEventListener('touchmove', function(e){
+        /* A second finger means pinch-zoom — abandon the swipe. */
+        if (e.touches.length > 1) tracking = false;
+      }, { passive: true });
+
+      document.addEventListener('touchend', function(e){
+        if (!tracking) return;
+        tracking = false;
+        var t = e.changedTouches && e.changedTouches[0];
+        if (!t) return;
+        if (Date.now() - t0 > SWIPE_MAX_MS) return;
+        var dx = t.clientX - x0, dy = t.clientY - y0;
+        if (Math.abs(dx) < SWIPE_MIN_PX) return;
+        if (Math.abs(dx) < Math.abs(dy) * SWIPE_RATIO) return;
+        go(dx < 0 ? idx + 1 : idx - 1);
+      }, { passive: true });
+
+      document.addEventListener('touchcancel', function(){ tracking = false; }, { passive: true });
+    })();
+
+    // hash deep-link
+    function fromHash(){
+      const m = /^#\/(\d+)/.exec(location.hash||'');
+      if (m) go(Math.max(0, parseInt(m[1],10)-1));
+    }
+    window.addEventListener('hashchange', fromHash);
+    fromHash();
+    go(idx);
+  });
+})();
+
+</script>
+<script>
+/* ===== lec16 deck.js ===== */
+/* ==========================================================================
+   第 16 讲课件脚本
+   运行在 html-ppt 的 runtime.js 之后：翻页、进度条、总览仍由 runtime 负责，
+   这里只补充课堂需要的部分——分步讲解、时序图、拟物场景、代码卡、复制与测验。
+   本脚本在 runtime 的 DOMContentLoaded 回调之前同步执行，
+   因此总览缩略图克隆到的是已经画好的页面。
+   ========================================================================== */
+(() => {
+  'use strict';
+
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  const svgEl = (name, attrs = {}) => {
+    const node = document.createElementNS(SVG_NS, name);
+    for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+    return node;
+  };
+  const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const CIRCLED = '⓪①②③④⑤⑥⑦⑧⑨';
+  /* 把反引号包住的部分排成代码，其余按纯文本处理 */
+  const rich = (text) => String(text).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
+    .replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  const deck = $('.deck');
+  const slides = $$('.deck > .slide');
+  const activeSlide = () => $('.deck > .slide.is-active');
+
+  /* ------------------------------------------------------------------
+   * 分步控件：时序图和电话场景共用。
+   * set(n, via) 的 via 用来区分“逐步前进”和“跳转”，只有逐步前进才播放飞行动画。
+   * ------------------------------------------------------------------ */
+  const steppers = new Map();
+
+  function makeStepper(root, { max, onChange, captionFor }) {
+    let cur = 0;
+    const prevBtn = $('[data-step-prev]', root);
+    const nextBtn = $('[data-step-next]', root);
+    const resetBtn = $('[data-step-reset]', root);
+    const count = $('[data-step-count]', root);
+    const caption = $('[data-step-caption]', root);
+
+    const release = (btn) => { if (btn && document.activeElement === btn) btn.blur(); };
+    const paint = () => {
+      if (count) count.textContent = `${cur} / ${max}`;
+      if (prevBtn) { prevBtn.disabled = cur === 0; release(prevBtn); }
+      if (nextBtn) { nextBtn.disabled = cur === max; release(nextBtn); }
+    };
+    const set = (n, via = 'jump') => {
+      n = Math.max(0, Math.min(max, n));
+      const old = cur;
+      cur = n;
+      root.dataset.step = String(n);
+      onChange(n, old, via);
+      if (caption && captionFor) { caption.innerHTML = captionFor(n); caption.classList.toggle('now', n > 0); }
+      paint();
+    };
+
+    if (prevBtn) prevBtn.addEventListener('click', () => set(cur - 1, 'prev'));
+    if (nextBtn) nextBtn.addEventListener('click', () => set(cur + 1, 'next'));
+    if (resetBtn) resetBtn.addEventListener('click', () => set(0, 'reset'));
+    set(0, 'init');
+    const api = { root, max, get: () => cur, set };
+    steppers.set(root, api);
+    return api;
+  }
+
+  /* ------------------------------------------------------------------
+   * 按键门控（捕获阶段，先于 runtime 的 document 监听）
+   *  - 课堂用不到的键（换主题、演讲者视图、备注、试动效）直接屏蔽，避免误触。
+   *  - 焦点在按钮、单选框、折叠标题上时，空格和回车交给控件自己。
+   *  - 当前页有分步内容时，→ 先推进一步，走完最后一步后才翻页；← 同理。
+   * ------------------------------------------------------------------ */
+  const HIDDEN_KEYS = new Set(['s', 'S', 'n', 'N', 't', 'T', 'a', 'A']);
+  const FIELD_KEYS = new Set(['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', ' ', 'PageDown', 'PageUp', 'Enter', 'Backspace', 'Home', 'End']);
+  const FWD = new Set(['ArrowRight', ' ', 'PageDown', 'Enter']);
+  const BACK = new Set(['ArrowLeft', 'PageUp', 'Backspace']);
+  const canScroll = (box, key) => {
+    if (key === 'PageDown' || key === ' ') return box.scrollHeight - box.scrollTop - box.clientHeight > 2;
+    if (key === 'PageUp') return box.scrollTop > 2;
+    return false;
+  };
+
+  window.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (HIDDEN_KEYS.has(e.key)) { e.stopPropagation(); e.preventDefault(); return; }
+    const target = e.target instanceof Element ? e.target : null;
+    if (target && target.closest('input, select, textarea') && FIELD_KEYS.has(e.key)) { e.stopPropagation(); return; }
+    if (target && target.closest('button, summary, a[href], [contenteditable]:not([contenteditable="false"])')
+      && (e.key === ' ' || e.key === 'Enter')) { e.stopPropagation(); return; }
+    const box = target && target.closest('[data-scroll]');
+    if (box && canScroll(box, e.key)) { e.stopPropagation(); return; }
+
+    const slide = activeSlide();
+    if (!slide) return;
+    for (const st of steppers.values()) {
+      if (!slide.contains(st.root)) continue;
+      if (FWD.has(e.key) && st.get() < st.max) { st.set(st.get() + 1, 'next'); e.stopPropagation(); e.preventDefault(); return; }
+      if (BACK.has(e.key) && st.get() > 0) { st.set(st.get() - 1, 'prev'); e.stopPropagation(); e.preventDefault(); return; }
+    }
+  }, true);
+
+  /* ------------------------------------------------------------------
+   * 页眉：显示当前页所在的板块；封面不显示页眉。
+   * ------------------------------------------------------------------ */
+  const sectionLabel = $('#cw-section');
+  const syncChrome = () => {
+    const current = activeSlide();
+    if (!current) return;
+    deck.classList.toggle('no-chrome', current.hasAttribute('data-chrome'));
+    if (sectionLabel) sectionLabel.textContent = current.getAttribute('data-section') || '';
+  };
+  const chromeObserver = new MutationObserver(syncChrome);
+  slides.forEach((s) => chromeObserver.observe(s, { attributes: true, attributeFilter: ['class'] }));
+  syncChrome();
+
+  /* ------------------------------------------------------------------
+   * 时序图：一张规格表 → SVG + 右侧步骤列表。
+   * 约定：竖条表示“正在执行、还在等”的调用；箭头从发送方指向接收方；时间从上往下。
+   * ------------------------------------------------------------------ */
+  const SEQ = {
+    cover: {
+      w: 660, h: 468, mini: true,
+      actors: [{ id: 'client', x: 170 }, { id: 'server', x: 490 }],
+      steps: [
+        { from: 'client', to: 'server', y: 150, label: [{ m: 'connect()' }, ' 连接'] },
+        { from: 'client', to: 'server', y: 228, label: [{ b: 'hello java' }] },
+        { from: 'server', to: 'client', y: 306, label: [{ b: 'ECHO: hello java' }] },
+        { from: 'client', to: 'server', y: 384, label: [{ m: 'close()' }, ' 结束'] },
+      ],
+    },
+    dialogue: {
+      w: 1040, h: 656, axis: '时间 ↓',
+      actors: [
+        { id: 'client', x: 250, name: '客户端', sub: 'TcpGreetingClient' },
+        { id: 'server', x: 790, name: '服务端', sub: 'TcpGreetingServer' },
+      ],
+      bars: [
+        { id: 'accept', actor: 'server', y1: 180, y2: 232, side: 'right', label: 'accept() 等待' },
+        { id: 'read-s1', actor: 'server', y1: 262, y2: 306, side: 'right', label: 'readLine() 等待' },
+        { id: 'read-c', actor: 'client', y1: 326, y2: 386, side: 'left', label: 'readLine() 等待' },
+        { id: 'read-s2', actor: 'server', y1: 334, y2: 476, side: 'right', label: 'readLine() 等待' },
+      ],
+      steps: [
+        { self: true, from: 'server', y: 150, label: [{ m: 'bind()' }, '，打印「正在监听」'], focus: ['accept'],
+          t: '服务端先启动，等待连接', d: '绑定 `127.0.0.1:16016` 后，`accept()` 停在这里等来电。' },
+        { from: 'client', to: 'server', y: 232, label: [{ m: 'connect()' }, '：发起连接'], focus: ['accept'],
+          t: '客户端发起连接', d: '像拨号。它到达后 `accept()` 才返回；这一步两端都没有新的输出。' },
+        { from: 'client', to: 'server', y: 306, label: [{ b: '"hello java"' }, { m: ' + ↵' }], cap: 'out.write() · out.flush()', focus: ['read-s1'],
+          t: '客户端发送一行', d: '`write()` 写出文字和换行，`flush()` 交出去；服务端读到这一行才继续。' },
+        { from: 'server', to: 'client', y: 386, label: [{ b: '"ECHO: hello java"' }, { m: ' + ↵' }], cap: 'out.write() · out.flush()', focus: ['read-c'],
+          t: '服务端回复', d: '写回 `ECHO: ` 加这一行。客户端的 `readLine()` 等到回复才返回。' },
+        { from: 'client', to: 'server', y: 476, label: [{ m: 'close()' }, '：结束发送'], focus: ['read-s2'],
+          also: { self: true, from: 'server', y: 512, label: [{ m: 'readLine()' }, ' 返回 ', { m: 'null' }] },
+          t: '客户端关闭连接', d: '`try` 结束时自动 `close()`。服务端读到 `null`，打印后也关闭。' },
+      ],
+      notes: [
+        { actor: 'client', y: 254, side: 'left', text: 'connect() 返回' },
+        { actor: 'server', y: 254, side: 'right', text: 'accept() 返回 peer' },
+      ],
+      ends: [{ actor: 'client', text: '程序结束' }, { actor: 'server', text: '打印后关闭，程序结束' }],
+    },
+    handshake: {
+      w: 1040, h: 604,
+      actors: [
+        { id: 'client', x: 250, name: '客户端', sub: '正在执行 connect()' },
+        { id: 'server', x: 790, name: '服务端', sub: '正在执行 accept()' },
+      ],
+      bars: [
+        { id: 'connect', actor: 'client', y1: 100, y2: 366, side: 'left', label: 'connect() 还没返回' },
+        { id: 'accept', actor: 'server', y1: 100, y2: 366, side: 'right', label: 'accept() 还没返回' },
+      ],
+      steps: [
+        { from: 'client', to: 'server', y: 170, label: ['SYN：请求建立连接'], cap: '由操作系统发出，Java 代码里看不到',
+          t: '客户端发出连接请求', d: '`connect()` 内部，操作系统先替我们发出连接请求（SYN）。' },
+        { from: 'server', to: 'client', y: 250, label: ['SYN + ACK：同意，也请你确认'],
+          t: '服务端同意并回应', d: '服务端的操作系统回应：同意连接，同时也请客户端确认。' },
+        { from: 'client', to: 'server', y: 330, label: ['ACK：确认，连接建立'], focus: ['connect', 'accept'],
+          t: '客户端确认，连接建立', d: '三步完成——这就是「三次握手」。这之后 `connect()` 才返回，`accept()` 也才返回 `peer`。' },
+        { from: 'client', to: 'server', y: 456, label: [{ b: '"hello java"' }, { m: ' + ↵' }], cap: '连接可用之后，才轮到我们的代码收发', tone: 'neutral',
+          t: '然后才轮到 hello java', d: '上一张时序图里的每一步收发，都发生在连接建立之后。' },
+      ],
+      notes: [
+        { actor: 'client', y: 392, side: 'left', text: 'connect() 返回' },
+        { actor: 'server', y: 392, side: 'right', text: 'accept() 返回 peer' },
+      ],
+      ends: [{ actor: 'client', text: 'write() · readLine() …' }, { actor: 'server', text: 'readLine() · write() …' }],
+    },
+    teardown: {
+      w: 1040, h: 640,
+      actors: [
+        { id: 'client', x: 250, name: '客户端', sub: '已收到 ECHO: hello java' },
+        { id: 'server', x: 790, name: '服务端', sub: '停在读下一行' },
+      ],
+      bars: [
+        { id: 'close-c', actor: 'client', y1: 112, y2: 168, side: 'left', label: 'close()' },
+        { id: 'read-s', actor: 'server', y1: 112, y2: 236, side: 'right', label: 'readLine() 等待' },
+      ],
+      steps: [
+        { from: 'client', to: 'server', y: 168, label: ['FIN：我不再发送了'], cap: 'try 结束 → 自动 close()', focus: ['close-c', 'read-s'],
+          t: '客户端结束发送', d: '打印完回复，`try` 结束并自动 `close()`；操作系统发出结束信号（FIN）。' },
+        { from: 'server', to: 'client', y: 236, label: ['ACK：收到'], cap: '操作系统自动回应',
+          also: { self: true, from: 'server', y: 288, label: [{ m: 'readLine()' }, ' 返回 ', { m: 'null' }] },
+          t: '服务端确认，并读到 null', d: '没有更多字节可读，`readLine()` 返回 `null`：对方不再发送，但连接还没完全关闭。' },
+        { from: 'server', to: 'client', y: 384, label: ['FIN：我也不再发送了'], cap: 'peer.close()（try 结束）',
+          t: '服务端也结束发送', d: '服务端打印后，`peer` 随 `try` 结束而关闭，发出自己的结束信号。' },
+        { from: 'client', to: 'server', y: 452, label: ['ACK：收到'], cap: '客户端程序可能已退出，由操作系统完成',
+          t: '客户端最后确认', d: '两个方向都结束，这次连接才真正关闭——四步合称「四次挥手」。' },
+      ],
+      notes: [{ actor: 'server', y: 330, side: 'right', text: '打印「客户端已结束发送」' }],
+      ends: [{ actor: 'client', text: '两个方向都已结束' }, { actor: 'server', text: '两个方向都已结束' }],
+    },
+  };
+
+  let seqSeq = 0;
+
+  function segText(parent, segs, x, y, cls, anchor) {
+    if (typeof segs === 'string') segs = [segs];
+    const text = svgEl('text', { x, y, class: cls, 'text-anchor': anchor || 'middle' });
+    for (const seg of segs) {
+      if (typeof seg === 'string') { text.appendChild(document.createTextNode(seg)); continue; }
+      const span = svgEl('tspan', seg.b ? { class: 'sq-label', 'font-weight': '700' } : { class: 'sq-label code' });
+      span.textContent = seg.m || seg.b || '';
+      text.appendChild(span);
+    }
+    parent.appendChild(text);
+    return text;
+  }
+
+  function renderSeq(node, key) {
+    const spec = SEQ[key];
+    const grid = node.matches('.cw-seq') ? node : $('.cw-seq', node);
+    const uid = `sq${++seqSeq}`;
+    const mini = !!spec.mini;
+    const interactive = node.hasAttribute('data-stepper');
+    const withBadges = interactive || node.hasAttribute('data-badges');
+    const W = spec.w;
+    const H = spec.h;
+    const actor = (id) => spec.actors.find((a) => a.id === id);
+    const toneOf = (id) => (id === 'client' ? 'client' : id === 'server' ? 'server' : 'neutral');
+    const boxW = mini ? 220 : 310;
+    const boxH = mini ? 68 : 84;
+
+    const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-labelledby': `${uid}-t ${uid}-d`, class: mini ? 'mini' : '' });
+    svg.appendChild(svgEl('title', { id: `${uid}-t` })).textContent = spec.title || key;
+    const desc = svg.appendChild(svgEl('desc', { id: `${uid}-d` }));
+    desc.textContent = (spec.steps || []).map((s, i) => `${CIRCLED[i + 1]} ${(s.label || []).map((x) => (typeof x === 'string' ? x : x.m || x.b)).join('')}`).join('；');
+
+    const defs = svg.appendChild(svgEl('defs'));
+    for (const tone of ['client', 'server', 'neutral']) {
+      const marker = svgEl('marker', { id: `${uid}-${tone}`, viewBox: '0 0 12 12', refX: '11', refY: '6', markerWidth: '22', markerHeight: '22', orient: 'auto-start-reverse', markerUnits: 'userSpaceOnUse' });
+      marker.appendChild(svgEl('path', { d: 'M1 1.5 L11 6 L1 10.5 Z', fill: tone === 'client' ? 'var(--c-client)' : tone === 'server' ? 'var(--c-server)' : 'var(--text-2)' }));
+      defs.appendChild(marker);
+    }
+
+    if (spec.axis) segText(svg, spec.axis, 14, 30, 'sq-axis', 'start');
+
+    /* 参与者与生命线 */
+    for (const a of spec.actors) {
+      const tone = toneOf(a.id);
+      svg.appendChild(svgEl('line', { x1: a.x, y1: boxH + 8, x2: a.x, y2: H - 40, class: 'sq-life' }));
+      svg.appendChild(svgEl('rect', { x: a.x - boxW / 2, y: 4, width: boxW, height: boxH, class: `sq-box ${tone}` }));
+      segText(svg, a.name || (a.id === 'client' ? '客户端' : '服务端'), a.x, mini ? 46 : 40, 'sq-name');
+      if (a.sub) segText(svg, a.sub, a.x, boxH - 14, 'sq-sub');
+    }
+
+    /* 执行条：正在执行、还没返回的调用 */
+    const bars = new Map();
+    for (const b of spec.bars || []) {
+      const a = actor(b.actor);
+      const g = svg.appendChild(svgEl('g', { class: `sq-bar-group`, 'data-bar': b.id }));
+      g.appendChild(svgEl('rect', { x: a.x - 10, y: b.y1, width: 20, height: b.y2 - b.y1, class: `sq-bar ${toneOf(b.actor)}` }));
+      if (b.label) segText(g, b.label, a.x + (b.side === 'left' ? -22 : 22), (b.y1 + b.y2) / 2 + 6, 'sq-barlab', b.side === 'left' ? 'end' : 'start');
+      bars.set(b.id, g);
+    }
+
+    /* 一条消息（箭头或自环） */
+    const drawMessage = (group, msg) => {
+      const A = actor(msg.from);
+      const B = actor(msg.to || msg.from);
+      const y = msg.y;
+      const tone = msg.tone || toneOf(msg.from);
+      if (msg.self) {
+        const dir = A.x < W / 2 ? 1 : -1;
+        const x1 = A.x + dir * 88;
+        const r = 9;
+        const d = dir > 0
+          ? `M${A.x} ${y - 11} H${x1 - r} A${r} ${r} 0 0 1 ${x1} ${y - 11 + r} V${y + 13 - r} A${r} ${r} 0 0 1 ${x1 - r} ${y + 13} H${A.x + 3}`
+          : `M${A.x} ${y - 11} H${x1 + r} A${r} ${r} 0 0 0 ${x1} ${y - 11 + r} V${y + 13 - r} A${r} ${r} 0 0 0 ${x1 + r} ${y + 13} H${A.x - 3}`;
+        group.appendChild(svgEl('path', { d, class: `sq-arrow ${tone}`, 'marker-end': `url(#${uid}-${tone})` }));
+        segText(group, msg.label, x1 + dir * 14, y + 8, 'sq-label', dir > 0 ? 'start' : 'end');
+        return null;
+      }
+      const dir = B.x > A.x ? 1 : -1;
+      const x1 = A.x + dir * 2;
+      const x2 = B.x - dir * 14;
+      const line = group.appendChild(svgEl('line', { x1, y1: y, x2, y2: y, class: 'sq-arrow', 'marker-end': `url(#${uid}-${tone})` }));
+      if (msg.cap) segText(group, msg.cap, (x1 + x2) / 2, y - 36, 'sq-cap');
+      segText(group, msg.label, (x1 + x2) / 2, y - 9, 'sq-label');
+      const dot = group.appendChild(svgEl('circle', { cx: 0, cy: y, r: 8, fill: tone === 'client' ? 'var(--c-client)' : tone === 'server' ? 'var(--c-server)' : 'var(--text-2)', class: 'sq-dot' }));
+      dot.dataset.from = String(x1);
+      dot.dataset.to = String(x2);
+      return dot;
+    };
+
+    (spec.steps || []).forEach((st, i) => {
+      const k = i + 1;
+      const group = svg.appendChild(svgEl('g', { class: `sq-step ${st.tone || toneOf(st.from)}`, 'data-step': k }));
+      const dot = drawMessage(group, st);
+      if (st.also) drawMessage(group, st.also);   /* 同一步里的自环按它自己的动作方着色 */
+      if (withBadges) {
+        const A = actor(st.self ? st.from : st.from);
+        const dir = A.x < W / 2 ? 1 : -1;
+        const bx = st.self ? A.x + dir * 46 : A.x + dir * 48;
+        const by = st.y - (st.self ? 32 : st.cap ? 24 : 22);
+        group.appendChild(svgEl('circle', { cx: bx, cy: by, r: 15, class: 'sq-numbg' }));
+        const n = segText(group, CIRCLED[k], bx, by + 6, 'sq-num');
+        n.setAttribute('font-size', '17');
+        n.style.fontFamily = 'var(--font-sans)';
+      }
+    });
+
+    for (const note of spec.notes || []) {
+      const a = actor(note.actor);
+      segText(svg, note.text, a.x + (note.side === 'left' ? -20 : 20), note.y, 'sq-note code', note.side === 'left' ? 'end' : 'start');
+    }
+    (spec.ends || []).forEach((end) => segText(svg, end.text, actor(end.actor).x, H - 16, 'sq-end'));
+
+    if (!interactive) { node.prepend(svg); return svg; }   /* 静态引用：只画图，不带步骤列表 */
+    const fig = document.createElement('figure');
+    fig.className = 'card cw-seq-fig';
+    fig.appendChild(svg);
+    grid.prepend(fig);
+
+    /* 右侧步骤列表 */
+    const list = document.createElement('ol');
+    list.className = 'cw-seq-steps';
+    {
+      spec.steps.forEach((st, i) => {
+        const li = document.createElement('li');
+        li.className = st.tone === 'neutral' ? '' : toneOf(st.from);
+        li.dataset.step = String(i + 1);
+        li.innerHTML = `<button type="button" data-go="${i + 1}" aria-label="高亮第 ${i + 1} 步：${st.t}"><span class="cw-n">${CIRCLED[i + 1]}</span><span><span class="cw-t">${st.t}</span><span class="cw-d">${rich(st.d)}</span></span></button>`;
+        list.appendChild(li);
+      });
+    }
+
+    const intro = node.dataset.intro || '整张图始终可见。按 → 或点击右侧步骤，逐步讲解。';
+    makeStepper(node, {
+      max: spec.steps.length,
+      captionFor: (n) => (n === 0 ? intro : `<b>${CIRCLED[n]} ${spec.steps[n - 1].t}</b>　${rich(spec.steps[n - 1].d)}`),
+      onChange: (n, old, via) => {
+        node.classList.toggle('has-focus', n > 0);
+        node.dataset.current = String(n);
+        $$('.sq-step', svg).forEach((g) => g.classList.toggle('on', Number(g.dataset.step) === n));
+        bars.forEach((g, id) => g.classList.toggle('on', n > 0 && (spec.steps[n - 1].focus || []).includes(id)));
+        $$('li', list).forEach((li) => li.classList.toggle('on', Number(li.dataset.step) === n));
+        const st = spec.steps[n - 1];
+        const stepGroup = st && $(`.sq-step[data-step="${n}"]`, svg);
+        const dot = stepGroup && $('.sq-dot', stepGroup);
+        if (dot && via === 'next' && n === old + 1 && !reduceMotion()) {
+          const x1 = Number(dot.dataset.from);
+          const x2 = Number(dot.dataset.to);
+          dot.getAnimations().forEach((a) => a.cancel());
+          dot.animate([{ transform: `translateX(${x1}px)`, opacity: 1 }, { transform: `translateX(${x2}px)`, opacity: 1, offset: 0.92 }, { transform: `translateX(${x2}px)`, opacity: 0 }],
+            { duration: 900, easing: 'ease-in-out' });
+        }
+      },
+    });
+    list.addEventListener('click', (e) => {
+      const btn = e.target instanceof Element && e.target.closest('[data-go]');
+      if (!btn) return;
+      const api = steppers.get(node);
+      const k = Number(btn.dataset.go);
+      api.set(api.get() === k ? 0 : k, 'jump');
+    });
+    $('.cw-seq-side', grid).prepend(list);
+    return svg;
+  }
+
+  $$('[data-seq]').forEach((node) => renderSeq(node, node.dataset.seq));
+
+  /* ------------------------------------------------------------------
+   * 拟物场景：把连接想成一通电话。
+   * 每一步同时更新电话状态、听筒位置、两端“正在执行”的调用和说明文字。
+   * ------------------------------------------------------------------ */
+  const CALL = [
+    { t: '待命：服务端先启动', cls: [], lcd: ['待机', '等待来电'], led: ['off', 'wait'],
+      now: ['尚未启动', 'accept() 等待中'],
+      d: '服务端绑定号码 `127.0.0.1:16016` 后就在等来电。`accept()` 会一直停在这里，直到有客户端连上来。' },
+    { t: '拨号：客户端发起连接', cls: ['offhook-c'], lcd: ['拨号 16016', '等待来电'], led: ['ring', 'wait'],
+      now: ['connect() 拨号中', 'accept() 等待中'],
+      d: '客户端拿起听筒、拨服务端的号码。这一步就是 `socket.connect(地址, 端口)`：告诉系统“我要连到这台机器的这个端口”。' },
+    { t: '振铃：请求到达服务端', cls: ['offhook-c', 'ringing'], lcd: ['拨号 16016', '来电'], led: ['ring', 'ring'],
+      now: ['connect() 拨号中', '振铃 · accept() 等待中'],
+      d: '服务端的电话响了，但还没人接。`accept()` 仍在等待，客户端的 `connect()` 也还没有返回。' },
+    { t: '接听：连接建立', cls: ['offhook-c', 'offhook-s', 'linked'], lcd: ['通话中', '通话中'], led: ['on', 'on'],
+      now: ['connect() 返回 → 得到 socket', 'accept() 返回 → 得到 peer'],
+      d: '服务端一接听，`accept()` 就返回了，交给你这次通话的听筒 `peer`。客户端的 `connect()` 同时结束，手里的 `socket` 可以用了。' },
+    { t: '客户端说：hello java', cls: ['offhook-c', 'offhook-s', 'linked', 'said'], lcd: ['说话中', '收听中'], led: ['on', 'on'],
+      now: ['write() + flush()', 'readLine() 读到一行'],
+      d: '客户端对着听筒说话：`write()` 写出一行并 `flush()`。服务端的 `readLine()` 一直在听，收到这一行才继续。' },
+    { t: '服务端回：ECHO: hello java', cls: ['offhook-c', 'offhook-s', 'linked', 'said', 'replied'], lcd: ['收听中', '说话中'], led: ['on', 'on'],
+      now: ['readLine() 读到一行', 'write() + flush()'],
+      d: '换服务端说、客户端听。客户端的 `readLine()` 要等这一句到达才返回。' },
+    { t: '挂断：连接结束', cls: ['hungup'], lcd: ['已挂断', '对方已挂断'], led: ['off', 'off'],
+      now: ['close() 已关闭', 'readLine() 返回 null → 关闭'],
+      d: '客户端先挂断（`close()`）。服务端发现对方没声了：`readLine()` 返回 `null`，打印「客户端已结束发送」，随后也挂断。' },
+  ];
+  const CALL_CLASSES = ['offhook-c', 'offhook-s', 'ringing', 'linked', 'said', 'replied', 'hungup', 'lag'];
+
+  function initCall(node) {
+    const scene = $('.cw-call', node);
+    if (!scene) return;
+    const lcd = { client: $('[data-lcd="client"]', scene), server: $('[data-lcd="server"]', scene) };
+    const led = { client: $('.pc-led.c', scene), server: $('.pc-led.s', scene) };
+    const now = { client: $('[data-call-now="client"]', node), server: $('[data-call-now="server"]', node) };
+    const desc = $('desc', scene);
+
+    const fly = (bubble, dir) => {
+      const start = dir > 0 ? [334, 124] : [1166, 124];
+      const end = dir > 0 ? [1180, 86] : [320, 86];
+      const ctrl = [750, 4];
+      const frames = [];
+      const N = 30;
+      for (let i = 0; i <= N; i++) {
+        const t = i / N; const u = 1 - t;
+        frames.push({ transform: `translate(${u * u * start[0] + 2 * u * t * ctrl[0] + t * t * end[0]}px, ${u * u * start[1] + 2 * u * t * ctrl[1] + t * t * end[1]}px)`, opacity: i === 0 ? 0 : 1 });
+      }
+      bubble.getAnimations().forEach((a) => a.cancel());
+      bubble.animate(frames, { duration: 1600, easing: 'ease-in-out', fill: 'forwards' });
+    };
+
+    makeStepper(node, {
+      max: CALL.length - 1,
+      captionFor: (n) => `<b>${CALL[n].t}</b>　${rich(CALL[n].d)}`,
+      onChange: (n, old, via) => {
+        const s = CALL[n];
+        scene.classList.remove(...CALL_CLASSES);
+        scene.classList.add(...s.cls);
+        if (n === CALL.length - 1 && via === 'next') scene.classList.add('lag');
+        lcd.client.textContent = s.lcd[0];
+        lcd.server.textContent = s.lcd[1];
+        for (const side of ['client', 'server']) {
+          led[side].classList.remove('wait', 'ring', 'on');
+          if (s.led[side === 'client' ? 0 : 1] !== 'off') led[side].classList.add(s.led[side === 'client' ? 0 : 1]);
+          now[side].textContent = s.now[side === 'client' ? 0 : 1];
+        }
+        if (desc) desc.textContent = `一通电话的比喻。第 ${n} 步：${s.t}。客户端${s.now[0]}；服务端${s.now[1]}。`;
+        /* 离开“说过话”的状态时取消飞行动画，否则动画的结束状态会让气泡留在画面上 */
+        for (const [cls, sel] of [['said', '.pc-bub.c'], ['replied', '.pc-bub.s']]) {
+          if (!s.cls.includes(cls)) $(sel, scene).getAnimations().forEach((a) => a.cancel());
+        }
+        if (via === 'next' && n === old + 1 && !reduceMotion()) {
+          if (n === 4) fly($('.pc-bub.c', scene), 1);
+          if (n === 5) fly($('.pc-bub.s', scene), -1);
+        }
+      },
+    });
+  }
+  $$('[data-call]').forEach(initCall);
+
+  /* ------------------------------------------------------------------
+   * 代码卡：行号、步骤标记、import 折叠、语法着色、复制。
+   * 源码原样放在 <pre class="cw-src"> 里（复制的就是它）；没有脚本时也能看到全文。
+   * ------------------------------------------------------------------ */
+  const TOKENS = /(\/\/[^\n]*|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|@[A-Za-z_$][\w$]*|\b(?:public|private|protected|class|static|void|int|double|float|byte|new|return|while|try|throws|import|if|else|true|false|null|final|for|catch|long|short|char|boolean)\b|\b0[xX][\da-fA-F_]+\b|\b\d[\d_]*(?:\.\d+)?[fFdDlL]?\b|\b[A-Z][\w$]*\b)/g;
+  const escapeHtml = (text) => text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+
+  function highlightJava(line) {
+    let out = '';
+    let last = 0;
+    for (const match of line.matchAll(TOKENS)) {
+      const value = match[0];
+      out += escapeHtml(line.slice(last, match.index));
+      const kind = value.startsWith('//') ? 'cm' : value[0] === '"' || value[0] === "'" ? 'str'
+        : value[0] === '@' ? 'an' : /^\d/.test(value) ? 'num' : /^[A-Z]/.test(value) ? 'ty' : 'kw';
+      out += `<span class="tk-${kind}">${escapeHtml(value)}</span>`;
+      last = match.index + value.length;
+    }
+    return out + escapeHtml(line.slice(last));
+  }
+
+  /* 标明出处的代码片段同样着色 */
+  $$('.cw-snippet').forEach((block) => { block.innerHTML = highlightJava(block.textContent); });
+
+  $$('.cw-code').forEach((card) => {
+    const source = $('pre.cw-src', card);
+    const scroll = $('.cw-code-scroll', card);
+    if (!source || !scroll) return;
+    const text = source.textContent.replace(/\n$/, '');
+    const lines = text.split('\n');
+
+    /* 标记按“包含的文字”定位行，而不是写死行号 */
+    const markAt = new Map();
+    for (const mark of JSON.parse(card.dataset.marks || '[]')) {
+      let seen = 0;
+      let index = -1;
+      const needle = mark.find || mark.after;
+      for (let i = 0; i < lines.length; i++) {
+        if (!lines[i].includes(needle)) continue;
+        if (seen++ === (mark.nth || 0)) { index = i; break; }
+      }
+      if (index >= 0 && mark.after) index += mark.offset || 0;   /* “某行之后第 N 行”，用于单独的右花括号 */
+      if (index < 0 || index >= lines.length) { card.dataset.markError = needle; console.error('[lec16] 找不到标记所在的行：', needle); continue; }
+      for (let j = 0; j < (mark.span || 1); j++) markAt.set(index + j, j === 0 ? mark.badge : '');
+    }
+
+    const pre = document.createElement('div');
+    pre.className = 'cw-pre';
+    lines.forEach((line, i) => {
+      const row = document.createElement('div');
+      const badge = markAt.get(i);
+      row.className = `cw-ln${badge !== undefined ? ' mark' : ''}${/^\s*import\s/.test(line) ? ' imp' : ''}`;
+      row.innerHTML = `<span class="mk">${badge ? `<b>${badge}</b>` : ''}</span><span class="no">${i + 1}</span><span class="tx">${highlightJava(line) || ' '}</span>`;
+      pre.appendChild(row);
+    });
+    const importCount = $$('.cw-ln.imp', pre).length;
+    if (importCount) {
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'cw-imp-toggle';
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.textContent = `import · ${importCount} 行（复制时包含）`;
+      toggle.addEventListener('click', () => {
+        const open = card.classList.toggle('imports-open');
+        toggle.setAttribute('aria-expanded', String(open));
+      });
+      pre.insertBefore(toggle, $('.cw-ln.imp', pre));
+    }
+    source.hidden = true;
+    source.before(pre);
+  });
+
+  /* 复制完整代码 */
+  const copyText = async (text) => {
+    if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
+    else throw new Error('clipboard api unavailable');
+  };
+  $$('[data-copy]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const target = document.getElementById(button.dataset.copy);
+      const status = button.closest('.cw-code')?.querySelector('.cw-code-status');
+      if (!target) return;
+      const label = button.textContent;
+      const done = () => {
+        button.textContent = '已复制 ✓';
+        setTimeout(() => { button.textContent = label; }, 2200);
+      };
+      try {
+        await copyText(target.textContent);
+        done();
+      } catch {
+        /* file:// 或权限受限时的兼容做法：选中全文，让用户按复制键 */
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(target);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch { ok = false; }
+        selection.removeAllRanges();
+        if (ok) done();
+        else {
+          /* 兼容路径也没成功：代码已全选，告诉用户按哪个键 */
+          button.textContent = '已全选 · 按 Ctrl/⌘+C';
+          setTimeout(() => { button.textContent = label; }, 5000);
+        }
+      }
+    });
+  });
+
+  /* ------------------------------------------------------------------
+   * 课堂检查
+   * ------------------------------------------------------------------ */
+  $$('[data-quiz]').forEach((quiz) => {
+    const check = $('[data-check]', quiz);
+    const result = $('.cw-result', quiz);
+    check.addEventListener('click', () => {
+      const picked = quiz.querySelector('input[type="radio"]:checked');
+      if (!picked) result.textContent = '请先选择一个答案。';
+      else if (picked.value === quiz.dataset.answer) result.textContent = `回答正确。${quiz.dataset.explanation}`;
+      else result.textContent = quiz.dataset.hint || '再想一想。';
+    });
+  });
+
+  /* ------------------------------------------------------------------
+   * 读取结果模拟：每次最多读 2 字节时，一种可能的读取过程。
+   * 只是按规则随机生成，用来比较“次数会变、字节不变”；真实输出以程序为准。
+   * ------------------------------------------------------------------ */
+  $$('[data-readsim]').forEach((node) => {
+    const bytes = ['68', '65', '6C', '6C', '6F', '21'];
+    const rows = $('.cw-reads', node);
+    const note = $('[data-sim-note]', node);
+    const cap = 2;
+    const render = (pattern, random) => {
+      rows.innerHTML = '';
+      let offset = 0;
+      let previous = [];
+      pattern.forEach((count, i) => {
+        const fresh = bytes.slice(offset, offset + count);
+        const tray = fresh.concat(previous.slice(count)).slice(0, cap);   /* 数组不会自动清空：count 之后是上一次留下的旧字节 */
+        const slots = [];
+        for (let s = 0; s < cap; s++) {
+          if (s < count) slots.push(`<span class="cw-byte hot">${fresh[s]}</span>`);
+          else if (tray[s]) slots.push(`<span class="cw-byte old">${tray[s]}</span>`);
+          else slots.push('<span class="cw-byte old">空</span>');
+        }
+        rows.insertAdjacentHTML('beforeend', `<li><span class="cw-cap">第 ${i + 1} 次 read()</span><span class="cw-tray">${slots.join('')}</span><span class="cw-out">本次 ${count} 字节：${fresh.join(' ')}</span></li>`);
+        previous = tray;
+        offset += count;
+      });
+      note.textContent = `共读取 ${pattern.length} 次，拼起来仍是 68 65 6C 6C 6F 21（6 字节）。${random ? '这是随机生成的一种可能。' : ''}`;
+    };
+    const randomPattern = () => {
+      const pattern = [];
+      let left = bytes.length;
+      while (left > 0) { const take = left >= cap && Math.random() < 0.6 ? cap : 1; pattern.push(take); left -= take; }
+      return pattern;
+    };
+    render([2, 2, 2], false);
+    $('[data-sim-again]', node).addEventListener('click', () => render(randomPattern(), true));
+  });
+
+  /* ------------------------------------------------------------------
+   * IDEA 运行窗口示意：切换标签页，就是切换两个程序各自的控制台。
+   * ------------------------------------------------------------------ */
+  $$('[data-ide]').forEach((node) => {
+    node.addEventListener('click', (e) => {
+      const tab = e.target.closest('[data-ide-tab]');
+      if (!tab) return;
+      $$('[data-ide-tab]', node).forEach((t) => { const on = t === tab; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); });
+      $$('[data-ide-pane]', node).forEach((p) => p.classList.toggle('on', p.dataset.idePane === tab.dataset.ideTab));
+    });
+  });
+})();
+
+</script>
+</body>
+</html>

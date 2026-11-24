@@ -15,14 +15,14 @@ next: false
 const CDN_BASE = '/pdf/java/2026_fall'
 
 const part1Lectures = [
-  { chap: '1.1', topic: 'Java 语言入门与开发环境搭建', filename: 'lec01-java-intro.pdf', practice: 'lec01' },
-  { chap: '1.2', topic: '数据类型、变量、常量与运算表达式', filename: 'lec02-data-types.pdf', practice: 'lec02' },
-  { chap: '1.3', topic: '控制台交互、格式化 I/O 与 Math 库', filename: 'lec03-console-io.pdf', practice: 'lec03' },
-  { chap: '1.4', topic: '流程控制与分支结构（if-else 与 switch）', filename: 'lec04-flow-control.pdf', practice: 'lec04' },
-  { chap: '1.5', topic: '循环结构与算法控制（for, while 与转向控制）', filename: 'lec05-loops.pdf', practice: 'lec05' },
-  { chap: '1.6', topic: '方法设计、JVM 栈帧与参数值传递机制', filename: 'lec06-methods.pdf', practice: 'lec06' },
-  { chap: '1.7', topic: '数组、矩阵操作与 Arrays 工具库', filename: 'lec07-arrays.pdf', practice: 'lec07' },
-  { chap: '1.8', topic: '经典排序算法与 ArrayList 动态列表', filename: 'lec08-sort-arraylist.pdf', practice: 'lec08' }
+  { chap: '1.1', topic: 'Java 语言入门与开发环境搭建', filename: 'lec01-java-intro.pdf' },
+  { chap: '1.2', topic: '数据类型、变量、常量与运算表达式', filename: 'lec02-data-types.pdf' },
+  { chap: '1.3', topic: '控制台交互、格式化 I/O 与 Math 库', filename: 'lec03-console-io.pdf' },
+  { chap: '1.4', topic: '流程控制与分支结构（if-else 与 switch）', filename: 'lec04-flow-control.pdf' },
+  { chap: '1.5', topic: '循环结构与算法控制（for, while 与转向控制）', filename: 'lec05-loops.pdf' },
+  { chap: '1.6', topic: '方法设计、JVM 栈帧与参数值传递机制', filename: 'lec06-methods.pdf' },
+  { chap: '1.7', topic: '数组、矩阵操作与 Arrays 工具库', filename: 'lec07-arrays.pdf' },
+  { chap: '1.8', topic: '经典排序算法与 ArrayList 动态列表', filename: 'lec08-sort-arraylist.pdf' }
 ]
 
 const part2Lectures = [
@@ -35,8 +35,8 @@ const part2Lectures = [
 ]
 
 const part3Lectures = [
-  { chap: '3.1', topic: '字节流 I/O、十六进制编码与通信数据序列化' },
-  { chap: '3.2', topic: '网络编程基础与 TCP Socket 通信' },
+  { chap: '3.1', topic: '字节流 I/O、十六进制编码与通信数据序列化', lesson: 'lec15' },
+  { chap: '3.2', topic: '网络编程基础与 TCP Socket 通信', lesson: 'lec16' },
   { chap: '3.3', topic: 'UDP 数据报通信与自定义二进制帧结构' },
   { chap: '3.4', topic: 'TCP 粘包拆包与有限状态机 (FSM) 协议定界' },
   { chap: '3.5', topic: '多线程基础与并发任务处理' },
@@ -53,7 +53,7 @@ const part4Lectures = [
 
 # Java程序设计 <span class="subtitle">2026 秋季学期</span>
 
-《Java程序设计》是计算机与软件工程等专业核心实践必修课程，内容涵盖语法基础、面向对象世界观、网络通信与并发底座，以及物联网综合实战。本页面提供 2026 秋季学期授课课件下载，随教学进度逐步开放更新。
+《Java程序设计》是面向通信工程及相关专业的实践课程，内容涵盖语法基础、面向对象世界观、网络通信与并发底座，以及物联网综合实战。本页面提供 2026 秋季学期授课课件下载，随教学进度逐步开放更新。
 
 <p class="mobile-desktop-hint">建议使用电脑桌面端访问，以获得更佳的课件浏览与下载体验。</p>
 
@@ -68,8 +68,7 @@ const part4Lectures = [
     <tr>
       <th style="width: 10%">章节</th>
       <th style="width: 60%">知识要点</th>
-      <th style="width: 15%; text-align: center;">授课课件</th>
-      <th style="width: 15%; text-align: center;">随堂实操</th>
+      <th style="width: 30%; text-align: center;">授课课件</th>
     </tr>
   </thead>
   <tbody>
@@ -78,9 +77,6 @@ const part4Lectures = [
       <td class="chap-title">{{ item.topic }}</td>
       <td class="download-cell">
         <a :href="CDN_BASE + '/' + item.filename" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a>
-      </td>
-      <td class="download-cell">
-        <a :href="'/courses/java-programming-2026-fall/practice/' + item.practice" class="btn-dl btn-practice">实操 💻</a>
       </td>
     </tr>
   </tbody>
@@ -93,8 +89,7 @@ const part4Lectures = [
     <tr>
       <th style="width: 10%">章节</th>
       <th style="width: 60%">知识要点</th>
-      <th style="width: 15%; text-align: center;">授课课件</th>
-      <th style="width: 15%; text-align: center;">随堂实操</th>
+      <th style="width: 30%; text-align: center;">授课课件</th>
     </tr>
   </thead>
   <tbody>
@@ -104,19 +99,12 @@ const part4Lectures = [
       <td class="download-cell">
         <a :href="CDN_BASE + '/' + item.filename" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a>
       </td>
-      <td class="download-cell">
-        <a v-if="item.practice" :href="'/courses/java-programming-2026-fall/practice/' + item.practice" class="btn-dl btn-practice">实操 💻</a>
-        <span v-else class="btn-lock">待开放 🔒</span>
-      </td>
     </tr>
     <tr class="bundle-row">
       <td class="chap-num">合辑</td>
       <td class="chap-title font-bundle">第二篇合辑总册 (第 9 ~ 14 讲总控)</td>
       <td class="download-cell">
         <a :href="CDN_BASE + '/part2-oop-comm.pdf'" target="_blank" rel="noopener" class="btn-dl btn-bundle">总册 📚</a>
-      </td>
-      <td class="download-cell">
-        <span class="btn-lock">-</span>
       </td>
     </tr>
   </tbody>
@@ -129,16 +117,14 @@ const part4Lectures = [
     <tr>
       <th style="width: 10%">章节</th>
       <th style="width: 60%">知识要点</th>
-      <th style="width: 15%; text-align: center;">授课课件</th>
-      <th style="width: 15%; text-align: center;">随堂实操</th>
+      <th style="width: 30%; text-align: center;">授课课件</th>
     </tr>
   </thead>
   <tbody>
     <tr v-for="item in part3Lectures" :key="item.chap">
       <td class="chap-num">{{ item.chap }}</td>
       <td class="chap-title">{{ item.topic }}</td>
-      <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
-      <td class="download-cell"><span class="btn-lock">待开放 🔒</span></td>
+      <td class="download-cell"><template v-if="item.lesson"><a :href="'/courseware/java/2026-fall/' + item.lesson + '/index.html'" target="_blank" rel="noopener" class="btn-dl">在线课件</a> <a :href="'/courseware/java/2026-fall/' + item.lesson + '/index.html'" :download="'java-2026-fall-' + item.lesson + '.html'" class="btn-dl">离线下载</a></template><span v-else class="btn-lock">待更新 🔒</span></td>
     </tr>
   </tbody>
 </table>
@@ -150,8 +136,7 @@ const part4Lectures = [
     <tr>
       <th style="width: 10%">章节</th>
       <th style="width: 60%">知识要点</th>
-      <th style="width: 15%; text-align: center;">授课课件</th>
-      <th style="width: 15%; text-align: center;">随堂实操</th>
+      <th style="width: 30%; text-align: center;">授课课件</th>
     </tr>
   </thead>
   <tbody>
@@ -159,7 +144,6 @@ const part4Lectures = [
       <td class="chap-num">{{ item.chap }}</td>
       <td class="chap-title">{{ item.topic }}</td>
       <td class="download-cell"><span class="btn-lock">待更新 🔒</span></td>
-      <td class="download-cell"><span class="btn-lock">待开放 🔒</span></td>
     </tr>
   </tbody>
 </table>
@@ -280,35 +264,6 @@ const part4Lectures = [
   color: #ffffff !important;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px var(--mn-primary-ring);
-}
-
-/* 随堂实操专属高质感微光样式 (紫蓝渐变) */
-.btn-practice {
-  background: rgba(99, 102, 241, 0.08);
-  color: #4f46e5 !important;
-  border-color: rgba(99, 102, 241, 0.28);
-  box-shadow: 0 1px 2px rgba(99, 102, 241, 0.06);
-}
-
-.btn-practice:hover {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  border-color: transparent;
-  color: #ffffff !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
-}
-
-.dark .btn-practice {
-  background: rgba(129, 140, 248, 0.12);
-  color: #a5b4fc !important;
-  border-color: rgba(129, 140, 248, 0.28);
-}
-
-.dark .btn-practice:hover {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  border-color: transparent;
-  color: #ffffff !important;
-  box-shadow: 0 4px 16px rgba(129, 140, 248, 0.45);
 }
 
 /* 合辑总册特殊行样式 */

@@ -1,0 +1,1572 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>第 15 讲｜让数据留下来</title>
+    <style>
+        :root {
+            --ink: #143449;
+            --muted: #536f7d;
+            --blue: #116b89;
+            --deep: #123d51;
+            --mint: #d5f1e8;
+            --lime: #d5ee93;
+            --bg: #f2f7f6;
+            --line: #d5e4e2;
+            --orange: #a64d22
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+            line-height: 1.65
+        }
+
+        button,
+        input {
+            font: inherit
+        }
+
+        button {
+            cursor: pointer
+        }
+
+        button:focus-visible,
+        input:focus-visible {
+            outline: 3px solid #db872f;
+            outline-offset: 3px
+        }
+
+        .bar {
+            height: 60px;
+            padding: 0 5%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            border-bottom: 1px solid var(--line);
+            font-weight: 700
+        }
+
+        .bar small {
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        .viewport {
+            height: calc(100dvh - 120px);
+            overflow: hidden
+        }
+
+        .track {
+            height: 100%;
+            display: flex;
+            transition: transform .35s ease
+        }
+
+        .slide {
+            height: 100%;
+            flex: 0 0 100%;
+            overflow-y: auto;
+            overscroll-behavior: contain
+        }
+
+        .inner {
+            max-width: 1180px;
+            margin: auto;
+            padding: 36px 34px 60px
+        }
+
+        .tag {
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: .14em;
+            color: var(--blue)
+        }
+
+        h1 {
+            font-size: clamp(38px, 5.2vw, 66px);
+            line-height: 1.15;
+            margin: 15px 0;
+            letter-spacing: -.04em
+        }
+
+        h2 {
+            font-size: clamp(27px, 3.5vw, 42px);
+            line-height: 1.25;
+            letter-spacing: -.03em;
+            margin: 8px 0 14px
+        }
+
+        h3 {
+            font-size: 20px;
+            margin: 0 0 10px
+        }
+
+        p {
+            margin: 10px 0
+        }
+
+        .lead {
+            font-size: 19px;
+            color: var(--muted);
+            max-width: 850px
+        }
+
+        .cover {
+            background: var(--deep);
+            color: white;
+            min-height: 100%
+        }
+
+        .cover .inner {
+            padding-top: 70px
+        }
+
+        .cover .tag {
+            color: var(--lime)
+        }
+
+        .cover .lead {
+            color: #c5e0df
+        }
+
+        .cover-grid,
+        .cols {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px
+        }
+
+        .cover-grid {
+            align-items: center;
+            gap: 55px
+        }
+
+        .signal {
+            border: 1px solid #5c8491;
+            border-radius: 18px;
+            padding: 26px;
+            background: #1b5265
+        }
+
+        .signal-line {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            font-size: 17px
+        }
+
+        .signal-line span {
+            background: #d8efe8;
+            color: #173e4b;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-weight: 750
+        }
+
+        .signal-line b {
+            color: var(--lime)
+        }
+
+        .signal small {
+            display: block;
+            color: #c3ddde;
+            margin-top: 20px
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 25px 28px
+        }
+
+        .card p:last-child {
+            margin-bottom: 0
+        }
+
+        .card.accent {
+            background: #e7f4ef;
+            border-color: #c7e4d9
+        }
+
+        .step-list {
+            display: grid;
+            gap: 12px;
+            margin: 24px 0
+        }
+
+        .step {
+            display: flex;
+            gap: 16px;
+            align-items: baseline;
+            padding: 14px 18px;
+            border-left: 4px solid #8cc8bb;
+            background: white;
+            border-radius: 0 8px 8px 0
+        }
+
+        .step b {
+            min-width: 26px;
+            color: var(--blue)
+        }
+
+        .flow {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 25px 0
+        }
+
+        .flow span {
+            background: #e5f3ee;
+            border: 1px solid #bfdfd6;
+            border-radius: 9px;
+            padding: 14px 20px;
+            font-weight: 750
+        }
+
+        .flow b {
+            color: var(--blue);
+            font-size: 22px
+        }
+
+        .note {
+            border-left: 4px solid #e5a271;
+            background: #fff4e9;
+            padding: 14px 18px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0
+        }
+
+        .hint {
+            color: var(--muted);
+            font-size: 15px
+        }
+
+        .code {
+            margin: 16px 0;
+            background: #103c4d;
+            color: #e6f5ee;
+            padding: 18px 20px;
+            border-radius: 10px;
+            overflow: auto;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            font: 15px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace
+        }
+
+        .code .highlight {
+            color: #d5ee93
+        }
+
+        .code {
+            border: 1px solid #286273;
+            box-shadow: 0 8px 24px rgba(16, 60, 77, .10);
+            tab-size: 4
+        }
+
+        .tok-keyword {
+            color: #c8b2ff;
+            font-weight: 700
+        }
+
+        .tok-string {
+            color: #cae993
+        }
+
+        .tok-comment {
+            color: #a8c3c8;
+            font-style: italic
+        }
+
+        .tok-number {
+            color: #ffc995
+        }
+
+        .tok-type {
+            color: #8edbea
+        }
+
+        .tok-annotation {
+            color: #ffd788
+        }
+
+        .code-wrap {
+            position: relative
+        }
+
+        .code-wrap .code {
+            white-space: pre;
+            overflow-wrap: normal;
+            padding-top: 52px
+        }
+
+        .copy-code {
+            position: absolute;
+            right: 12px;
+            top: 10px;
+            border: 1px solid #8cb6b6;
+            background: #245769;
+            color: white;
+            border-radius: 6px;
+            padding: 5px 11px;
+            font-size: 13px;
+            font-weight: 700
+        }
+
+        .copy-status {
+            font-size: 13px;
+            color: var(--muted);
+            min-height: 1.5em
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 8px;
+            padding: 10px 17px;
+            background: var(--blue);
+            color: white;
+            font-weight: 750
+        }
+
+        .btn.secondary {
+            background: #e6f0ee;
+            color: var(--deep)
+        }
+
+        .btn:disabled {
+            opacity: .4;
+            cursor: not-allowed
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin: 18px 0
+        }
+
+        .cells {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 18px 0
+        }
+
+        .cell {
+            min-width: 52px;
+            text-align: center;
+            background: #e1f2ef;
+            border: 1px solid #b7dcd4;
+            border-radius: 8px;
+            padding: 12px 8px;
+            font: 700 20px monospace
+        }
+
+        .cell.new {
+            background: #c9eaf7;
+            border-color: #80bfd2
+        }
+
+        .cell.old {
+            background: #ffe5d0;
+            color: #985020;
+            border-color: #ecb186
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px
+        }
+
+        .metric {
+            padding: 14px;
+            border-radius: 9px;
+            background: #edf5f3
+        }
+
+        .metric small {
+            display: block;
+            color: var(--muted)
+        }
+
+        .metric strong {
+            font: 700 22px monospace
+        }
+
+        .field {
+            padding: 9px 12px;
+            border: 1px solid #a6c8c4;
+            border-radius: 7px;
+            width: 130px;
+            background: white
+        }
+
+        .feedback {
+            min-height: 1.8em;
+            color: var(--blue);
+            font-weight: 700
+        }
+
+        .quiz label {
+            display: block;
+            padding: 4px 0
+        }
+
+        .lab-list {
+            padding-left: 1.3em
+        }
+
+        .lab-list li {
+            margin: 9px 0
+        }
+
+        details {
+            border: 1px solid var(--line);
+            background: white;
+            padding: 13px 18px;
+            border-radius: 9px;
+            margin-top: 15px
+        }
+
+        summary {
+            cursor: pointer;
+            font-weight: 750;
+            color: var(--blue)
+        }
+
+        .footer {
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            background: white;
+            border-top: 1px solid var(--line)
+        }
+
+        .count {
+            font: 700 14px monospace;
+            color: var(--muted);
+            min-width: 60px;
+            text-align: center
+        }
+
+        .footer small {
+            color: var(--muted)
+        }
+
+        @media(max-width:760px) {
+
+            .cover-grid,
+            .cols,
+            .metrics {
+                grid-template-columns: minmax(0, 1fr)
+            }
+
+            .inner {
+                padding: 25px 20px 45px
+            }
+
+            .cover .inner {
+                padding-top: 32px
+            }
+
+            .footer small,
+            .bar small {
+                display: none
+            }
+
+            .signal {
+                padding: 18px
+            }
+        }
+
+        @media(prefers-reduced-motion:reduce) {
+            .track {
+                transition: none
+            }
+        }
+
+        .code-wrap {
+            margin: 16px 0
+        }
+
+        .code-wrap .code {
+            margin: 0
+        }
+
+        .code-label {
+            position: absolute;
+            top: 12px;
+            left: 16px;
+            color: #a8c8c9;
+            font-size: 12px;
+            letter-spacing: .08em
+        }
+
+        .code-wrap pre {
+            max-height: none
+        }
+
+        .quiz-result {
+            min-height: 1.6em;
+            color: var(--blue);
+            font-weight: 700
+        }
+
+        .trace {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 24px 0
+        }
+
+        .trace-step {
+            border: 1px solid #c5dfd9;
+            border-radius: 12px;
+            background: #eff8f5;
+            padding: 18px;
+            opacity: .48;
+            transition: opacity .3s ease, transform .3s ease, border-color .3s ease
+        }
+
+        .trace-step.active {
+            opacity: 1;
+            border-color: #16877f;
+            transform: translateY(-4px)
+        }
+
+        .trace-step h3 {
+            font-size: 17px
+        }
+
+        .trace-step strong {
+            font: 700 22px ui-monospace, monospace;
+            display: block;
+            overflow-wrap: anywhere
+        }
+
+        .trace-step small {
+            color: #536f7d
+        }
+
+        .bits-demo {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 20px 0
+        }
+
+        .bit-button {
+            width: 60px;
+            border: 1px solid #a7d4c8;
+            border-radius: 8px;
+            background: #e6f4ef;
+            color: #143449;
+            padding: 8px 4px;
+            font: 700 21px monospace;
+            cursor: pointer
+        }
+
+        .bit-button small {
+            font: 12px sans-serif;
+            display: block;
+            color: #536f7d
+        }
+
+        .bit-button.on {
+            background: #cbeafa;
+            border-color: #75bacc
+        }
+
+        @media(max-width:760px) {
+            .trace {
+                grid-template-columns: 1fr
+            }
+
+            .trace-step.active {
+                transform: none
+            }
+
+            .bit-button {
+                width: 38px;
+                font-size: 17px
+            }
+        }
+
+        @media(prefers-reduced-motion:reduce) {
+            .trace-step {
+                transition: none
+            }
+        }
+
+        .code-wrap {
+            margin: 16px 0
+        }
+
+        .code-wrap .code {
+            margin: 0
+        }
+
+        .code-label {
+            position: absolute;
+            top: 12px;
+            left: 16px;
+            color: #a8c8c9;
+            font-size: 12px;
+            letter-spacing: .08em
+        }
+
+        .stage {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin: 24px 0
+        }
+
+        .stage-box {
+            min-height: 130px;
+            padding: 18px;
+            background: white;
+            border: 2px solid #d5e4e2;
+            border-radius: 12px;
+            transition: border-color .25s, transform .25s
+        }
+
+        .stage-box.active {
+            border-color: #16877f;
+            transform: translateY(-3px);
+            background: #e7f4ef
+        }
+
+        .stage-box strong {
+            display: block;
+            font-size: 20px
+        }
+
+        .stage-box p {
+            overflow-wrap: anywhere
+        }
+
+        .stage-box small {
+            color: #536f7d
+        }
+
+        @media(max-width:760px) {
+            .stage {
+                grid-template-columns: 1fr
+            }
+
+            .stage-box {
+                min-height: 80px
+            }
+
+            .stage-box.active {
+                transform: none
+            }
+        }
+
+        @media(prefers-reduced-motion:reduce) {
+            .stage-box {
+                transition: none;
+                transform: none !important
+            }
+        }
+
+        .source-bytes {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin: 10px 0
+        }
+
+        .source-byte {
+            min-width: 44px;
+            padding: 5px 7px;
+            text-align: center;
+            border: 1px solid #d5e4e2;
+            border-radius: 7px;
+            background: #fff;
+            color: #536f7d;
+            font: 700 16px ui-monospace, monospace
+        }
+
+        .source-byte small {
+            display: block;
+            font: 12px ui-monospace, monospace;
+            color: #68828b
+        }
+
+        .source-byte.done {
+            background: #e3eeea
+        }
+
+        .source-byte.current {
+            background: #c9eaf7;
+            border-color: #75bacc;
+            color: #143449
+        }
+
+        .collected-text {
+            white-space: pre-wrap;
+            font: 700 18px ui-monospace, monospace;
+            color: #116b89
+        }
+
+        .read-label {
+            font-size: 14px;
+            color: #536f7d;
+            font-weight: 700;
+            margin: 8px 0
+        }
+    </style>
+</head>
+
+<body>
+    <header class="bar"><span>JAVA 程序设计 <span style="color:#16817d">/</span> 第三部分 · 第 15 讲</span><small>文件读写 · 字节流 ·
+            缓冲</small></header>
+    <main class="viewport">
+        <div class="track" id="track">
+            <section class="slide cover" aria-label="封面">
+                <div class="inner cover-grid">
+                    <div>
+                        <div class="tag">第三部分 · 通信基础与并发</div>
+                        <h1>让数据<br>留下来</h1>
+                        <p class="lead">第 15 讲 · 从文字文件走进字节流</p>
+                        <p style="color:#c5e0df">先保存一句话，再写入、读回并核对一条设备记录。</p>
+                    </div>
+                    <div class="signal">
+                        <div class="signal-line"><span>写入</span><b>→</b><span>查看</span><b>→</b><span>读取</span></div>
+                        <small>实验从本机文件开始。最后用同样的读写约定解析一条模拟坐标记录。</small>
+                    </div>
+                </div>
+            </section>
+            <section class="slide" aria-label="学习目标">
+                <div class="inner">
+                    <div class="tag">本讲任务</div>
+                    <h2>先完成一个真实的小任务</h2>
+                    <p class="lead">把 <strong>hello java</strong> 写入文本文件，打开文件查看，再用另一个 Java 程序读取。</p>
+                    <div class="step-list">
+                        <div class="step"><b>写入</b><span>运行写入程序，生成 <code>greeting.txt</code>。</span></div>
+                        <div class="step"><b>查看</b><span>打开文件，确认文字与输入一致。</span></div>
+                        <div class="step"><b>读回</b><span>运行读取程序，让控制台再次显示同一段文字。</span></div>
+                    </div>
+                    <p class="hint">机房环境用 JDK 21。所有文件读写示例请使用同一个工作目录。最后验证设备编号、温度和三维坐标。</p>
+                </div>
+            </section>
+
+            <section class="slide" aria-label="写入文件">
+                <div class="inner">
+                    <div class="tag">任务一 · 写入</div>
+                    <h2>先把文字写进文件</h2>
+                    <p class="lead">在 IDE 中新建 <code>WriteGreeting.java</code>，复制并运行。</p>
+                    <div class="code-wrap"><span class="code-label">JAVA · WriteGreeting.java</span><button
+                            type="button" class="copy-code" data-copy="write-code">复制完整代码</button>
+                        <pre class="code" id="write-code">import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
+public class WriteGreeting {
+    public static void main(String[] args) throws IOException {
+        String message = &quot;hello java&quot;;
+        // 使用 UTF-8 将文字转换为字节，再写入文件。
+        byte[] data = message.getBytes(StandardCharsets.UTF_8);
+        // 按索引逐个查看数组中的字节值
+        for (int i = 0; i &lt; data.length; i++) {
+            System.out.println(&quot;data[&quot; + i + &quot;] = &quot; + data[i]);
+        }
+        try (FileOutputStream out = new FileOutputStream(&quot;greeting.txt&quot;)) {
+            out.write(data);
+        }
+        System.out.println(&quot;已写入 greeting.txt&quot;);
+        System.out.println(&quot;文件路径：&quot; + new java.io.File(&quot;greeting.txt&quot;).getAbsolutePath());
+    }
+}</pre>
+                    </div>
+                    <p class="copy-status" aria-live="polite">保存为 WriteGreeting.java 后运行。</p>
+                </div>
+            </section>
+
+            <section class="slide" aria-label="查看结果">
+                <div class="inner">
+                    <div class="tag">任务一 · 查看</div>
+                    <h2>文件真的生成了吗？</h2>
+                    <div class="card">
+                        <ol class="lab-list">
+                            <li>运行 <code>WriteGreeting</code>，查看控制台打印的文件路径。</li>
+                            <li>在 IDEA 中打开 <code>greeting.txt</code>；如果文件列表没有刷新，请刷新项目视图。</li>
+                            <li>确认文件显示：<strong>hello java</strong>。</li>
+                        </ol>
+                        <div class="note">文件位于程序的工作目录，不一定与源码在同一目录。再次运行写入程序会覆盖同名文件。</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide" aria-label="读取文件">
+                <div class="inner">
+                    <div class="tag">任务一 · 读回</div>
+                    <h2>用另一个程序读取</h2>
+                    <p class="lead">新建 <code>ReadGreeting.java</code>。先确保前面的文件已生成，并使用相同的工作目录。</p>
+                    <div class="code-wrap"><span class="code-label">JAVA · ReadGreeting.java</span><button type="button"
+                            class="copy-code" data-copy="read-code">复制完整代码</button>
+                        <pre class="code" id="read-code">import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
+public class ReadGreeting {
+    public static void main(String[] args) throws IOException {
+        // 读取文件中的全部字节，并按写入时相同的 UTF-8 编码还原文字。
+        try (FileInputStream in = new FileInputStream(&quot;greeting.txt&quot;)) {
+            byte[] data = in.readAllBytes();
+            String message = new String(data, StandardCharsets.UTF_8);
+            System.out.println(&quot;读回：&quot; + message);
+        }
+    }
+}</pre>
+                    </div>
+                    <p class="copy-status" aria-live="polite">保存为 ReadGreeting.java 后运行。</p>
+                    <div class="note">控制台应显示：<strong>读回：hello java</strong>。本例的 <code>readAllBytes()</code> 需要 JDK 9
+                        或更新版本。</div>
+                </div>
+            </section>
+
+            <section class="slide" aria-label="第一个闭环">
+                <div class="inner">
+                    <div class="tag">任务一 · 检查</div>
+                    <h2>我们已经完成了什么？</h2>
+                    <div class="flow"><span>Java 写入</span><b>→</b><span>打开文件</span><b>→</b><span>Java 读回</span></div>
+                    <div class="cols">
+                        <div class="card">
+                            <h3>动手检查</h3>
+                            <p>先把 <code>hello java</code> 改成 <code>hello lab</code>，重新写入并读回。核对后恢复 <code>hello java</code>，再运行写入程序，供后面的分批读取实验使用。</p>
+                        </div>
+                        <div class="card accent">
+                            <h3>接下来的问题</h3>
+                            <p>代码中的 <code>getBytes</code>、<code>FileOutputStream</code> 和 <code>readAllBytes</code>
+                                分别做了什么？</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide" aria-label="解释编码">
+                <div class="inner">
+                    <div class="tag">回看代码 · 文字与字节</div>
+                    <h2>文字为什么要先变成字节？</h2>
+                    <p class="lead">字节流读写的是字节。UTF-8 是一种文字与字节之间的编码约定。</p>
+                    <div class="cols">
+                        <div class="card">
+                            <h3>写入前：编码</h3>
+                            <div class="code">byte[] data = message.getBytes(StandardCharsets.UTF_8);</div>
+                            <p>把字符串变成字节数组，再交给输出流。</p>
+                        </div>
+                        <div class="card">
+                            <h3>读回后：解码</h3>
+                            <div class="code">String message = new String(data, StandardCharsets.UTF_8);</div>
+                            <p>按照相同编码，把读到的字节还原成字符串。</p>
+                        </div>
+                    </div>
+                    <p class="hint">写入和读取的编码应一致；这个例子用明确指定的 UTF-8，不依赖系统默认编码。</p>
+                </div>
+            </section>
+
+            <section class="slide" aria-label="字节流动画">
+                <div class="inner">
+                    <div class="tag">回看代码 · 字节流</div>
+                    <h2>字节流：连接程序与文件</h2>
+                    <p class="lead">以写入程序为例，点击“下一步”观察数据怎样流动；读取时方向相反。</p>
+                    <div class="controls"><button class="btn" type="button" id="flowNext">下一步</button><button
+                            class="btn secondary" type="button" id="flowReset">重新开始</button></div>
+                    <div class="stage">
+                        <div class="stage-box" id="flowText"><strong>程序中的文字</strong>
+                            <p>hello java</p>
+                        </div>
+                        <div class="stage-box" id="flowBytes"><strong>UTF-8 字节</strong>
+                            <p id="flowMid">等待转换</p>
+                        </div>
+                        <div class="stage-box" id="flowFile"><strong>文件</strong>
+                            <p id="flowEnd">等待写入</p>
+                        </div>
+                    </div>
+                    <p class="feedback" id="flowStatus" aria-live="polite">点击下一步，从文字开始。</p>
+                    <p class="hint">这是交互模拟，不会改写本地文件。文件实际内容请通过上一个 Java 程序验证。</p>
+                </div>
+            </section>
+
+            <section class="slide" aria-label="解释方法">
+                <div class="inner">
+                    <div class="tag">回看代码 · 逐项认识</div>
+                    <h2>刚才的代码，分别负责什么？</h2>
+                    <div class="step-list">
+                        <div class="step">
+                            <b>打开</b><span><code>new FileOutputStream("greeting.txt")</code>：打开文件并准备写入。</span>
+                        </div>
+                        <div class="step"><b>写入</b><span><code>out.write(data)</code>：把数组中的字节写出去。</span></div>
+                        <div class="step"><b>读取</b><span><code>in.readAllBytes()</code>：读取剩余字节，返回
+                                <code>byte[]</code>。</span></div>
+                        <div class="step"><b>关闭</b><span><code>try-with-resources</code>
+                                在代码块结束时关闭流；<code>throws IOException</code> 暂时将错误交给调用方处理。</span></div>
+                    </div>
+                    <p class="hint"><code>InputStream</code> 和 <code>OutputStream</code> 是字节输入和输出的基类。这里用它们的文件子类，读写方向以 Java 程序为参照。</p>
+                </div>
+            </section>
+
+            <section class="slide" aria-label="字节数组">
+                <div class="inner">
+                    <div class="tag">读写一组数据 · 字节数组</div>
+                    <h2>byte[] 是什么？</h2>
+                    <p class="lead">前面学过数组。<code>byte[]</code> 就是按顺序保存多个字节的数组。</p>
+                    <div class="flow"><span>字符串</span><b>→ UTF-8 编码 →</b><span>byte[]</span><b>→ write
+                            →</b><span>文件</span></div>
+                    <div class="card">
+                        <h3>和刚才程序对应起来</h3>
+                        <pre class="code">byte[] data = message.getBytes(StandardCharsets.UTF_8);
+// 通过索引逐个打印字节
+for (int i = 0; i &lt; data.length; i++) {
+    System.out.println("data[" + i + "] = " + data[i]);
+}
+out.write(data);</pre>
+                        <p><code>hello java</code> 的 10 个字节（数值按十进制显示）：</p>
+                        <pre class="code">data[0] = 104    data[5] = 32
+data[1] = 101    data[6] = 106
+data[2] = 108    data[7] = 97
+data[3] = 108    data[8] = 118
+data[4] = 111    data[9] = 97</pre>
+                        <p class="hint">数组索引从 0 开始；这些数值是字符经过 UTF-8 编码后得到的字节值。下一页对照每个字符来看。</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide" aria-label="字符和字节值对照">
+                <div class="inner">
+                    <div class="tag">读写一组数据 · 看懂字节值</div>
+                    <h2>104、101……是怎么来的？</h2>
+                    <p class="lead">程序按 UTF-8 编码 <code>hello java</code>；对于这些英文字母和空格，每个字符各对应一个字节。</p>
+                    <div class="card">
+                        <div style="overflow-x:auto">
+                            <table style="border-collapse:collapse;text-align:center;min-width:750px;font-size:19px">
+                                <tr>
+                                    <th style="padding:10px 14px;text-align:left">索引</th>
+                                    <td style="padding:10px">0</td>
+                                    <td style="padding:10px">1</td>
+                                    <td style="padding:10px">2</td>
+                                    <td style="padding:10px">3</td>
+                                    <td style="padding:10px">4</td>
+                                    <td style="padding:10px">5</td>
+                                    <td style="padding:10px">6</td>
+                                    <td style="padding:10px">7</td>
+                                    <td style="padding:10px">8</td>
+                                    <td style="padding:10px">9</td>
+                                </tr>
+                                <tr>
+                                    <th style="padding:10px 14px;text-align:left">字符</th>
+                                    <td>h</td>
+                                    <td>e</td>
+                                    <td>l</td>
+                                    <td>l</td>
+                                    <td>o</td>
+                                    <td>空格</td>
+                                    <td>j</td>
+                                    <td>a</td>
+                                    <td>v</td>
+                                    <td>a</td>
+                                </tr>
+                                <tr>
+                                    <th style="padding:10px 14px;text-align:left">字节值</th>
+                                    <td>104</td>
+                                    <td>101</td>
+                                    <td>108</td>
+                                    <td>108</td>
+                                    <td>111</td>
+                                    <td>32</td>
+                                    <td>106</td>
+                                    <td>97</td>
+                                    <td>118</td>
+                                    <td>97</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <p>例如：<code>h → 104</code>，<code>e → 101</code>，空格 → <code>32</code>。这些数字是字节值的十进制写法。</p>
+                    </div>
+                    <div class="note">这些对应关系由编码规则规定：这里 UTF-8 对英文字母和空格的编码与 ASCII 一致。无需背诵数值；读取时使用相同的 UTF-8 规则，就能还原文字。
+                    </div>
+                    <p class="hint">这个例子中的每个字符恰好占 1 字节；其他字符在 UTF-8 中可能占用多个字节。</p>
+                </div>
+            </section>
+            <section class="slide" aria-label="从一次读完到分批读取">
+                <div class="inner">
+                    <div class="tag">任务一 · 改造读取</div>
+                    <h2>一次最多取 4 字节，怎么读完原文件？</h2>
+                    <p class="lead"><code>ReadGreeting</code> 用 <code>readAllBytes()</code> 一次取回剩余字节。我们继续用同一份 10 字节的 <code>greeting.txt</code>，把一次读完换成分批读。</p>
+                    <div class="cols">
+                        <div class="card"><h3>ReadGreeting 的读取行</h3>
+                            <pre class="code">byte[] data = in.readAllBytes();</pre>
+                            <p>返回装有全部剩余字节的数组。</p>
+                        </div>
+                        <div class="card accent"><h3>分批读取的两行</h3>
+                            <pre class="code">byte[] buffer = new byte[4];
+int count = in.read(buffer);</pre>
+                            <p>下一次继续复用 4 格数组。先预测读到文件尾部时会填满几格。</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="slide" aria-label="分批读取介绍">
+                <div class="inner">
+                    <div class="tag">分批读取 · 先看一轮</div>
+                    <h2>一次 read 做了什么？</h2>
+                    <p class="lead">继续读取前面写入的 <code>hello java</code>：它按 UTF-8 编码后有 10 个字节。</p>
+                    <div class="flow"><span>文件中剩余字节</span><b>→</b><span>in.read(buffer)</span><b>→</b><span>最多放入 4
+                            格</span></div>
+                    <div class="card">
+                        <pre class="code">byte[] buffer = new byte[4];
+int count = in.read(buffer);</pre>
+                        <p><code>buffer</code> 存放读到的数据；<code>count</code> 告诉我们本轮有效数据有多少个。读到文件末尾时，<code>read</code> 返回
+                            <code>-1</code>。
+                        </p>
+                    </div>
+                    <p class="hint">一轮不一定读满数组。下一页模拟一种可能的读取过程。</p>
+                </div>
+            </section>
+            <section class="slide" aria-label="批量读取">
+                <div class="inner">
+                    <div class="tag">分批读取 · 动手观察</div>
+                    <h2>读到最后，该用几格？何时停？</h2>
+                    <p class="lead">点击按钮，观察 <code>hello java</code> 分批读入同一个数组。先预测最后两个字节读完后，再调用一次 <code>read</code> 会发生什么。</p>
+                    <p class="read-label">文件内容（字符 / 字节值）：蓝色为本轮读取，灰色为已读，白色为待读</p>
+                    <div class="source-bytes" id="readSource" aria-label="文件内容与读取进度"></div>
+                    <div class="controls"><button class="btn" id="readNext" type="button">读取下一轮</button><button
+                            class="btn secondary" id="readReset" type="button">重新开始</button></div>
+                    <p class="read-label">读取后的 4 格数组</p>
+                    <div class="cells" id="readCells"></div>
+                    <p id="readStatus" class="feedback" aria-live="polite"></p>
+                    <p class="read-label">已收集的内容：<span class="collected-text" id="readCollected"
+                            aria-live="polite">（尚未读取）</span></p>
+                    <div class="card">
+                        <h3>最后一轮，该处理哪几格？</h3>
+                        <p>试着解释，如果最后一次成功读取后仍把 4 格都追加，为什么会得到 <code>hello javaja</code>？
+                        </p>
+                    </div>
+                    <p class="hint">这是模拟的一种读取顺序；实际每轮读取数以 <code>read</code> 的返回值为准。</p>
+                </div>
+            </section>
+            <section class="slide" aria-label="分批读取完整程序">
+                <div class="inner">
+                    <div class="tag">机房实操 · 分批读回</div>
+                    <h2>把每一轮有效字节收集起来</h2>
+                    <p class="lead">先用 <code>WriteGreeting</code> 写回原样的 <code>hello java</code>。在同一工作目录运行下面的程序，核对每次读取数量和最后一行。</p>
+                    <div class="code-wrap"><span class="code-label">JAVA · ReadGreetingChunks.java</span><button
+                            type="button" class="copy-code" data-copy="chunks-code">复制完整代码</button>
+                        <pre class="code" id="chunks-code">import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
+public class ReadGreetingChunks {
+    public static void main(String[] args) throws IOException {
+        // 把每轮读取到的有效字节汇总到内存中。
+        ByteArrayOutputStream collected = new ByteArrayOutputStream();
+        try (FileInputStream in = new FileInputStream(&quot;greeting.txt&quot;)) {
+            byte[] buffer = new byte[4];
+            int count;
+            // 每次最多读 4 字节；-1 表示已经到文件末尾。
+            while ((count = in.read(buffer)) != -1) {
+                System.out.println(&quot;本轮读取字节数：&quot; + count);
+                collected.write(buffer, 0, count);
+            }
+        }
+        // 汇总后再按 UTF-8 解码，避免字符跨两轮时被拆开。
+        String message = new String(collected.toByteArray(), StandardCharsets.UTF_8);
+        System.out.println(&quot;读回：&quot; + message);
+    }
+}</pre>
+                    </div>
+                    <p class="copy-status" aria-live="polite">保存为 ReadGreetingChunks.java 后运行。</p>
+                    <div class="note">这次应看到 <code>4、4、2</code> 和 <code>读回：hello java</code>。<code>-1</code> 会跳过循环体。这里为了读回短文本才汇总所有字节，大文件可边读边处理。</div>
+                </div>
+            </section>
+            <section class="slide" aria-label="引出缓冲">
+                <div class="inner">
+                    <div class="tag">为什么需要缓冲</div>
+                    <h2>读时分批取，写时能先攒一批吗？</h2>
+                    <p class="lead">刚才 <code>read(buffer)</code> 把读到的字节放进我们提供的数组。现在看写入端：如果程序不断交来很小的数据块，<code>BufferedOutputStream</code> 能在内部暂存它们，再成批交给下游。
+                    </p>
+                    <div class="flow"><span>程序写入</span><b>→</b><span>缓冲区</span><b>→</b><span>下游输出流</span></div>
+                    <div class="note">缓冲会改变数据何时交给下游流，不改变数据的含义。是否更快取决于具体程序和环境，需要测量。</div>
+                </div>
+            </section>
+
+            <section class="slide" aria-label="缓冲演示">
+                <div class="inner">
+                    <div class="tag">缓冲动画 · 小步观察</div>
+                    <h2>字节什么时候交给下游？</h2>
+                    <p class="lead">先预测：写了 1 个字节后，下游能看到几个？点一次「写入一个字节」，再点 <code>flush()</code> 比较。</p>
+                    <div class="controls"><button class="btn" id="bufferWrite" type="button">写入一个字节</button><button
+                            class="btn secondary" id="bufferFlush" type="button">flush 刷新</button><button
+                            class="btn secondary" id="bufferReset" type="button">重新开始</button></div>
+                    <div class="stage">
+                        <div class="stage-box"><strong>程序</strong>
+                            <p>每次写入 1 个字节</p>
+                        </div>
+                        <div class="stage-box active"><strong>缓冲区（容量 3）</strong>
+                            <p id="pending">空</p>
+                        </div>
+                        <div class="stage-box"><strong>下游流</strong>
+                            <p id="delivered">空</p>
+                        </div>
+                    </div>
+                    <p class="feedback" id="bufferStatus" aria-live="polite">试着先写入 1 个字节，再点击 flush。</p>
+                    <div class="note">教学模拟：为便于观察，这里在缓冲区满时立即送出。真实实现的具体送出时机取决于操作和实现；<code>flush()</code> 会把尚在缓冲中的数据交给下游流。
+                    </div>
+                </div>
+            </section>
+
+            <section class="slide" aria-label="缓冲实验">
+                <div class="inner">
+                    <div class="tag">缓冲实验 · 运行验证</div>
+                    <h2>真正的 Java 程序会怎样？</h2>
+                    <p class="lead">这个实验以下游“内存流”记录收到的字节数，避免把磁盘缓存和程序缓冲混在一起。</p>
+                    <div class="code-wrap"><span class="code-label">JAVA · BufferDemo.java</span><button type="button"
+                            class="copy-code" data-copy="buffer-code">复制完整代码</button>
+                        <pre class="code" id="buffer-code">import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+public class BufferDemo {
+    public static void main(String[] args) throws IOException {
+        // 下游用内存流，方便直接观察已经收到多少字节。
+        ByteArrayOutputStream destination = new ByteArrayOutputStream();
+        try (BufferedOutputStream out = new BufferedOutputStream(destination, 8)) {
+            out.write(new byte[] {1, 2, 3});
+            System.out.println(&quot;刷新前，下游字节数：&quot; + destination.size());
+            out.flush(); // 将缓冲区中的数据交给下游流
+            System.out.println(&quot;刷新后，下游字节数：&quot; + destination.size());
+        }
+    }
+}</pre>
+                    </div>
+                    <p class="copy-status" aria-live="polite">保存为 BufferDemo.java 后运行。</p>
+                    <div class="note">预计输出：刷新前下游字节数为 0，刷新后为 3。<code>flush()</code> 不能保证文件已持久写入磁盘，也不保证网络对方已收到。</div>
+                </div>
+            </section>
+
+            <section class="slide" aria-label="设备案例背景">
+                <div class="inner">
+                    <div class="tag">任务二 · 延续同一份读写代码</div>
+                    <h2>从读回一句话，到读回两个数</h2>
+                    <p class="lead">刚才两个读法都找回了 <code>hello java</code>。现在把同一套流程交给机房里的两个程序，一个模拟温度设备，一个读取它的记录。</p>
+                    <div class="cols">
+                        <div class="card"><h3>先试一下现有方案</h3>
+                            <pre class="code">String message = "1,26.5";</pre>
+                            <p>改 <code>WriteGreeting</code> 的这一行，再运行 <code>ReadGreeting</code>。你会读回字符串 <code>1,26.5</code>。试完将示例恢复为 <code>hello java</code>。</p>
+                        </div>
+                        <div class="card accent"><h3>这次实验的交接约定</h3>
+                            <p>读取方要得到可分别使用的两个数。双方约定文件里先放编号 <code>int</code>（4 字节），再放温度 <code>float</code>（4 字节）。</p>
+                            <p>完成标志是另一个程序能读出编号 1 和温度 26.5 ℃。</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="slide" aria-label="从文字写入到设备写入">
+                <div class="inner">
+                    <div class="tag">项目延伸 · 改造写入代码</div>
+                    <h2>沿用刚才的写入流程，数据换成数字</h2>
+                    <p class="lead">之前先把字符串编码为字节，再通过文件输出流写入。现在希望直接写入一个整数和一个浮点数。</p>
+                    <div class="cols">
+                        <div class="card">
+                            <h3>之前：WriteGreeting（片段）</h3>
+                            <pre class="code">byte[] data =
+    message.getBytes(StandardCharsets.UTF_8);
+try (FileOutputStream out =
+    new FileOutputStream("greeting.txt")) {
+    out.write(data);
+}</pre>
+                        </div>
+                        <div class="card">
+                            <h3>现在：写入两个数（片段）</h3>
+                            <pre class="code">try (DataOutputStream out =
+    new DataOutputStream(
+        new FileOutputStream("device.bin"))) {
+    out.writeInt(deviceId);
+    out.writeFloat(temperature);
+}</pre>
+                        </div>
+                    </div>
+                    <div class="note"><code>FileOutputStream</code> 仍负责连接文件；外面的 <code>DataOutputStream</code> 提供写入 Java
+                        基本类型的方法。示例中的编号先写、温度后写。</div>
+                </div>
+            </section>
+            <section class="slide" aria-label="设备写入完整代码">
+                <div class="inner">
+                    <div class="tag">机房实操 · 写入设备记录</div>
+                    <h2>先运行写入程序</h2>
+                    <p class="lead">新建 <code>WriteDevice.java</code> 并运行，记录它打印的文件路径。</p>
+                    <div class="code-wrap"><span class="code-label">JAVA · WriteDevice.java</span><button type="button"
+                            class="copy-code" data-copy="write-device-code">复制完整代码</button>
+                        <pre class="code" id="write-device-code">import java.io.DataOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
+public class WriteDevice {
+    public static void main(String[] args) throws IOException {
+        // 一条模拟设备记录：编号 1，温度 26.5 ℃。
+        int deviceId = 1;
+        float temperature = 26.5f;
+        // 文件每次会重新写入，原有内容会被覆盖。
+        try (DataOutputStream out = new DataOutputStream(
+                new FileOutputStream(&quot;device.bin&quot;))) {
+            out.writeInt(deviceId);
+            out.writeFloat(temperature);
+        }
+        System.out.println(&quot;设备记录已写入 device.bin&quot;);
+        System.out.println(&quot;文件路径：&quot; + new java.io.File(&quot;device.bin&quot;).getAbsolutePath());
+    }
+}</pre>
+                    </div>
+                    <p class="copy-status" aria-live="polite">保存为 WriteDevice.java 后运行。</p>
+                    <div class="note">默认写出 <code>device.bin</code>；再次运行会覆盖同名文件。它是按数据格式组织的字节，不要求用文本编辑器直接阅读。</div>
+                </div>
+            </section>
+            <section class="slide" aria-label="从文字读取到设备读取">
+                <div class="inner">
+                    <div class="tag">项目延伸 · 改造读取代码</div>
+                    <h2>沿用读取文件的思路，把字节还原成数</h2>
+                    <p class="lead">之前读取全部字节并按 UTF-8 还原文字。设备记录使用另一种约定：先读 4 字节整数，再读 4 字节浮点数。</p>
+                    <div class="cols">
+                        <div class="card">
+                            <h3>之前：ReadGreeting（片段）</h3>
+                            <pre class="code">byte[] data = in.readAllBytes();
+String message =
+    new String(data, StandardCharsets.UTF_8);</pre>
+                            <p>根据文字编码解释字节。</p>
+                        </div>
+                        <div class="card">
+                            <h3>现在：读设备数据（片段）</h3>
+                            <pre class="code">int deviceId = in.readInt();
+float temperature = in.readFloat();</pre>
+                            <p>根据约定的类型和顺序解释字节。</p>
+                        </div>
+                    </div>
+                    <p class="hint">这里的 <code>in</code> 是 <code>DataInputStream</code>，它包装文件输入流；完整程序见下一页。</p>
+                </div>
+            </section>
+            <section class="slide" aria-label="设备读取完整代码">
+                <div class="inner">
+                    <div class="tag">机房实操 · 读回设备记录</div>
+                    <h2>再运行读取程序</h2>
+                    <p class="lead">先运行 <code>WriteDevice</code> 生成文件；在相同工作目录运行 <code>ReadDevice</code>。</p>
+                    <div class="code-wrap"><span class="code-label">JAVA · ReadDevice.java</span><button type="button"
+                            class="copy-code" data-copy="read-device-code">复制完整代码</button>
+                        <pre class="code" id="read-device-code">import java.io.DataInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+
+public class ReadDevice {
+    public static void main(String[] args) throws IOException {
+        // 按写入时相同的类型和顺序读取。
+        try (DataInputStream in = new DataInputStream(
+                new FileInputStream(&quot;device.bin&quot;))) {
+            int deviceId = in.readInt();
+            float temperature = in.readFloat();
+            System.out.println(&quot;设备编号：&quot; + deviceId);
+            System.out.println(&quot;温度：&quot; + temperature + &quot; ℃&quot;);
+        }
+    }
+}</pre>
+                    </div>
+                    <p class="copy-status" aria-live="polite">保存为 ReadDevice.java 后运行。</p>
+                    <div class="note">预期输出：设备编号 <strong>1</strong>、温度 <strong>26.5
+                            ℃</strong>。可以先退出写入程序，再单独运行读取程序，验证文件跨运行保留。</div>
+                </div>
+            </section>
+            <section class="slide" aria-label="设备字节为何需要检查">
+                <div class="inner">
+                    <div class="tag">排查数据 · 为什么查看字节？</div>
+                    <h2>如果读回的编号不对，从哪里检查？</h2>
+                    <p class="lead">设想另一个读取程序报告编号 16777216，而写入方确认写的是 1。我们先查看文件的前 4 个字节，再检查对方使用的读取方式。</p>
+                    <div class="card">
+                        <h3>借用之前的读取方式</h3>
+                        <pre class="code">// ReadGreeting 中用过：先把文件读成字节数组
+byte[] data = in.readAllBytes();</pre>
+                        <p>这里保留数组，按字段范围逐个查看字节。</p>
+                    </div>
+                    <div class="flow"><span>前 4 字节<br><small>编号 int</small></span><b>+</b><span>后 4 字节<br><small>温度
+                                float</small></span></div>
+                    <p class="hint">文件里没有自动保存“编号”或“温度”这样的标签；接收方必须知道字段类型和顺序。</p>
+                </div>
+            </section>
+            <section class="slide" aria-label="十六进制应用">
+                <div class="inner">
+                    <div class="tag">排查数据 · 用十六进制查看</div>
+                    <h2>沿用字节数组，换一种显示方式</h2>
+                    <p class="lead">之前打印过 <code>hello java</code> 的字节值。现在仍按索引查看，但把每个字节显示为两位十六进制，方便逐字节核对。</p>
+                    <div class="cols">
+                        <div class="card">
+                            <h3>之前：十进制显示（片段）</h3>
+                            <div class="code">System.out.println("data[" + i + "] = " + data[i]);</div>
+                            <p>例如原来的 <code>h</code> 显示为 <code>104</code>。</p>
+                        </div>
+                        <div class="card">
+                            <h3>现在：十六进制显示（片段）</h3>
+                            <div class="code">System.out.printf("data[%d] = %02X%n", i, data[i] &amp; 0xFF);</div>
+                            <p><code>%02X</code> 用两位大写十六进制显示；<code>&amp; 0xFF</code> 用于按 0～255 查看有符号 byte 的原始 8 位。</p>
+                        </div>
+                    </div>
+                    <div class="note">同一个字节，十进制是 <code>104</code>，十六进制是 <code>68</code>（6 × 16 + 8）。两位十六进制对应一个字节，方便按组找字段。</div>
+                </div>
+            </section>
+            <section class="slide" aria-label="设备字节检查代码">
+                <div class="inner">
+                    <div class="tag">机房实操 · 检查字节</div>
+                    <h2>把文件字节打印出来</h2>
+                    <p class="lead">先运行 <code>WriteDevice</code>。在相同工作目录运行下面的程序；示例使用 <code>readAllBytes()</code>（JDK 9
+                        或更新版本）。</p>
+                    <div class="code-wrap"><span class="code-label">JAVA · InspectDevice.java</span><button
+                            type="button" class="copy-code" data-copy="inspect-device-code">复制完整代码</button>
+                        <pre class="code" id="inspect-device-code">import java.io.FileInputStream;
+import java.io.IOException;
+
+public class InspectDevice {
+    public static void main(String[] args) throws IOException {
+        // 读取文件的原始字节，用十六进制逐个显示。
+        try (FileInputStream in = new FileInputStream(&quot;device.bin&quot;)) {
+            byte[] data = in.readAllBytes();
+            System.out.println(&quot;字节数：&quot; + data.length);
+            for (int i = 0; i &lt; data.length; i++) {
+                System.out.printf(&quot;data[%d] = %02X%n&quot;, i, data[i] &amp; 0xFF);
+            }
+        }
+    }
+}</pre>
+                    </div>
+                    <p class="copy-status" aria-live="polite">保存为 InspectDevice.java 后运行。</p>
+                    <div class="note">这个程序与前面的 <code>ReadGreeting</code> 一样先读取字节数组；区别在于它逐个打印字节，不把它们当作文本解码。</div>
+                </div>
+            </section>
+            <section class="slide" aria-label="设备字段和字节">
+                <div class="inner">
+                    <div class="tag">排查数据 · 对照字段</div>
+                    <h2>把实际输出与写入顺序对照</h2>
+                    <p class="lead">运行 <code>InspectDevice</code> 后，示例文件共 8 字节：</p>
+                    <div class="flow"><span>00 00 00 01<br><small>data[0]～data[3] · 编号</small></span><b>+</b><span>41 D4
+                            00 00<br><small>data[4]～data[7] · 温度</small></span></div>
+                    <div class="card">
+                        <h3>为什么这样分？</h3>
+                        <p>写入时先用 <code>writeInt</code> 写编号，再用 <code>writeFloat</code> 写温度；这个示例中两者各占 4 字节。</p>
+                        <p>编号组确实是 <code>00 00 00 01</code>。下一页保持这 4 字节，用两种顺序解释它，看看能不能复现 16777216。</p>
+                    </div>
+                </div>
+            </section>
+            <section class="slide" aria-label="字节序演示">
+                <div class="inner">
+                    <div class="tag">排查数据 · 一个读取错误</div>
+                    <h2>相同的 4 字节，为什么会得到不同编号？</h2>
+                    <p class="lead"><code>writeInt(1)</code> 在本例中写出 <code>00 00 00 01</code>。文件字节顺序固定。先猜哪端把最右边的 <code>01</code> 当作最高位，再点按钮验证。</p>
+                    <div class="controls"><button class="btn" id="bigOrder" type="button">按大端读</button><button
+                            class="btn secondary" id="littleOrder" type="button">按小端读</button></div>
+                    <div class="flow"><span>00</span><span>00</span><span>00</span><span>01</span><b>→</b><span
+                            id="orderResult">请选择读取方式</span></div>
+                    <p class="feedback" id="orderExplain" aria-live="polite"></p>
+                    <div class="note"><code>DataOutputStream</code> 的多字节基本类型按大端写出；前面的 <code>DataInputStream</code>
+                        也按大端读取。本动画对比另一个读取约定，不修改文件。</div>
+                </div>
+            </section>
+            <section class="slide" aria-label="温度字段的字节与浮点数">
+                <div class="inner">
+                    <div class="tag">任务三 · 重放一组已知字节</div>
+                    <h2>把 41 D4 00 00 还原成 26.5 ℃</h2>
+                    <p class="lead">假设同学把刚才检查出的温度字节发给你。你可以在自己的程序里还原这组字节，再验证它是否仍是 26.5。</p>
+                    <div class="flow"><span>十六进制字符串<br><code>41D40000</code></span><b>→</b><span>4 字节<br><code>41 D4 00 00</code></span><b>→</b><span>大端 float<br><code>26.5</code></span></div>
+                    <div class="cols">
+                        <div class="card"><h3>每两个十六进制字符还原一个字节</h3><p><code>parseHex()</code> 把 8 个十六进制字符转成 4 字节，<code>formatHex()</code> 可以转回文本。</p></div>
+                        <div class="card accent"><h3>按约定读这个字段</h3><p><code>ByteBuffer.wrap()</code> 让程序按位置读取现有数组。指定大端后，<code>getFloat()</code> 取 4 字节，按 IEEE 754 单精度格式的符号位、指数和尾数字段恢复数值。</p></div>
+                    </div>
+                </div>
+            </section>
+            <section class="slide" aria-label="空间坐标字段约定">
+                <div class="inner">
+                    <div class="tag">任务三 · 把同一种字段读三次</div>
+                    <h2>如果设备记录的是三个坐标呢？</h2>
+                    <p class="lead">同学再给你一条模拟位置记录。双方约定依次放 <code>x</code>、<code>y</code>、<code>z</code>，每个字段都是大端 <code>float</code>，单位为米。</p>
+                    <div class="flow"><span><code>3F C0 00 00</code><br><small>x · 索引 0–3</small></span><b>→</b><span><code>C0 00 00 00</code><br><small>y · 索引 4–7</small></span><b>→</b><span><code>3F 00 00 00</code><br><small>z · 索引 8–11</small></span></div>
+                    <div class="note">沿用温度字段的读法。每次调用 <code>getFloat()</code>，读位置就往后移动 4 字节。下一页用同一个程序验证温度和坐标。</div>
+                </div>
+            </section>
+            <section class="slide" aria-label="解析坐标完整程序">
+                <div class="inner">
+                    <div class="tag">机房实操 · 解析坐标</div>
+                    <h2>读回温度和三个坐标</h2>
+                    <p class="lead">在 JDK 21 中运行 <code>DecodeCoordinates.java</code>。使用程序内的模拟输入即可。</p>
+                    <div class="note">预期得到温度 <strong>26.5 ℃</strong>，坐标 <strong>(1.5, -2.0, 0.5) m</strong>。</div>
+                    <div class="code-wrap"><span class="code-label">JAVA · DecodeCoordinates.java</span><button type="button" class="copy-code" data-copy="coordinates-code">复制完整代码</button>
+                        <pre class="code" id="coordinates-code">import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.HexFormat;
+
+public class DecodeCoordinates {
+    public static void main(String[] args) {
+        HexFormat hex = HexFormat.of().withUpperCase();
+
+        // 先重放 device.bin 中温度字段的 4 个字节。
+        byte[] temperatureBytes = hex.parseHex(&quot;41D40000&quot;);
+        float temperature = ByteBuffer.wrap(temperatureBytes)
+                .order(ByteOrder.BIG_ENDIAN).getFloat();
+        System.out.println(&quot;温度字节：&quot; + hex.formatHex(temperatureBytes));
+        System.out.println(&quot;温度：&quot; + temperature + &quot; ℃&quot;);
+
+        // 模拟收到的坐标记录。约定依次是 x、y、z，各占 4 字节，单位为米。
+        byte[] payload = hex.parseHex(&quot;3FC00000C00000003F000000&quot;);
+        ByteBuffer fields = ByteBuffer.wrap(payload).order(ByteOrder.BIG_ENDIAN);
+        float x = fields.getFloat();
+        float y = fields.getFloat();
+        float z = fields.getFloat();
+        System.out.printf(&quot;坐标 (x, y, z)：(%s, %s, %s) m%n&quot;, x, y, z);
+    }
+}</pre>
+                    </div>
+                    <p class="copy-status" aria-live="polite">保存为 DecodeCoordinates.java 后运行。</p>
+                </div>
+            </section>
+            <section class="slide" aria-label="设备案例小结">
+                <div class="inner">
+                    <div class="tag">机房验收 · 先预测，再改一处</div>
+                    <h2>能预测哪一组字节会改变吗？</h2>
+                    <div class="cols">
+                        <div class="card"><h3>改编号，再核对文件</h3><p>把 <code>WriteDevice</code> 的编号改为 2。重跑写入、读回和检查程序，核对变化发生在哪个索引。</p>
+                            <details><summary>核对结果</summary><p>编号变成 2，字节 <code>data[3]</code> 从 <code>01</code> 变成 <code>02</code>，温度保持 26.5 ℃。</p></details>
+                        </div>
+                        <div class="card accent"><h3>再试一次字段解析</h3><p>在 <code>DecodeCoordinates</code> 中，把最后 8 位十六进制字符换成 <code>3F800000</code>。预测哪一个坐标会变化。</p>
+                            <details><summary>核对结果</summary><p>第三个坐标变成 <code>1.0</code> 米，前两个坐标不变。</p></details>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="slide" aria-label="总结">
+                <div class="inner">
+                    <div class="tag">回到本讲任务</div>
+                    <h2>文件里的字节，怎样还原成数据？</h2>
+                    <div class="step-list">
+                        <div class="step"><b>文字</b><span>用 UTF-8 约定把字符串变成字节，再按同一编码还原。</span></div>
+                        <div class="step"><b>分批</b><span>每轮只用 <code>read</code> 返回的有效长度，遇到 <code>-1</code> 停止。写入端可以先缓冲，再交给下游。</span></div>
+                        <div class="step"><b>记录</b><span>用十六进制定位字段，再用双方约定的类型、顺序和字节序恢复编号、温度或坐标。</span></div>
+                    </div>
+                    <div class="card accent"><h3>下一讲</h3><p>这次两个程序通过文件交接字节。下一讲打开 TCP 连接，把字节从一个程序直接送到另一个程序。</p></div>
+                </div>
+            </section>
+        </div>
+    </main>
+    <footer class="footer"><button class="btn secondary" id="prev" type="button">← 上一页</button><span class="count"
+            id="count" aria-live="polite"></span><button class="btn" id="next" type="button">下一页 →</button><small>← →
+            键翻页 · 内容较多时可在当前页滚动</small></footer>
+    <script>(() => {
+            'use strict';
+            function highlightJava(block) {
+                const text = block.textContent, fragment = document.createDocumentFragment();
+                const pattern = /(\/\*[\s\S]*?\*\/|\/\/[^\n]*|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|@[A-Za-z_$][\w$]*|\b(?:public|private|protected|class|static|void|int|double|float|byte|new|return|while|try|throws|import|if|else|true|false|null|final)\b|\b(?:String|System|IOException|FileInputStream|FileOutputStream|DataInputStream|DataOutputStream|TemperatureRecord|TemperatureDemo)\b|\b\d+(?:\.\d+)?[fFdD]?\b)/g;
+                let last = 0, match;
+                while ((match = pattern.exec(text)) !== null) {
+                    fragment.append(document.createTextNode(text.slice(last, match.index)));
+                    const value = match[0], span = document.createElement('span');
+                    span.className = value.startsWith('//') || value.startsWith('/*') ? 'tok-comment' : value.startsWith('\"') || value.startsWith("'") ? 'tok-string' : value.startsWith('@') ? 'tok-annotation' : /^\d/.test(value) ? 'tok-number' : /^[A-Z]/.test(value) ? 'tok-type' : 'tok-keyword';
+                    span.textContent = value; fragment.append(span); last = pattern.lastIndex;
+                }
+                fragment.append(document.createTextNode(text.slice(last))); block.replaceChildren(fragment);
+            }
+
+
+
+            const $ = id => document.getElementById(id), slides = [...document.querySelectorAll('.slide')], track = $('track'); let page = 0; document.querySelectorAll('.code').forEach(highlightJava);
+            function show(n) { page = Math.max(0, Math.min(slides.length - 1, n)); track.style.transform = `translateX(-${page * 100}%)`; slides.forEach((s, i) => { s.inert = i !== page; s.setAttribute('aria-hidden', i === page ? 'false' : 'true') }); $('prev').disabled = page === 0; $('next').disabled = page === slides.length - 1; $('count').textContent = `${page + 1} / ${slides.length}` }
+            $('prev').onclick = () => show(page - 1); $('next').onclick = () => show(page + 1); document.addEventListener('keydown', e => { if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) || e.target.isContentEditable) return; if (e.key === 'ArrowRight') { e.preventDefault(); show(page + 1) } else if (e.key === 'ArrowLeft') { e.preventDefault(); show(page - 1) } }); show(0);
+            document.querySelectorAll('[data-copy]').forEach(button => button.addEventListener('click', async () => {
+                const target = $(button.dataset.copy);
+                const status = button.closest('.inner').querySelector('.copy-status');
+                try {
+                    if (!navigator.clipboard || !window.isSecureContext) throw new Error('Clipboard API unavailable');
+                    await navigator.clipboard.writeText(target.textContent);
+                    status.textContent = '已复制代码。';
+                } catch {
+                    const selection = window.getSelection();
+                    const range = document.createRange();
+                    range.selectNodeContents(target);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    try {
+                        if (document.execCommand('copy')) {
+                            selection.removeAllRanges();
+                            status.textContent = '已复制代码。';
+                            return;
+                        }
+                    } catch {}
+                    status.textContent = '已选中代码，请按 Ctrl+C（Mac 按 ⌘C）。';
+                }
+            }));
+            let flow = 0; function renderFlow() { ['flowText', 'flowBytes', 'flowFile'].forEach((id, i) => $(id).classList.toggle('active', flow === i + 1)); $('flowMid').textContent = flow >= 2 ? '编码得到字节数组' : '等待转换'; $('flowEnd').textContent = flow >= 3 ? '字节已写入 greeting.txt' : '等待写入'; $('flowStatus').textContent = ['点击下一步，从文字开始。', '程序准备好一段字符串。', 'getBytes(UTF_8) 将文字编码为字节。', '输出流将字节写入文件；读取时按相反方向还原。'][flow]; $('flowNext').disabled = flow === 3 } $('flowNext').onclick = () => { flow = Math.min(flow + 1, 3); renderFlow() }; $('flowReset').onclick = () => { flow = 0; renderFlow() }; renderFlow();
+            let pending = [], delivered = [], nextValue = 1; function renderBuffer(note) { $('pending').textContent = pending.length ? pending.join('　') : '空'; $('delivered').textContent = delivered.length ? delivered.join('　') : '空'; $('bufferStatus').textContent = note } $('bufferWrite').onclick = () => { pending.push(nextValue++); if (pending.length === 3) { delivered.push(...pending); pending = []; renderBuffer('模型缓冲区已满，将 3 字节交给下游。') } else renderBuffer('数据暂存在模型缓冲区，尚未交给下游。') }; $('bufferFlush').onclick = () => { const n = pending.length; delivered.push(...pending); pending = []; renderBuffer(n ? `flush：将暂存的 ${n} 字节交给下游。` : '缓冲区为空，没有需要送出的数据。') }; $('bufferReset').onclick = () => { pending = []; delivered = []; nextValue = 1; renderBuffer('试着先写入 1 个字节，再点击 flush。') }; $('bufferReset').onclick();
+            const message = 'hello java';
+            const sourceBytes = new TextEncoder().encode(message);
+            const readBoundaries = [0, 4, 8, 10, 10];
+            let round = 0;
+            function drawRead() {
+                const start = readBoundaries[Math.max(0, round - 1)];
+                const end = readBoundaries[round];
+                const count = end - start;
+                $('readSource').replaceChildren(...Array.from(sourceBytes, (value, i) => {
+                    const cell = document.createElement('span');
+                    const number = document.createElement('small');
+                    cell.className = 'source-byte';
+                    if (i < start) cell.classList.add('done');
+                    else if (i < end) cell.classList.add('current');
+                    cell.textContent = message[i] === ' ' ? '空格' : message[i];
+                    number.textContent = value;
+                    cell.append(number);
+                    return cell;
+                }));
+                const buffer = [null, null, null, null];
+                for (let read = 1; read <= round; read++) {
+                    sourceBytes.slice(readBoundaries[read - 1], readBoundaries[read])
+                        .forEach((value, index) => { buffer[index] = value; });
+                }
+                $('readCells').replaceChildren(...buffer.map((value, i) => {
+                    const cell = document.createElement('span');
+                    cell.className = 'cell';
+                    if (value !== null) cell.classList.add(i < count ? 'new' : 'old');
+                    cell.textContent = value ?? '—';
+                    cell.setAttribute('aria-label', 'buffer[' + i + '] ' +
+                        (value === null ? '尚未读取' : value + (i < count ? '，本次有效' : '，旧值')));
+                    return cell;
+                }));
+                $('readCollected').textContent = end ? '“' + message.slice(0, end) + '”' : '（尚未读取）';
+                const messages = [
+                    '准备读取：文件中共有 10 字节。',
+                    '第 1 次：count = 4，本次新增 hell。',
+                    '第 2 次：count = 4，本次新增 o、空格、j、a。',
+                    '第 3 次：count = 2，本次新增 va。只用前两格，后两格是旧值。',
+                    '第 4 次：read 返回 -1，文件已读完。数组保留旧值，本次没有追加。'
+                ];
+                $('readStatus').textContent = messages[round];
+                $('readNext').disabled = round === readBoundaries.length - 1;
+            }
+            $('readNext').onclick = () => { round++; drawRead(); };
+            $('readReset').onclick = () => { round = 0; drawRead(); };
+            drawRead();
+            $('bigOrder').onclick = () => { $('orderResult').textContent = '编号 = 1'; $('orderExplain').textContent = '大端读取：最右边的 01 是最低位，贡献 1 × 256⁰。' }; $('littleOrder').onclick = () => { $('orderResult').textContent = '编号 = 16777216'; $('orderExplain').textContent = '小端读取：最右边的 01 是最高位，贡献 1 × 256³，复现了实验中的错误编号。' };
+        })();</script>
+</body>
+
+</html>
