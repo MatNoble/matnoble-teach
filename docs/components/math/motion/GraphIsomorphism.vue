@@ -210,7 +210,9 @@
               :style="c.color ? { borderColor: c.color, color: c.color } : null"
             >{{ c.text }}</span>
             <span v-if="stepInAct === 4" class="gi-chip bijection show"><span class="kx" v-html="kx('f')" /> 是双射 ✓</span>
-            <span v-if="stepInAct >= 5" class="gi-chip ok show">邻接保持 ✓</span>
+            <!-- 结论随验证进度揭示：第 5/6 步标注已验边数，第 7 步五条边全部验证完成才给出邻接保持结论 -->
+            <span v-if="stepInAct >= 5 && stepInAct <= 6" class="gi-chip ok show">已验证 {{ verifiedCount(stepInAct) }}/5 条边</span>
+            <span v-if="stepInAct >= 7" class="gi-chip ok show">邻接保持 ✓</span>
             <span v-if="stepInAct >= 8" class="gi-chip noedge show">非邻接保持 ✓</span>
           </div>
 
@@ -491,7 +493,7 @@ const CAPTIONS = {
   5: [
     "理解同构：形状可以不同，连接结构必须相同。",
     "证明同构：构造一个保持邻接关系的顶点双射。某个候选对应失败，不代表不存在同构——换个对应方式再试。",
-    "证明非同构：找到一个不同的同构不变量——边数、度数序列、连通性……但全部不变量都相同，也不能直接断定同构，最终仍要回到双射。",
+    "证明非同构：找到一个不同的同构不变量——边数、度数序列、连通性……但即使上述常用同构不变量均相同，也不能直接断定同构，最终仍要回到双射。",
     "课堂思考：如何从完全图 K₅ 出发，构造至少 8 个两两非同构的生成子图？（提示：按边数分类讨论）",
   ],
 };
@@ -516,6 +518,7 @@ const armed = ref(false);
 
 const embedRef = ref(null);
 const fitRef = ref(null);
+const stageRef = ref(null);
 
 const act = computed(() => {
   for (let i = ACT_STARTS.length - 1; i >= 0; i--) {
@@ -818,9 +821,10 @@ function next() {
   stepIdx.value += 1;
   if (!fromAct1) return;
   if (act.value === 1) {
-    // 第 2 → 3 步：教学演示用的完整连续变形（已接近五角星时不重复播放）；
+    // 第 2 → 3 步：无条件交由 tweenMorph 处理——其内部会先取消残留补间，
+    // 并在已接近目标时直接吸附，杜绝「反向补间首帧前前进」时旧动画继续执行；
     // 第 1 → 2 步保持 morphT 不变（第 2 步仍由滑杆自由探索）
-    if (stepInAct.value === 3 && morphT.value < 0.999) tweenMorph(1, 3600);
+    if (stepInAct.value === 3) tweenMorph(1, 3600);
     return;
   }
   // 从第一幕离开：固定为完整五角星
@@ -872,6 +876,8 @@ function toggleFs() {
 
 function onKey(e) {
   if (!armed.value && !isFs.value) return;
+  // 系统组合键（Cmd/Ctrl/Alt + 字母，如浏览器查找、地址栏）不拦截
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
   const t = e.target;
   if (t && t.closest && t.closest("button, input, textarea, select, a, [contenteditable]")) return;
   switch (e.key) {
@@ -889,6 +895,15 @@ function onDocPointerDown(e) {
 function onFocusIn(e) {
   // 键盘焦点移出动画（如 Tab 到页面其他区域）时同样交还快捷键，避免干扰页面正常浏览
   if (!isFs.value && embedRef.value && !embedRef.value.contains(e.target)) armed.value = false;
+}
+function onStagePointerUp(e) {
+  // 鼠标/触控点按舞台内的控制按钮（步进、重播、全屏、幕标签）后，把焦点交还舞台，
+  // 使快捷键立即可用；键盘 Tab 导航不触发 pointerup，按钮的无障碍焦点与操作不受影响。
+  // 滑杆不在此列——点按后保持自身焦点，方向键继续调节滑杆。
+  const t = e.target;
+  if (!(t instanceof Element)) return;
+  if (!t.closest(".gi-btns button, .gi-tab")) return;
+  stageRef.value?.focus({ preventScroll: true });
 }
 
 /* ==================================================================
@@ -913,6 +928,7 @@ onMounted(() => {
   document.addEventListener("focusin", onFocusIn);
   document.addEventListener("fullscreenchange", onFsChange);
   document.addEventListener("webkitfullscreenchange", onFsChange);
+  embedRef.value?.addEventListener("pointerup", onStagePointerUp);
 });
 function onFsChange() {
   isFs.value = !!(document.fullscreenElement || document.webkitFullscreenElement);
@@ -925,6 +941,7 @@ onBeforeUnmount(() => {
   document.removeEventListener("pointerdown", onDocPointerDown, true);
   document.removeEventListener("focusin", onFocusIn);
   document.removeEventListener("fullscreenchange", onFsChange);
+  embedRef.value?.removeEventListener("pointerup", onStagePointerUp);
   document.removeEventListener("webkitfullscreenchange", onFsChange);
 });
 </script>
