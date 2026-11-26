@@ -232,4 +232,4 @@ html:not(.dark) .motion-tag {
 - **轻量实现**：全部动画基于 Vue + SVG + CSS 原生能力实现，无需安装任何插件。
 - **持续积累**：栏目随教学进度逐步充实，优先保证每个动画的数学正确性与教学质量。
 
-相关入口：[离散数学课程](/courses/discrete-math-2026-fall) · [教学讲义](/teaching/) · [数学工具](/tools/)
+相关入口：[离散数学课程](/courses/discrete-math)（当前学期） · [教学讲义](/teaching/) · [数学工具](/tools/)

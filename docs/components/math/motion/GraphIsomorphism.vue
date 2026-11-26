@@ -209,9 +209,9 @@
               :class="{ show: c.show }"
               :style="c.color ? { borderColor: c.color, color: c.color } : null"
             >{{ c.text }}</span>
-            <span v-if="stepInAct === 4" class="gi-chip bijection"><span class="kx" v-html="kx('f')" /> 是双射 ✓</span>
-            <span v-if="stepInAct >= 5" class="gi-chip ok">邻接保持 ✓</span>
-            <span v-if="stepInAct >= 8" class="gi-chip noedge">非邻接保持 ✓</span>
+            <span v-if="stepInAct === 4" class="gi-chip bijection show"><span class="kx" v-html="kx('f')" /> 是双射 ✓</span>
+            <span v-if="stepInAct >= 5" class="gi-chip ok show">邻接保持 ✓</span>
+            <span v-if="stepInAct >= 8" class="gi-chip noedge show">非邻接保持 ✓</span>
           </div>
 
           <!-- —— 覆盖层：结论 / 警示横幅 —— -->
@@ -241,6 +241,7 @@
                 <li>顶点之间一一对应（f 是双射）</li>
                 <li>邻接与非邻接关系同时保持（⇔，两个方向都要成立）</li>
                 <li>同构的核心是<strong>结构相同</strong>，而不是形状相同</li>
+                <li>本定义针对无向简单图；有向边、平行边、自环需相应扩展</li>
               </ul>
             </div>
           </transition>
@@ -407,13 +408,16 @@ const g2Pos = ring(["a", "b", "c", "d", "e"], ACT3.RC, ACT3.cy, ACT3.R);
 const c4Pos = { a: { x: 500, y: 125 }, b: { x: 695, y: 320 }, c: { x: 500, y: 515 }, d: { x: 305, y: 320 } };
 const p4Pos = { a: { x: 230, y: 320 }, b: { x: 410, y: 320 }, c: { x: 590, y: 320 }, d: { x: 770, y: 320 } };
 const k13Pos = { h: { x: 1100, y: 235 }, x: { x: 885, y: 420 }, y: { x: 1100, y: 465 }, z: { x: 1315, y: 420 } };
+/* 第三组专用布局：P₅ 收窄左移、C₃ ∪ K₂ 右移，两组图形（含顶点光环、
+ * 度数徽章与连通分支虚线框 pad 58）互不相交——P₅ 右缘（顶点 5 光环 806 / 徽章 816）
+ * 与分支① 框左界（890 − 58 = 832）保持 ≥ 16px 间隙。 */
 const p5Pos = {
-  1: { x: 150, y: 332 }, 2: { x: 320, y: 274 }, 3: { x: 490, y: 332 },
-  4: { x: 660, y: 274 }, 5: { x: 830, y: 332 },
+  1: { x: 130, y: 332 }, 2: { x: 290, y: 270 }, 3: { x: 450, y: 332 },
+  4: { x: 610, y: 270 }, 5: { x: 770, y: 332 },
 };
 const c3k2Pos = {
-  a: { x: 900, y: 205 }, b: { x: 1000, y: 378 }, c: { x: 800, y: 378 },
-  d: { x: 1180, y: 320 }, e: { x: 1340, y: 320 },
+  a: { x: 990, y: 205 }, b: { x: 1090, y: 378 }, c: { x: 890, y: 378 },
+  d: { x: 1270, y: 320 }, e: { x: 1430, y: 320 },
 };
 const k5Pos = ring(["1", "2", "3", "4", "5"], 230, 320, 168);
 const k5Edges = [];
@@ -439,6 +443,8 @@ const ACT_STARTS = [];
 }
 const LAST_STEP = ACT_STEP_COUNTS.reduce((a, b) => a + b, 0) - 1;
 
+/* 教学字幕：多数为固定文案；第二幕第 2–5 步为函数——根据教师点击的顶点动态生成，
+ * 保证字幕与画面高亮始终来自同一个数学状态（selectedVertex + C5_EDGES）。 */
 const CAPTIONS = {
   1: [
     "这是图 G：顶点 A、B、C、D、E；边 AB、BC、CD、DE、EA。请先记住它的样子。",
@@ -447,10 +453,17 @@ const CAPTIONS = {
   ],
   2: [
     "同一组顶点与边，两种画法。顶点的位置变了——有什么东西没有变？",
-    "选定一个顶点，例如 B。它在两幅图中是同一个顶点。（也可以点击任意顶点切换）",
-    "与 B 相邻的顶点：A 与 C。两幅图完全一致。",
-    "与 B 关联的边：BA 与 BC。边，还是那些边。",
-    "B 的度数：deg(B) = 2。换一个顶点，结论也一样。",
+    () => `选定一个顶点，例如 ${selectedVertex.value}。它在两幅图中是同一个顶点。（也可以点击任意顶点切换）`,
+    () => {
+      const [m, n] = neighborsOf(C5_EDGES, selectedVertex.value);
+      return `与 ${selectedVertex.value} 相邻的顶点：${m} 与 ${n}。两幅图完全一致。`;
+    },
+    () => {
+      const [m, n] = neighborsOf(C5_EDGES, selectedVertex.value);
+      return `与 ${selectedVertex.value} 关联的边：${selectedVertex.value}${m} 与 ${selectedVertex.value}${n}。边，还是那些边。`;
+    },
+    () =>
+      `${selectedVertex.value} 的度数：deg(${selectedVertex.value}) = ${degreeOf(C5_EDGES, selectedVertex.value)}。换一个顶点，结论也一样。`,
     "顶点的位置改变了，但顶点之间的邻接关系没有变。图论关心的不是几何形状，而是顶点之间的连接结构。",
   ],
   3: [
@@ -460,12 +473,12 @@ const CAPTIONS = {
     "最后：4 对 b，5 对 d。f：1↦a, 2↦c, 3↦e, 4↦b, 5↦d 是双射——顶点一一对应。",
     "验证邻接：G₁ 中的边 1—2，其像 {a, c} 恰好也是 G₂ 中的边。✓",
     "继续验证：2—3 ↦ c—e ✓；3—4 ↦ e—b ✓。",
-    "全部五条边一一对应：4—5 ↦ b—d ✓，5—1 ↦ d—a ✓。每条边都映到边——邻接关系完全保持。",
-    "反之，G₁ 中不相邻的 1 与 3，其像 a 与 e 在 G₂ 中也不相邻。⇔ 的两个方向都成立：非邻接关系同样保持。",
+    "全部五条边一一对应：4—5 ↦ b—d ✓，5—1 ↦ d—a ✓。五条像互不相同、又都是 G₂ 的边，而 G₂ 恰有五条边——边集恰好互映。",
+    "补全推理：f 是双射，且边集恰好互映。对无向简单图，由此相邻与不相邻关系同时保持——图中 1 与 3 ↦ a 与 e 的虚线只是直观展示，并非证明的全部。",
     "这就是图同构的定义：结构相同，形状可以不同。记作 G₁ ≅ G₂。",
   ],
   4: [
-    "第一组：C₄ 与「C₄ 加一条对角线」。先数一数边数。",
+    "判断两图是否同构，通常由易到难分层检查：顶点数与边数 → 度数序列 → 局部邻接关系 → 连通分支与圈。任意一层不同，即可断定非同构。第一组：C₄ 与「C₄ 加一条对角线」——先数边数。",
     "|E| = 4 ≠ 5。边数不同，不可能同构——边数是一个同构不变量。",
     "第二组：P₄ 与星形 K₁,₃。边数都是 3，边数失效了，换一个不变量。",
     "给每个顶点标出度数（与它关联的边数）。",
@@ -477,8 +490,8 @@ const CAPTIONS = {
   ],
   5: [
     "理解同构：形状可以不同，连接结构必须相同。",
-    "证明同构：构造一个保持邻接关系的顶点双射。",
-    "证明非同构：找到一个不同的同构不变量——边数、度数序列、连通性……",
+    "证明同构：构造一个保持邻接关系的顶点双射。某个候选对应失败，不代表不存在同构——换个对应方式再试。",
+    "证明非同构：找到一个不同的同构不变量——边数、度数序列、连通性……但全部不变量都相同，也不能直接断定同构，最终仍要回到双射。",
     "课堂思考：如何从完全图 K₅ 出发，构造至少 8 个两两非同构的生成子图？（提示：按边数分类讨论）",
   ],
 };
@@ -513,7 +526,10 @@ const act = computed(() => {
 const stepInAct = computed(() => stepIdx.value - ACT_STARTS[act.value - 1] + 1);
 const actSteps = computed(() => ACT_STEP_COUNTS[act.value - 1]);
 const actTitle = computed(() => ACT_META[act.value - 1].title);
-const caption = computed(() => CAPTIONS[act.value][stepInAct.value - 1]);
+const caption = computed(() => {
+  const entry = CAPTIONS[act.value][stepInAct.value - 1];
+  return typeof entry === "function" ? entry() : entry;
+});
 
 const kx = (tex, display = false) =>
   katex.renderToString(tex, { displayMode: display, throwOnError: false, output: "html" });
@@ -544,7 +560,7 @@ const act2Panels = computed(() => {
   const mk = (pos, title, cx) => ({
     cx,
     title,
-    clickable: true,
+    clickable: s >= 2,
     pos,
     washes: [],
     edges: C5_EDGES.map(([a, b]) => ({
@@ -571,7 +587,15 @@ const degFormula = computed(() =>
 /* 五对对应顶点的配色：深浅两套主题由 CSS 变量 --gi-p1..p5（及 -soft 半透明版）提供 */
 const PAIR_VAR = (u) => `var(--gi-p${u})`;
 const PAIR_SOFT = (u) => `var(--gi-p${u}-soft)`;
-const pairReveal = (s) => (s === 2 ? ["1"] : s === 3 ? ["1", "2", "3"] : ["1", "2", "3", "4", "5"]);
+/* 映射揭示进度：第 1 步只呈现两个待判断的图（不泄露任何对应关系），
+ * 第 2/3/4 步才逐步揭示 1、3、5 组顶点对，之后保持全部揭示并转入边验证。
+ * 任何回退都会按此表收缩，不保留后续步骤的答案。 */
+const pairReveal = (s) => {
+  if (s <= 1) return [];
+  if (s === 2) return ["1"];
+  if (s === 3) return ["1", "2", "3"];
+  return ["1", "2", "3", "4", "5"];
+};
 const verifiedCount = (s) => (s === 5 ? 1 : s === 6 ? 3 : s >= 7 ? 5 : 0);
 
 const act3Panels = computed(() => {
@@ -711,14 +735,14 @@ const panels = computed(() => {
     : [];
   return [
     {
-      cx: ACT4.LC, title: "P₅（五阶路径）", pos: p5Pos, clickable: false,
+      cx: 450, title: "P₅（五阶路径）", pos: p5Pos, clickable: false,
       edges: mkEdges(P5_EDGES, false),
       vertices: P5_IDS.map((id) => ({ id, ...p5Pos[id], deg: showDeg ? degreeOf(P5_EDGES, id) : null })),
       texts: s >= 7 ? [`度数序列 ${fmtSeq(p5Seq)}`] : [],
       washes: [],
     },
     {
-      cx: ACT4.RC, title: "C₃ ∪ K₂（不交并）", pos: c3k2Pos, clickable: false,
+      cx: 1160, title: "C₃ ∪ K₂（不交并）", pos: c3k2Pos, clickable: false,
       edges: mkEdges(C3K2_EDGES, false),
       vertices: C3K2_IDS.map((id) => ({ id, ...c3k2Pos[id], deg: showDeg ? degreeOf(C3K2_EDGES, id) : null })),
       texts: s >= 7 ? [`度数序列 ${fmtSeq(unionSeq)}`] : [],
@@ -752,67 +776,86 @@ const spaceHint = computed(() => act.value === 1 && stepInAct.value === 2 && mor
  * ================================================================== */
 
 let rafId = 0;
+let tweenTarget = null; // 当前补间的目标 morphT；null 表示无补间运行
 let reduceMotion = false;
 
 function cancelTween() {
   if (rafId) cancelAnimationFrame(rafId);
   rafId = 0;
+  tweenTarget = null;
 }
 function tweenMorph(target, duration) {
   cancelTween();
   const from = morphT.value;
-  if (reduceMotion) { morphT.value = target; return; }
+  if (reduceMotion || Math.abs(from - target) < 0.002) { morphT.value = target; return; }
+  tweenTarget = target;
   const t0 = performance.now();
   const dur = Math.max(1, duration);
   const tick = (now) => {
     const p = Math.min(1, (now - t0) / dur);
     morphT.value = from + (target - from) * p;
     if (p < 1) rafId = requestAnimationFrame(tick);
-    else rafId = 0;
+    else { rafId = 0; tweenTarget = null; }
   };
   rafId = requestAnimationFrame(tick);
 }
 
 /* ==================================================================
  * 七、交互控制
+ *
+ * 步骤进入的副作用统一遵循以下恢复规则（前进 / 回退 / 重播 / 跳幕都适用）：
+ * · 第一幕：第 1、2 步 = 完整五边形（morphT = 0），第 3 步 = 完整五角星（morphT = 1）。
+ *   仅「第 2 → 3 步的前进」播放 3.6s 连续变形；其余任何途径进入第 3 步
+ *   都直接恢复五角星，不依赖此前残留的 morphT 或仍在运行的补间。
+ * · 离开第一幕：取消补间并把 morphT 固定为 1，防止残留动画在其他幕后继续运行。
+ * · 重播 / 跳转进入第二幕：选中顶点重置为 B（该幕的初始交互状态），
+ *   幕内回退则保留教师当前的选择——画面与字幕始终由同一状态推导，不会失配。
  * ================================================================== */
 
 function next() {
   if (stepIdx.value >= LAST_STEP) return;
-  // 第一幕第 2 → 3 步：触发完整的连续变形
-  if (act.value === 1 && stepInAct.value === 2) {
-    stepIdx.value += 1;
-    if (morphT.value < 0.999) tweenMorph(1, 3600);
+  const fromAct1 = act.value === 1;
+  stepIdx.value += 1;
+  if (!fromAct1) return;
+  if (act.value === 1) {
+    // 第 2 → 3 步：教学演示用的完整连续变形（已接近五角星时不重复播放）；
+    // 第 1 → 2 步保持 morphT 不变（第 2 步仍由滑杆自由探索）
+    if (stepInAct.value === 3 && morphT.value < 0.999) tweenMorph(1, 3600);
     return;
   }
-  stepIdx.value += 1;
+  // 从第一幕离开：固定为完整五角星
+  cancelTween();
+  morphT.value = 1;
 }
 function prev() {
   if (stepIdx.value <= 0) return;
   stepIdx.value -= 1;
   if (act.value === 1) {
-    if (stepInAct.value === 2) tweenMorph(0, 900);
-    if (stepInAct.value === 1) { cancelTween(); morphT.value = 0; }
+    if (stepInAct.value === 3) { cancelTween(); morphT.value = 1; } // 从第二幕回退：直接恢复五角星
+    else if (stepInAct.value === 2) tweenMorph(0, 900);            // 第 3 → 2 步：平滑回卷到五边形
+    else { cancelTween(); morphT.value = 0; }                      // 第 1 步：完整五边形
   }
 }
 function replay() {
   cancelTween();
-  const start = ACT_STARTS[act.value - 1];
-  stepIdx.value = start;
+  stepIdx.value = ACT_STARTS[act.value - 1];
   if (act.value === 1) morphT.value = 0;
+  if (act.value === 2) selectedVertex.value = "B";
 }
 function jumpAct(n) {
   cancelTween();
   stepIdx.value = ACT_STARTS[n - 1];
   if (n === 1) morphT.value = 0;
+  if (n === 2) selectedVertex.value = "B";
 }
 function selectVertex(id) {
   selectedVertex.value = id;
 }
 function advance() {
-  // Space：优先推进当前幕的连续动画，否则进入下一步
+  // Space：优先推进当前幕的连续动画；补间进行中再按一次 Space 则立即完成，交还控制权
   if (act.value === 1 && stepInAct.value === 2 && morphT.value < 0.999) {
-    tweenMorph(1, 3600);
+    if (tweenTarget === 1) { cancelTween(); morphT.value = 1; }
+    else tweenMorph(1, 3600);
     return;
   }
   next();
@@ -843,6 +886,10 @@ function onKey(e) {
 function onDocPointerDown(e) {
   if (embedRef.value && !embedRef.value.contains(e.target)) armed.value = false;
 }
+function onFocusIn(e) {
+  // 键盘焦点移出动画（如 Tab 到页面其他区域）时同样交还快捷键，避免干扰页面正常浏览
+  if (!isFs.value && embedRef.value && !embedRef.value.contains(e.target)) armed.value = false;
+}
 
 /* ==================================================================
  * 八、自适应缩放与生命周期
@@ -863,6 +910,7 @@ onMounted(() => {
   updateFit();
   window.addEventListener("keydown", onKey);
   document.addEventListener("pointerdown", onDocPointerDown, true);
+  document.addEventListener("focusin", onFocusIn);
   document.addEventListener("fullscreenchange", onFsChange);
   document.addEventListener("webkitfullscreenchange", onFsChange);
 });
@@ -875,6 +923,7 @@ onBeforeUnmount(() => {
   if (ro) ro.disconnect();
   window.removeEventListener("keydown", onKey);
   document.removeEventListener("pointerdown", onDocPointerDown, true);
+  document.removeEventListener("focusin", onFocusIn);
   document.removeEventListener("fullscreenchange", onFsChange);
   document.removeEventListener("webkitfullscreenchange", onFsChange);
 });

@@ -182,7 +182,7 @@ const CDN_BASE = '/pdf/discrete/2026-2027-1'
       <td class="chap-title">无向图与有向图的基本概念</td>
       <td class="download-cell">
         <a :href="CDN_BASE + '/5-1_Basic_Concepts_of_Graphs.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a>
-        <a href="/motion/graph-theory/isomorphism/" class="btn-motion">▶ 动画</a>
+        <a href="/motion/graph-theory/isomorphism" class="btn-motion">▶ 动画</a>
       </td>
     </tr>
     <tr>
