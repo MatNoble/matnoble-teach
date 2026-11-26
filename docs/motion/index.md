@@ -60,6 +60,19 @@ next: false
   max-width: 640px;
 }
 .motion-hero-tagline strong { color: #f0e6d2; font-weight: 600; }
+/* 浅色模式：纸面色 + 墨色文字 + 深金点缀，与动画舞台的浅色令牌（--gi-*）同族；
+ * 品牌图标本身是深蓝底金色方块的标志图形，作为浅色页面上的品牌印记保留原样 */
+html:not(.dark) .motion-hero {
+  background: linear-gradient(148deg, #fdfcf8 0%, #f8f2e5 58%, #f0e9d8 100%);
+  border-color: rgba(160, 129, 72, 0.32);
+  color: #2e3b47;
+  box-shadow: 0 18px 44px -30px rgba(24, 37, 46, 0.4);
+}
+html:not(.dark) .motion-hero-brand { color: #8d9aa4; }
+html:not(.dark) .motion-hero-name { color: #8a6516; }
+html:not(.dark) .motion-hero-name .en { color: #a08148; }
+html:not(.dark) .motion-hero-tagline { color: #51606b; }
+html:not(.dark) .motion-hero-tagline strong { color: #2e3b47; }
 @media (max-width: 720px) {
   .motion-hero { flex-direction: column; align-items: flex-start; gap: 24px; padding: 30px 26px; }
   .motion-hero-name { font-size: 30px; }
@@ -91,6 +104,16 @@ next: false
   border-color: rgba(217, 184, 117, 0.65);
   transform: translateY(-2px);
   box-shadow: 0 14px 34px -16px rgba(24, 37, 46, 0.4);
+}
+html:not(.dark) .motion-card:hover {
+  box-shadow: 0 14px 34px -18px rgba(24, 37, 46, 0.2);
+}
+/* 浅色下小号金色文字对比度补偿：压深一档，保证标签与英文副标可读 */
+html:not(.dark) .motion-card-title .en { color: #8a6516; }
+html:not(.dark) .motion-tag {
+  color: #8a6516;
+  border-color: rgba(160, 129, 72, 0.55);
+  background: rgba(217, 184, 117, 0.14);
 }
 .motion-card-thumb {
   flex: none;
