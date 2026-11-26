@@ -32,6 +32,9 @@ const ROUTE_LABELS: Record<string, string> = {
   "teaching/linear-algebra/elementary-transformations": "初等变换",
   "teaching/linear-algebra/matrix-normal-form": "矩阵化简",
   "teaching/space-geometry-lab": "空间解析几何 3D 实验室",
+  "motion": "数学之形",
+  "motion/graph-theory": "图论",
+  "motion/graph-theory/isomorphism": "图的同构",
   "tools": "数学工具",
   "tools/countdown": "课堂倒计时",
   "tools/di-method": "DI 表格积分法",
@@ -48,7 +51,7 @@ const REDIRECT_ROUTES = new Set([
   "/courses/economic-math-2",
 ]);
 
-const DIRECTORY_ROUTES = new Set(["courses", "teaching", "tools"]);
+const DIRECTORY_ROUTES = new Set(["courses", "teaching", "tools", "motion"]);
 
 function canonicalUrl(relativePath: string): string {
   if (relativePath === "index.md") return `${SITE_ORIGIN}/`;
@@ -317,6 +320,7 @@ export default defineConfig({
       { text: "课程中心", link: "/courses/" },
       { text: "教学讲义", link: "/teaching/" },
       { text: "数学工具", link: "/tools/" },
+      { text: "数学之形", link: "/motion/" },
       { text: "主讲教师", link: "https://matnoble.top/about" },
       { text: "个人门户", link: "https://matnoble.top/" },
     ],
