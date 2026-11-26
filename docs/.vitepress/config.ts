@@ -32,6 +32,9 @@ const ROUTE_LABELS: Record<string, string> = {
   "teaching/linear-algebra/elementary-transformations": "初等变换",
   "teaching/linear-algebra/matrix-normal-form": "矩阵化简",
   "teaching/space-geometry-lab": "空间解析几何 3D 实验室",
+  "motion": "数学之形",
+  "motion/graph-theory": "图论",
+  "motion/graph-theory/isomorphism": "图的同构",
   "tools": "数学工具",
   "tools/countdown": "课堂倒计时",
   "tools/di-method": "DI 表格积分法",
@@ -47,8 +50,6 @@ const REDIRECT_ROUTES = new Set([
   "/courses/advanced-math-2",
   "/courses/economic-math-2",
 ]);
-
-const DIRECTORY_ROUTES = new Set(["courses", "teaching", "tools"]);
 
 function canonicalUrl(relativePath: string): string {
   if (relativePath === "index.md") return `${SITE_ORIGIN}/`;
@@ -89,9 +90,17 @@ function markdownMirrorUrl(relativePath: string): string {
   return `${SITE_ORIGIN}/.well-known/markdown/${route || "index"}.md`;
 }
 
-function breadcrumbItemUrl(route: string): string {
-  const trailingSlash = DIRECTORY_ROUTES.has(route) ? "/" : "";
-  return `${SITE_ORIGIN}/${route}${trailingSlash}`;
+/* 面包屑层级 URL：目录索引页（<route>/index.md）带尾斜杠，普通页面（<route>.md）不带。
+ * 两者都不存在时返回 null——该层级没有真实页面（如 /motion/graph-theory 暂无专题首页），
+ * 不应作为面包屑链接输出，避免结构化数据指向 404 路由。 */
+function breadcrumbRouteUrl(srcDir: string, route: string): string | null {
+  if (existsSync(resolve(srcDir, route, "index.md"))) {
+    return `${SITE_ORIGIN}/${route}/`;
+  }
+  if (existsSync(resolve(srcDir, `${route}.md`))) {
+    return `${SITE_ORIGIN}/${route}`;
+  }
+  return null;
 }
 
 export default defineConfig({
@@ -317,6 +326,7 @@ export default defineConfig({
       { text: "课程中心", link: "/courses/" },
       { text: "教学讲义", link: "/teaching/" },
       { text: "数学工具", link: "/tools/" },
+      { text: "数学之形", link: "/motion/" },
       { text: "主讲教师", link: "https://matnoble.top/about" },
       { text: "个人门户", link: "https://matnoble.top/" },
     ],
@@ -381,7 +391,7 @@ export default defineConfig({
   lastUpdated: true,
   cleanUrls: true,
 
-  transformHead: ({ pageData }) => {
+  transformHead: ({ pageData, siteConfig }) => {
     const url = canonicalUrl(pageData.relativePath);
 
     const siteTitle = "MatNoble 教学中心";
@@ -418,15 +428,18 @@ export default defineConfig({
       pathSegments.forEach((segment, index) => {
         const currentRoute = pathSegments.slice(0, index + 1).join("/");
         const isLast = index === pathSegments.length - 1;
+        const itemUrl = breadcrumbRouteUrl(siteConfig.srcDir, currentRoute);
+        // 中间层级仅在存在真实页面时输出（position 依据已输出条目连续编号）
+        if (!isLast && !itemUrl) return;
         const name =
           (isLast && pageData.frontmatter.breadcrumb) ||
           ROUTE_LABELS[currentRoute] ||
           segment.replace(/-/g, " ");
         breadcrumbs.push({
           "@type": "ListItem",
-          "position": index + 2,
-          "name": name,
-          "item": breadcrumbItemUrl(currentRoute)
+          position: breadcrumbs.length + 1,
+          name,
+          item: isLast ? url : itemUrl as string
         });
       });
     }

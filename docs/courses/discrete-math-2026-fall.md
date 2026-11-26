@@ -180,7 +180,10 @@ const CDN_BASE = '/pdf/discrete/2026-2027-1'
     <tr>
       <td class="chap-num">5.1</td>
       <td class="chap-title">无向图与有向图的基本概念</td>
-      <td class="download-cell"><a :href="CDN_BASE + '/5-1_Basic_Concepts_of_Graphs.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a></td>
+      <td class="download-cell">
+        <a :href="CDN_BASE + '/5-1_Basic_Concepts_of_Graphs.pdf'" target="_blank" rel="noopener" class="btn-dl">PDF 📂</a>
+        <a href="/motion/graph-theory/isomorphism" class="btn-motion">▶ 动画</a>
+      </td>
     </tr>
     <tr>
       <td class="chap-num">5.2</td>
@@ -307,6 +310,34 @@ const CDN_BASE = '/pdf/discrete/2026-2027-1'
   color: #ffffff !important;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px var(--mn-primary-ring);
+}
+
+/* 数学之形动画入口（金色系，与 PDF 下载徽章并列） */
+.btn-motion {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 4px;
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 20px;
+  background: rgba(217, 184, 117, 0.12);
+  color: #a08148 !important;
+  border: 1px solid rgba(217, 184, 117, 0.45);
+  text-decoration: none !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .btn-motion {
+  color: #d9b875 !important;
+}
+
+.btn-motion:hover {
+  background: #d9b875;
+  color: #18252e !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(217, 184, 117, 0.35);
 }
 
 /* 暂未开放状态样式 */

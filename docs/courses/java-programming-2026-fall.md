@@ -37,7 +37,7 @@ const part2Lectures = [
 const part3Lectures = [
   { chap: '3.1', topic: '字节流 I/O、十六进制编码与通信数据序列化', lesson: 'lec15' },
   { chap: '3.2', topic: '网络编程基础与 TCP Socket 通信', lesson: 'lec16' },
-  { chap: '3.3', topic: 'UDP 数据报通信与自定义二进制帧结构' },
+  { chap: '3.3', topic: 'UDP 数据报通信与自定义二进制帧结构', lesson: 'lec17' },
   { chap: '3.4', topic: 'TCP 粘包拆包与有限状态机 (FSM) 协议定界' },
   { chap: '3.5', topic: '多线程基础与并发任务处理' },
   { chap: '3.6', topic: '线程安全、并发锁与阻塞队列' }

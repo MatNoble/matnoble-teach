@@ -1,0 +1,3813 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="engineering-whiteprint">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>第 17 讲｜UDP 与遥测数据帧</title>
+<meta name="description" content="第 17 讲：一次发送，一份数据报。UDP 与自定义遥测帧，两包文字的收发与一条 21 字节帧的拼装、校验。">
+<style>
+/* ===== html-ppt assets/base.css (verbatim) ===== */
+/* html-ppt :: base.css — reset + shared tokens + layout primitives */
+/* Default tokens. Themes in assets/themes/*.css override the :root block. */
+:root {
+  --bg: #ffffff;
+  --bg-soft: #f7f7f8;
+  --surface: #ffffff;
+  --surface-2: #f2f2f4;
+  --border: rgba(0,0,0,.08);
+  --border-strong: rgba(0,0,0,.16);
+  --text-1: #111216;
+  --text-2: #55596a;
+  --text-3: #8a8f9e;
+  --accent: #3b6cff;
+  /* Text drawn on top of an --accent fill. Every theme in assets/themes/
+   * and every full-deck style.css overrides this with whichever of white /
+   * near-black clears WCAG AA against its own accent — a hardcoded ink
+   * cannot, because accents here range from #ffffff to #000000.
+   * This default is black rather than white on purpose: against the default
+   * --accent #3b6cff, white measures 4.40:1 and black 4.77:1, so only black
+   * clears AA for normal text. Reached by any deck that links no theme. */
+  --accent-ink: #000000;
+  --accent-2: #7a5cff;
+  --accent-3: #ff5c8a;
+  --good: #1aaf6c;
+  --warn: #f5a524;
+  --bad:  #e0445a;
+  --grad: linear-gradient(135deg,#3b6cff,#7a5cff 55%,#ff5c8a);
+  --grad-soft: linear-gradient(135deg,#eef2ff,#f5ecff 55%,#ffeef5);
+  --radius: 18px;
+  --radius-sm: 12px;
+  --radius-lg: 26px;
+  --shadow: 0 10px 30px rgba(18,24,40,.08), 0 2px 6px rgba(18,24,40,.04);
+  --shadow-lg: 0 24px 60px rgba(18,24,40,.14), 0 6px 16px rgba(18,24,40,.06);
+  --font-sans: 'Inter','Noto Sans SC',-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif;
+  --font-serif: 'Playfair Display','Noto Serif SC',Georgia,serif;
+  --font-mono: 'JetBrains Mono','IBM Plex Mono',SFMono-Regular,Menlo,monospace;
+  --font-display: var(--font-sans);
+  --letter-tight: -.03em;
+  --letter-normal: -.01em;
+  --ease: cubic-bezier(.4,0,.2,1);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text-1);
+  font-family:var(--font-sans);font-weight:400;line-height:1.6;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  letter-spacing:var(--letter-normal)}
+
+/* Viewport host: centres the fixed-size design canvas and letterboxes the rest.
+   Every px in a slide therefore means the same thing in the browser, in the
+   presenter preview, in the overview thumbnail and in a headless render. */
+body{width:100vw;height:100vh;overflow:hidden;
+  display:flex;align-items:center;justify-content:center}
+img,svg,video{max-width:100%;display:block}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+code,kbd,pre,samp{font-family:var(--font-mono)}
+
+/* ================= SLIDE SYSTEM ================= */
+/* ================= DESIGN CANVAS =================
+   Slides are authored against a FIXED 1920x1080 canvas and scaled to fit the
+   viewport by runtime.js (--deck-scale). Before this, .deck was 100vw/100vh
+   while type and spacing stayed in absolute px, so a 1512x850 laptop window
+   and a 1920x1080 render produced visibly different pages (issue #20).
+
+   Escape hatches:
+     <body data-fit="fluid">      -> old behaviour, canvas follows the viewport
+     <div class="deck" data-w=".." data-h="..">  -> custom canvas (e.g. 1080x1440 for 3:4)
+*/
+.deck{position:relative;flex:none;
+  width:var(--deck-w,1920px);height:var(--deck-h,1080px);
+  overflow:hidden;background:var(--bg);
+  transform:scale(var(--deck-scale,1));transform-origin:center center}
+
+/* Opt out: fluid canvas, exactly what the deck did before. */
+body[data-fit="fluid"]{display:block}
+body[data-fit="fluid"] .deck{width:100vw;height:100vh;transform:none}
+.slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:72px 96px;
+  box-sizing:border-box;
+  opacity:0;pointer-events:none;
+  transition:opacity .5s var(--ease), transform .5s var(--ease);
+  transform:translateX(30px);
+  overflow:hidden;
+}
+.slide.is-active{opacity:1;pointer-events:auto;transform:translateX(0);z-index:2}
+.slide.is-prev{transform:translateX(-30px)}
+
+/* single-page standalone (used when a layout file is opened directly) */
+body.single .slide{position:relative;width:100%;height:100%;opacity:1;transform:none;pointer-events:auto}
+body[data-fit="fluid"].single .slide{width:100vw;height:100vh}
+
+/* ================= TYPOGRAPHY ================= */
+.eyebrow{font-size:13px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--text-3)}
+.kicker{font-size:14px;font-weight:600;color:var(--accent);letter-spacing:.08em;text-transform:uppercase}
+h1.title,.h1{font-family:var(--font-display);font-size:72px;line-height:1.05;font-weight:800;letter-spacing:var(--letter-tight);margin:0 0 18px;color:var(--text-1)}
+h2.title,.h2{font-family:var(--font-display);font-size:54px;line-height:1.1;font-weight:700;letter-spacing:var(--letter-tight);margin:0 0 14px}
+h3,.h3{font-size:32px;line-height:1.2;font-weight:600;letter-spacing:var(--letter-normal);margin:0 0 10px}
+h4,.h4{font-size:22px;line-height:1.3;font-weight:600;margin:0 0 8px}
+.lede{font-size:22px;line-height:1.55;color:var(--text-2);font-weight:300;max-width:62ch}
+.dim{color:var(--text-2)}
+.dim2{color:var(--text-3)}
+.mono{font-family:var(--font-mono)}
+.serif{font-family:var(--font-serif)}
+.gradient-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+
+/* ================= LAYOUT PRIMITIVES ================= */
+.stack>*+*{margin-top:14px}
+.row{display:flex;gap:24px;align-items:center}
+.row.wrap{flex-wrap:wrap}
+.grid{display:grid;gap:24px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.center{display:flex;align-items:center;justify-content:center;text-align:center}
+.fill{flex:1}
+.sp-t{padding-top:24px}.sp-b{padding-bottom:24px}
+.mt-s{margin-top:8px}.mt-m{margin-top:18px}.mt-l{margin-top:32px}
+.mb-s{margin-bottom:8px}.mb-m{margin-bottom:18px}.mb-l{margin-bottom:32px}
+
+/* ================= CARDS ================= */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:26px 28px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.card-soft{background:var(--surface-2);border:1px solid var(--border)}
+.card-outline{background:transparent;border:1.5px solid var(--border-strong);box-shadow:none}
+.card-accent{background:var(--surface);border-top:3px solid var(--accent)}
+.card-hover{transition:transform .3s var(--ease),box-shadow .3s var(--ease)}
+.card-hover:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+
+.pill{display:inline-block;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:500;
+  background:var(--surface-2);color:var(--text-2);border:1px solid var(--border)}
+.pill-accent{background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 28%,transparent)}
+
+/* ================= BARS / DIVIDERS ================= */
+.divider{height:1px;background:var(--border);width:100%}
+.divider-accent{height:3px;width:72px;background:var(--accent);border-radius:2px}
+
+/* ================= IMAGES (issue #17) =================
+ * Framing primitives shared by every image-* layout. The frame owns the
+ * aspect ratio and the crop; the <img> just fills it. That's what lets you
+ * swap in a photo of any shape without touching the layout.
+ *   <figure class="img-frame"><img src="…" alt=""></figure>
+ *   .img-frame.contain  -> letterbox instead of crop (screenshots, diagrams,
+ *                          logos — anything where cropping loses information)
+ *   --img-ratio         -> aspect ratio of the frame (default 16/10)
+ *   --img-pos           -> object-position, e.g. "top" to protect a headline
+ */
+.img-frame{position:relative;margin:0;overflow:hidden;
+  border-radius:var(--radius);box-shadow:var(--shadow);background:var(--surface-2);
+  aspect-ratio:var(--img-ratio,16/10)}
+.img-frame > img{width:100%;height:100%;object-fit:cover;object-position:var(--img-pos,center)}
+.img-frame.contain{background:var(--bg-soft);box-shadow:none;border:1px solid var(--border)}
+.img-frame.contain > img{object-fit:contain}
+.img-frame.fill{height:100%;aspect-ratio:auto}
+.img-scrim{position:absolute;inset:0;
+  background:linear-gradient(180deg,transparent 42%,rgba(8,10,20,.72))}
+.img-cap{margin:10px 2px 0;font-size:14px;line-height:1.5;color:var(--text-3)}
+.img-tag{position:absolute;top:14px;left:14px;padding:5px 12px;border-radius:999px;
+  background:rgba(10,12,20,.55);color:#fff;font-size:12px;letter-spacing:.06em;
+  text-transform:uppercase;backdrop-filter:blur(6px)}
+
+/* ================= CHROME (header/footer/progress) ================= */
+.deck-header{position:absolute;top:24px;left:40px;right:40px;display:flex;align-items:center;justify-content:space-between;
+  font-size:12px;color:var(--text-3);letter-spacing:.12em;text-transform:uppercase;z-index:10;pointer-events:none}
+.deck-footer{position:absolute;bottom:24px;left:40px;right:40px;display:flex;align-items:center;justify-content:space-between;
+  font-size:12px;color:var(--text-3);z-index:10;pointer-events:none}
+.slide-number::before{content:attr(data-current)}
+.slide-number::after{content:" / " attr(data-total)}
+.progress-bar{position:fixed;left:0;right:0;bottom:0;height:3px;background:transparent;z-index:20}
+.progress-bar > span{display:block;height:100%;width:0;background:var(--accent);transition:width .3s var(--ease)}
+
+/* ---- custom logo (issue #11) ----
+ * One logo per deck, drawn over the slide area. Two ways in, same CSS:
+ *   1. hand-author it  -> <img class="deck-logo" data-pos="bottom-right" src="…">
+ *   2. declare it once -> <body data-logo="…" data-logo-position="bottom-right">
+ * (1) needs no JS at all; (2) is created by runtime.js. It lives inside .deck
+ * so it scales with the deck. On an exported PDF it is painted per page by the
+ * @media print block below, not by this element — see the note there. */
+.deck-logo{position:absolute;z-index:11;pointer-events:none;
+  height:var(--logo-size,44px);width:auto;max-width:30%;object-fit:contain;
+  opacity:var(--logo-opacity,.9)}
+.deck-logo[data-pos="top-left"]     {top:var(--logo-inset-y,28px);left:var(--logo-inset-x,40px)}
+.deck-logo[data-pos="top-right"]    {top:var(--logo-inset-y,28px);right:var(--logo-inset-x,40px)}
+.deck-logo[data-pos="bottom-left"]  {bottom:var(--logo-inset-y,28px);left:var(--logo-inset-x,40px)}
+.deck-logo[data-pos="bottom-right"] {bottom:var(--logo-inset-y,28px);right:var(--logo-inset-x,40px)}
+.deck-logo:not([data-pos])          {top:28px;right:40px}
+
+/* ================= PRESENTER / OVERVIEW ================= */
+/* Keep this list in sync with NOTE_SEL in assets/runtime.js — the runtime
+ * reads speaker notes from all of these, so all of them must be hidden
+ * from the audience. */
+.notes,.speaker-notes{display:none!important}
+.notes-overlay{position:fixed;inset:auto 0 0 0;max-height:42vh;background:rgba(20,22,30,.95);color:#e8ebf4;
+  padding:20px 32px;font-size:16px;line-height:1.6;border-top:1px solid rgba(255,255,255,.1);transform:translateY(100%);
+  transition:transform .3s var(--ease);z-index:40;overflow:auto;font-family:var(--font-sans)}
+.notes-overlay.open{transform:translateY(0)}
+.overview{position:fixed;inset:0;background:rgba(10,12,18,.92);backdrop-filter:blur(12px);z-index:50;
+  display:none;padding:40px;overflow:auto}
+.overview.open{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;align-content:start}
+.overview .thumb{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  aspect-ratio:16/9;overflow:hidden;cursor:pointer;position:relative;color:var(--text-1);padding:16px;
+  font-size:11px;transition:transform .2s var(--ease)}
+.overview .thumb:hover{transform:scale(1.04)}
+.overview .thumb .n{position:absolute;top:8px;left:10px;font-weight:700;font-size:14px;color:var(--text-3)}
+.overview .thumb .t{position:absolute;bottom:10px;left:14px;right:14px;font-weight:600;color:var(--text-1)}
+
+/* ================= PRESENTER VIEW ================= */
+/* Presenter view opens in a separate popup window (S key).
+ * All presenter styles are self-contained in the popup HTML generated by runtime.js.
+ * The audience window (this file) is NOT affected — it stays as normal deck view.
+ * Only the .notes class below is needed to hide speaker notes from audience. */
+
+/* ================= UTILITY ================= */
+.hidden{display:none!important}
+.nowrap{white-space:nowrap}
+.tr{text-align:right}.tc{text-align:center}.tl{text-align:left}
+.uppercase{text-transform:uppercase;letter-spacing:.12em}
+
+/* ================= PRINT ================= */
+@media print{
+  /* Every declaration here is !important on purpose. A template stylesheet
+   * scopes its rules as `.tpl-name .slide`, which is specificity (0,2,0) and
+   * beats a bare `.slide` at (0,1,0) — so without !important a template
+   * silently keeps its screen layout in print. That is how dir-key-nav-minimal
+   * (position:absolute) printed 8 slides onto 1 page and xhs-post printed 9
+   * onto 2: only the opacity/transform declarations on this rule carried
+   * !important, and the ones that decide pagination did not. */
+  body{display:block!important;width:auto!important;height:auto!important;overflow:visible!important}
+  .deck{transform:none!important;width:100%!important;height:auto!important;
+        min-height:0!important;display:block!important}
+  .slide{position:relative!important;inset:auto!important;
+         opacity:1!important;transform:none!important;
+         page-break-after:always;break-after:page;
+         width:100%!important;height:100vh!important;max-height:100vh!important}
+  .slide:last-child{page-break-after:auto;break-after:auto}
+  .deck-header,.deck-footer,.progress-bar,.notes-overlay,.overview{display:none!important}
+
+  /* Logo in print. The .deck-logo element is position:absolute inside .deck,
+   * and print collapses .deck to height:auto with every slide stacked — so the
+   * element can only anchor ONCE against the whole document and lands on a
+   * single page (or none). Hide it and paint the logo per slide instead: in
+   * print one .slide is exactly one page. runtime.js mirrors the image URL and
+   * placement onto .deck (--logo-print / data-logo-print), so this only kicks
+   * in when the runtime is present; a JS-less deck keeps the element. */
+  .deck[data-logo-print] > .deck-logo{display:none!important}
+  .deck[data-logo-print] .slide:not([data-no-logo])::after{
+    content:"";position:absolute;z-index:11;pointer-events:none;
+    width:30%;height:var(--logo-size,44px);
+    background-image:var(--logo-print);background-repeat:no-repeat;
+    background-size:contain;opacity:var(--logo-opacity,.9)}
+  .deck[data-logo-print="top-left"]     .slide:not([data-no-logo])::after{top:var(--logo-inset-y,28px);left:var(--logo-inset-x,40px);background-position:left top}
+  .deck[data-logo-print="top-right"]    .slide:not([data-no-logo])::after{top:var(--logo-inset-y,28px);right:var(--logo-inset-x,40px);background-position:right top}
+  .deck[data-logo-print="bottom-left"]  .slide:not([data-no-logo])::after{bottom:var(--logo-inset-y,28px);left:var(--logo-inset-x,40px);background-position:left bottom}
+  .deck[data-logo-print="bottom-right"] .slide:not([data-no-logo])::after{bottom:var(--logo-inset-y,28px);right:var(--logo-inset-x,40px);background-position:right bottom}
+}
+
+</style>
+<style>
+/* ===== html-ppt theme: engineering-whiteprint (verbatim) ===== */
+/* theme: engineering-whiteprint — 工程白图 */
+:root{
+  --bg:#ffffff;--bg-soft:#f8fafc;--surface:#ffffff;--surface-2:#f4f7fb;
+  --border:rgba(10,30,70,.22);--border-strong:#0a1e46;
+  --text-1:#0a1e46;--text-2:#3a4a6a;--text-3:#8090a8;
+  --accent:#0a1e46;--accent-2:#1e5ac4;--accent-3:#c42a10;
+  --accent-ink:#ffffff;  /* text on --accent — 16.3:1 */
+  --good:#1a6a3a;--warn:#c47a10;--bad:#c42a10;
+  --grad:linear-gradient(135deg,#0a1e46,#1e5ac4);
+  --grad-soft:linear-gradient(135deg,#eaf0fb,#f4f7fb);
+  --radius:0px;--radius-sm:0px;--radius-lg:0px;
+  --shadow:none;
+  --shadow-lg:0 0 0 1px var(--border-strong);
+  --font-sans:'Inter','Noto Sans SC',sans-serif;
+  --font-mono:'JetBrains Mono','IBM Plex Mono',monospace;
+  --font-display:'JetBrains Mono','Inter',monospace;
+}
+body{background:
+  repeating-linear-gradient(0deg,rgba(10,30,70,.07) 0 1px,transparent 1px 40px),
+  repeating-linear-gradient(90deg,rgba(10,30,70,.07) 0 1px,transparent 1px 40px),
+  #ffffff}
+.card{border:1px solid var(--border-strong);box-shadow:none;background:rgba(255,255,255,.85)}
+.divider{background:var(--border-strong);height:1px}
+.divider-accent{background:var(--border-strong);height:1px;width:100%}
+.kicker{font-family:var(--font-mono);color:var(--accent-2);letter-spacing:.18em}
+h1.title,h2.title,.h1,.h2{font-weight:600}
+.pill{font-family:var(--font-mono);border:1px solid var(--border-strong);border-radius:0}
+
+</style>
+<style>
+/* ===== html-ppt assets/animations/animations.css (verbatim) ===== */
+/* html-ppt :: animations.css
+ * Apply by adding class="anim-<name>" or data-anim="<name>".
+ * Durations are deliberately snappy; tweak --anim-dur per element.
+ */
+:root{--anim-dur:.7s;--anim-ease:cubic-bezier(.4,0,.2,1)}
+
+/* ---------- FADE DIRECTIONALS ---------- */
+@keyframes kf-fade-up{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:none}}
+@keyframes kf-fade-down{from{opacity:0;transform:translateY(-32px)}to{opacity:1;transform:none}}
+@keyframes kf-fade-left{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:none}}
+@keyframes kf-fade-right{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+.anim-fade-up{animation:kf-fade-up var(--anim-dur) var(--anim-ease) both}
+.anim-fade-down{animation:kf-fade-down var(--anim-dur) var(--anim-ease) both}
+.anim-fade-left{animation:kf-fade-left var(--anim-dur) var(--anim-ease) both}
+.anim-fade-right{animation:kf-fade-right var(--anim-dur) var(--anim-ease) both}
+
+/* ---------- RISE / DROP / ZOOM / BLUR / GLITCH ---------- */
+@keyframes kf-rise{from{opacity:0;transform:translateY(60px) scale(.97);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@keyframes kf-drop{from{opacity:0;transform:translateY(-60px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes kf-zoom{0%{opacity:0;transform:scale(.6)}60%{transform:scale(1.04)}100%{opacity:1;transform:scale(1)}}
+@keyframes kf-blur{from{opacity:0;filter:blur(18px)}to{opacity:1;filter:none}}
+@keyframes kf-glitch{0%{opacity:0;transform:translateX(0);clip-path:inset(0 0 0 0)}
+  20%{opacity:1;transform:translateX(-6px);clip-path:inset(20% 0 30% 0)}
+  40%{transform:translateX(4px);clip-path:inset(50% 0 10% 0)}
+  60%{transform:translateX(-3px);clip-path:inset(10% 0 60% 0)}
+  80%{transform:translateX(2px);clip-path:inset(0 0 0 0)}
+  100%{opacity:1;transform:none}}
+.anim-rise-in{animation:kf-rise .9s var(--anim-ease) both}
+.anim-drop-in{animation:kf-drop .8s var(--anim-ease) both}
+.anim-zoom-pop{animation:kf-zoom .7s cubic-bezier(.22,1.3,.36,1) both}
+.anim-blur-in{animation:kf-blur .8s var(--anim-ease) both}
+.anim-glitch-in{animation:kf-glitch .8s steps(5,end) both}
+
+/* ---------- TYPEWRITER ---------- */
+.anim-typewriter{display:inline-block;overflow:hidden;white-space:nowrap;border-right:2px solid currentColor;
+  width:0;animation:kf-type 2.4s steps(40,end) forwards, kf-caret 1s step-end infinite}
+@keyframes kf-type{to{width:100%}}
+@keyframes kf-caret{50%{border-color:transparent}}
+
+/* ---------- GLOW / SHIMMER / GRADIENT-FLOW ---------- */
+@keyframes kf-neon{0%,100%{text-shadow:0 0 8px var(--accent),0 0 20px var(--accent)}
+  50%{text-shadow:0 0 16px var(--accent),0 0 40px var(--accent),0 0 80px var(--accent)}}
+.anim-neon-glow{animation:kf-neon 2s ease-in-out infinite}
+
+.anim-shimmer-sweep{position:relative;overflow:hidden}
+.anim-shimmer-sweep::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(110deg,transparent 40%,rgba(255,255,255,.55) 50%,transparent 60%);
+  transform:translateX(-100%);animation:kf-shimmer 2.4s var(--anim-ease) infinite}
+@keyframes kf-shimmer{to{transform:translateX(100%)}}
+
+.anim-gradient-flow{background:linear-gradient(90deg,var(--accent),var(--accent-2,var(--accent)),var(--accent-3,var(--accent)),var(--accent));
+  background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+  animation:kf-gradflow 4s linear infinite}
+@keyframes kf-gradflow{to{background-position:300% 0}}
+
+/* ---------- STAGGER LIST ---------- */
+.anim-stagger-list > *{opacity:0;animation:kf-rise .65s var(--anim-ease) both}
+.anim-stagger-list > *:nth-child(1){animation-delay:.05s}
+.anim-stagger-list > *:nth-child(2){animation-delay:.15s}
+.anim-stagger-list > *:nth-child(3){animation-delay:.25s}
+.anim-stagger-list > *:nth-child(4){animation-delay:.35s}
+.anim-stagger-list > *:nth-child(5){animation-delay:.45s}
+.anim-stagger-list > *:nth-child(6){animation-delay:.55s}
+.anim-stagger-list > *:nth-child(7){animation-delay:.65s}
+.anim-stagger-list > *:nth-child(8){animation-delay:.75s}
+.anim-stagger-list > *:nth-child(n+9){animation-delay:.85s}
+
+/* ---------- COUNTER-UP (JS-driven, marker class only) ---------- */
+.counter{font-variant-numeric:tabular-nums}
+
+/* ---------- SVG PATH DRAW ---------- */
+.anim-path-draw path,.anim-path-draw line,.anim-path-draw polyline,.anim-path-draw circle,.anim-path-draw rect{
+  stroke-dasharray:1000;stroke-dashoffset:1000;animation:kf-draw 2s var(--anim-ease) forwards}
+@keyframes kf-draw{to{stroke-dashoffset:0}}
+
+/* ---------- PARALLAX TILT (hover) ---------- */
+.anim-parallax-tilt{transform-style:preserve-3d;transition:transform .4s var(--anim-ease)}
+.anim-parallax-tilt:hover{transform:perspective(900px) rotateX(6deg) rotateY(-8deg) translateZ(10px)}
+
+/* ---------- CARD FLIP 3D ---------- */
+@keyframes kf-flip{from{transform:perspective(1200px) rotateY(-90deg);opacity:0}
+  to{transform:perspective(1200px) rotateY(0);opacity:1}}
+.anim-card-flip-3d{animation:kf-flip .9s var(--anim-ease) both;transform-style:preserve-3d;backface-visibility:hidden}
+
+/* ---------- CUBE ROTATE 3D ---------- */
+@keyframes kf-cube{from{transform:perspective(1200px) rotateX(20deg) rotateY(-90deg) translateZ(-200px);opacity:0}
+  to{transform:perspective(1200px) rotateX(0) rotateY(0) translateZ(0);opacity:1}}
+.anim-cube-rotate-3d{animation:kf-cube 1s var(--anim-ease) both}
+
+/* ---------- PAGE TURN 3D ---------- */
+@keyframes kf-pageturn{from{transform:perspective(1600px) rotateY(-85deg);transform-origin:left center;opacity:0}
+  to{transform:perspective(1600px) rotateY(0);opacity:1}}
+.anim-page-turn-3d{animation:kf-pageturn 1s var(--anim-ease) both;transform-origin:left center}
+
+/* ---------- PERSPECTIVE ZOOM ---------- */
+@keyframes kf-pzoom{from{opacity:0;transform:perspective(1400px) translateZ(-400px) rotateX(12deg)}
+  to{opacity:1;transform:none}}
+.anim-perspective-zoom{animation:kf-pzoom 1s var(--anim-ease) both}
+
+/* ---------- MARQUEE SCROLL ---------- */
+.anim-marquee-scroll{display:flex;gap:48px;white-space:nowrap;animation:kf-marquee 20s linear infinite}
+@keyframes kf-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ---------- KEN BURNS ---------- */
+@keyframes kf-kenburns{0%{transform:scale(1) translate(0,0)}100%{transform:scale(1.15) translate(-2%,-1%)}}
+.anim-kenburns{animation:kf-kenburns 14s ease-in-out infinite alternate}
+
+/* ---------- CONFETTI BURST (pseudo — pure CSS sparkles) ---------- */
+.anim-confetti-burst{position:relative}
+.anim-confetti-burst::before,.anim-confetti-burst::after{
+  content:"";position:absolute;top:50%;left:50%;width:8px;height:8px;border-radius:50%;
+  background:var(--accent);box-shadow:
+    20px -30px 0 var(--accent-2,var(--accent)),-25px -20px 0 var(--accent-3,var(--accent)),
+    30px 20px 0 var(--good,#1aaf6c),-30px 25px 0 var(--warn,#f5a524),
+    40px -10px 0 var(--bad,#e0445a),-45px 0 0 var(--accent),
+    10px 40px 0 var(--accent-2,var(--accent)),-15px -40px 0 var(--accent-3,var(--accent));
+  opacity:0;animation:kf-confetti 1.2s var(--anim-ease) forwards}
+.anim-confetti-burst::after{animation-delay:.15s;transform:rotate(45deg)}
+@keyframes kf-confetti{0%{opacity:0;transform:scale(.2)}30%{opacity:1}100%{opacity:0;transform:scale(2.2)}}
+
+/* ---------- SPOTLIGHT ---------- */
+@keyframes kf-spot{0%{clip-path:circle(0% at 50% 50%)}100%{clip-path:circle(140% at 50% 50%)}}
+.anim-spotlight{animation:kf-spot 1.1s var(--anim-ease) both}
+
+/* ---------- MORPH SHAPE (SVG) ---------- */
+.anim-morph-shape path{animation:kf-morph 6s ease-in-out infinite alternate}
+@keyframes kf-morph{0%{d:path("M60,120 Q120,20 180,120 T300,120")}
+  100%{d:path("M60,120 Q120,220 180,120 T300,120")}}
+
+/* ---------- RIPPLE REVEAL ---------- */
+@keyframes kf-ripple{0%{clip-path:circle(0% at 20% 80%);opacity:.4}
+  100%{clip-path:circle(160% at 20% 80%);opacity:1}}
+.anim-ripple-reveal{animation:kf-ripple 1.2s var(--anim-ease) both}
+
+/* reduced motion */
+@media (prefers-reduced-motion: reduce){
+  [class*="anim-"]{animation:none!important;transition:none!important}
+}
+
+</style>
+<style>
+/* ===== lec17 deck.css (verbatim) ===== */
+/* ==========================================================================
+   第 17 讲课件专用样式
+   建立在 html-ppt 的 base.css 与 engineering-whiteprint 主题之上。
+   颜色一律取自主题令牌；新增的几个变量是本讲自己的语义色。
+   色彩约定（全讲统一）：发送端 = 蓝，接收端 = 绿，当前步骤 = 琥珀，错误/丢失 = 红。
+   ========================================================================== */
+
+:root{
+  /* 离线字体栈：不加载 fonts.css 的网络字体，中文回退到系统黑体。 */
+  --font-sans:'Inter','Noto Sans SC','PingFang SC','Microsoft YaHei','Source Han Sans SC','Segoe UI',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono','Cascadia Code','SF Mono',Menlo,Consolas,'Microsoft YaHei','PingFang SC',monospace;
+  --font-display:var(--font-sans);
+  --c-client:var(--accent-2);
+  --c-server:#1a6a3a;
+  --c-now:var(--warn);
+  --c-bad:var(--accent-3);
+  /* 拟物明信片的配色 */
+  --pc-ink:#0a1e46;
+}
+
+/* 画布透明，让主题的坐标纸网格铺满整个窗口 */
+.deck{background:transparent}
+
+/* ---------- 页面基础 ---------- */
+.slide{font-size:24px;line-height:1.5;justify-content:flex-start}
+.slide p{margin:0 0 12px}
+.slide p:last-child{margin-bottom:0}
+.slide ul,.slide ol{margin:0;padding-left:1.25em}
+.slide li{margin:8px 0}
+.slide code{font-family:var(--font-mono);font-size:.9em;background:var(--surface-2);border:1px solid var(--border);padding:0 6px;white-space:nowrap}
+.slide pre code{background:none;border:0;padding:0;white-space:inherit;font-size:inherit}
+.slide kbd{font:700 .82em var(--font-mono);border:1.5px solid var(--border-strong);border-bottom-width:3px;padding:1px 8px;background:var(--surface);white-space:nowrap}
+.slide strong,.slide b{font-weight:700;color:var(--text-1)}
+.slide :focus-visible{outline:3px solid var(--c-now);outline-offset:2px}
+.slide .kicker{font-size:20px;margin:0 0 6px;letter-spacing:.14em;text-transform:none}
+.slide .h2{font-size:52px;margin:0}
+.slide .h1{font-size:84px;line-height:1.08}
+.slide .lede{font-size:27px;font-weight:400}
+.slide .grid{gap:28px}
+.slide .card{padding:26px 30px}
+.slide .card h3{font-size:29px;margin:0 0 10px}
+.slide .card h4{font-size:24px;margin:0 0 8px}
+.slide .card p{font-size:24px}
+.slide .card.dim p,.slide p.dim{color:var(--text-2)}
+
+/* ---------- 页眉、页脚（全讲共用一份） ---------- */
+.deck-header,.deck-footer{font-size:17px;letter-spacing:.1em;font-family:var(--font-mono)}
+.deck-header{transition:opacity .3s}
+.deck.no-chrome .deck-header{opacity:0}
+.deck-header .now{color:var(--accent-2);font-weight:700}
+
+/* ---------- 标题区 ---------- */
+.cw-head{margin:0 0 26px}
+.cw-head .lede{margin:10px 0 0;max-width:70ch}
+.cw-head.tight{margin-bottom:18px}
+.cw-head.tight .h2{font-size:46px}
+
+/* ---------- 角色：发送端 / 接收端 ---------- */
+.card.client{border-top:5px solid var(--c-client)}
+.card.server{border-top:5px solid var(--c-server)}
+.card.now{border-top:5px solid var(--c-now)}
+.card.bad{border-top:5px solid var(--c-bad)}
+.cw-role{font:700 16px/1.2 var(--font-mono);letter-spacing:.14em;color:var(--text-2);margin:0 0 8px}
+.cw-role.client{color:var(--c-client)}
+.cw-role.server{color:var(--c-server)}
+
+/* ---------- 提示条 ---------- */
+.cw-callout{border-left:6px solid var(--accent-2);background:var(--surface-2);padding:16px 24px;font-size:23px;line-height:1.5;margin:0}
+.cw-callout.server{border-left-color:var(--c-server)}
+.cw-callout.client{border-left-color:var(--c-client)}
+.cw-callout.now{border-left-color:var(--c-now);background:color-mix(in srgb,var(--c-now) 9%,var(--surface))}
+.cw-callout p+p{margin-top:8px}
+.cw-callout.tight{font-size:20px;padding:11px 20px}
+.cw-gap{margin-top:24px}
+
+/* ---------- 按钮 ---------- */
+.cw-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);
+  padding:10px 22px;font:700 21px/1.2 var(--font-sans);cursor:pointer;white-space:nowrap}
+.cw-btn.ghost{background:var(--surface);color:var(--text-1);border-color:var(--border-strong)}
+.cw-btn.sm{padding:5px 14px;font-size:18px}
+.cw-btn.ghost.sm.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.cw-btn:disabled{opacity:.35;cursor:not-allowed}
+.cw-btn:not(:disabled):hover{filter:brightness(1.12)}
+.cw-btn:not(:disabled):active{transform:translateY(1px)}
+
+/* ---------- 分步控件（时序图、明信片场景共用） ---------- */
+.cw-stepbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.cw-count{font:700 19px var(--font-mono);color:var(--text-2);min-width:74px;text-align:center;font-variant-numeric:tabular-nums}
+.cw-caption{margin:12px 0 0;font-size:23px;line-height:1.5;min-height:2.4em}
+.cw-caption b{color:var(--accent-2)}
+.cw-keyhint{color:var(--text-3);font-size:18px}
+
+/* ---------- 终端窗口 ---------- */
+.cw-term{font-family:var(--font-mono);font-size:21px;line-height:1.6;background:var(--accent);color:var(--accent-ink);
+  border:1px solid var(--border-strong);padding-bottom:14px;min-width:0}
+.cw-term-bar{display:flex;align-items:center;gap:8px;padding:11px 16px;margin-bottom:12px;
+  border-bottom:1px solid color-mix(in srgb,var(--accent-ink) 22%,transparent)}
+.cw-term-bar i{width:13px;height:13px;border-radius:50%;background:color-mix(in srgb,var(--accent-ink) 26%,transparent);flex:none}
+.cw-term-bar span{margin-left:10px;font-size:17px;opacity:.78;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cw-term pre{margin:0;padding:0 20px;white-space:pre-wrap;overflow-wrap:anywhere;font:inherit}
+.cw-term .cw-p{color:color-mix(in srgb,var(--accent-ink) 72%,var(--accent-2))}
+.cw-term .cw-o{opacity:.8}
+.cw-term .cw-err{color:#ffd0c4}
+.cw-term .cw-ok{color:#bfe6cc}
+.cw-term .cw-caret{display:inline-block;width:11px;height:1.05em;background:var(--accent-ink);vertical-align:-.18em;margin-left:2px}
+
+/* ---------- IDEA 示意：运行窗口 / 编辑配置对话框（不是截图） ---------- */
+.cw-ide{font-family:var(--font-mono);font-size:21px;line-height:1.6;background:var(--surface);color:var(--text-1);
+  border:1px solid var(--border-strong);min-width:0}
+.cw-ide-bar{display:flex;align-items:center;gap:8px;padding:11px 16px;border-bottom:1px solid var(--border)}
+.cw-ide-bar i{width:13px;height:13px;border-radius:50%;background:var(--border-strong);flex:none}
+.cw-ide-bar span{margin-left:10px;font-size:17px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cw-ide-tool{display:flex;align-items:center;gap:14px;padding:9px 16px;border-bottom:1px solid var(--border)}
+.cw-ide-tool b{display:inline-flex;align-items:center;gap:8px;padding:3px 14px;border:1px solid var(--border-strong);
+  background:var(--surface-2);font-size:18px;font-weight:600;line-height:1.5}
+.cw-ide-tool .rerun{color:var(--good)}
+.cw-ide-tool .stop{color:var(--accent-3)}
+.cw-ide-tool>span{margin-left:auto;font-size:17px;color:var(--text-3)}
+.cw-ide-tabs{display:flex;gap:6px;padding:10px 16px 0}
+.cw-ide-tabs button{font:600 19px/1.3 var(--font-mono);padding:7px 24px 9px;border:1px solid var(--border-strong);border-bottom:none;
+  border-radius:8px 8px 0 0;background:var(--surface-2);color:var(--text-2);cursor:pointer}
+.cw-ide-tabs button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);cursor:default}
+.cw-ide-tabs button:focus-visible{outline:3px solid var(--accent-2);outline-offset:-4px}
+.cw-ide>pre{display:none;margin:0;padding:14px 20px;min-height:calc(3 * 1.6em + 28px);background:var(--accent);color:var(--accent-ink);
+  white-space:pre-wrap;overflow-wrap:anywhere;font:inherit}
+.cw-ide>pre.on{display:block}
+.cw-ide .cw-o{opacity:.8}
+.cw-ide-form{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:10px 30px;align-items:center;padding:12px 20px 16px;font-size:21px}
+.cw-ide-form>span{color:var(--text-2);text-align:right}
+.cw-ide-field{display:flex;align-items:center;gap:18px;min-width:0;border:1px solid var(--border-strong);background:var(--surface-2);padding:5px 16px}
+.cw-ide-field code{font:700 22px var(--font-mono);color:var(--text-1)}
+.cw-ide-field em{font-style:normal;font-size:18px;color:var(--text-3);overflow-wrap:anywhere}
+.cw-ide-btns{grid-column:2;justify-self:end;display:flex;gap:12px}
+.cw-ide-btns span{border:1px solid var(--border-strong);padding:3px 22px;font-size:18px;line-height:1.5;background:var(--surface)}
+.cw-ide-btns .on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+/* ---------- 代码卡 ---------- */
+.cw-codegrid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:28px;align-items:start}
+.cw-code{padding:0;min-width:0}
+.cw-code-head{display:flex;align-items:center;gap:14px;padding:7px 12px 7px 20px;border-bottom:1px solid var(--border);background:var(--surface)}
+.cw-code-head .file{font:700 21px/1.2 var(--font-mono);color:var(--text-1)}
+.cw-code-head .meta{color:var(--text-3);font-size:17px;white-space:nowrap}
+.cw-code-head .cw-btn{margin-left:auto}
+.cw-code-scroll{overflow:auto;background:var(--surface);scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;max-height:var(--code-max,none)}
+.cw-code-scroll:focus-visible{outline-offset:-4px}
+.cw-code-status{margin:0;padding:9px 20px;font-size:18px;color:var(--text-2);border-top:1px solid var(--border);min-height:1.6em}
+.cw-src[hidden]{display:none}
+.cw-pre{margin:0;padding:6px 18px 10px 0;font:var(--code-fs,17px)/var(--code-lh,23px) var(--font-mono);tab-size:4;color:var(--text-1)}
+.cw-ln{display:flex;line-height:var(--code-lh,23px);white-space:pre;min-height:var(--code-lh,23px);padding-right:16px}
+.cw-ln>.mk{flex:0 0 36px;display:flex;align-items:center;justify-content:center}
+.cw-ln>.mk b{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;
+  border:1.5px solid var(--text-2);font:800 15px/1 var(--font-mono);color:var(--text-1);background:var(--surface)}
+.cw-ln>.no{flex:0 0 52px;text-align:right;padding-right:16px;color:var(--text-3);user-select:none;font-size:16px}
+.cw-ln.mark{background:color-mix(in srgb,var(--c-now) 13%,var(--surface));box-shadow:inset 5px 0 0 var(--c-now)}
+.cw-ln.mark>.mk b{background:var(--c-now);border-color:var(--c-now);color:var(--accent-ink)}
+.cw-imp-toggle{display:flex;align-items:center;gap:10px;width:100%;padding:0 16px;border:0;background:color-mix(in srgb,var(--accent-2) 7%,var(--surface));
+  color:var(--accent-2);font:600 18px/24px var(--font-mono);cursor:pointer;text-align:left}
+.cw-imp-toggle::before{content:'▸';font-size:15px}
+.cw-code.imports-open .cw-imp-toggle::before{content:'▾'}
+.cw-code.imports-open .cw-imp-toggle{background:none}
+.cw-code:not(.imports-open) .cw-ln.imp{display:none}
+/* 语法着色（浅色代码面板） */
+.tk-kw{color:var(--accent-2);font-weight:700}
+.tk-ty{color:var(--accent);font-weight:600}
+.tk-str{color:var(--c-server)}
+.tk-num{color:var(--c-bad)}
+.tk-cm{color:var(--text-2);font-style:italic}
+.tk-an{color:var(--c-bad)}
+.cw-code-side{display:flex;flex-direction:column;gap:20px;min-width:0}
+.cw-code-side .card{padding:22px 26px}
+.cw-map-list{list-style:none;padding:0;margin:0;display:grid;gap:12px}
+.cw-map-list li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;align-items:start;margin:0}
+.cw-map-list b.cw-b{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;border:1.5px solid var(--text-2);font:800 17px/1 var(--font-mono);margin-top:3px}
+.cw-map-list p{font-size:22px;line-height:1.45;margin:0}
+.cw-term.compact{font-size:19px}
+
+/* ---------- 流程步骤（来自 process-steps 布局） ---------- */
+.cw-steps{display:grid;grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:26px;margin-top:26px}
+.cw-step{position:relative;padding:30px 26px 24px;border:1px solid var(--border-strong);background:var(--surface)}
+.cw-step .num{position:absolute;top:-23px;left:24px;width:46px;height:46px;background:var(--accent);color:var(--accent-ink);
+  display:flex;align-items:center;justify-content:center;font:800 22px var(--font-mono)}
+.cw-step.client .num{background:var(--c-client)}
+.cw-step.server .num{background:var(--c-server)}
+.cw-step h4{margin:2px 0 10px;font-size:25px}
+.cw-step p{font-size:22px;line-height:1.48;color:var(--text-2)}
+.cw-step p b,.cw-step p strong{color:var(--text-1)}
+
+/* ---------- 表格（来自 table 布局） ---------- */
+.cw-table{width:100%;border-collapse:collapse;font-size:23px}
+.cw-table th,.cw-table td{padding:16px 18px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top}
+.cw-table th{font-size:18px;letter-spacing:.08em;color:var(--text-3);font-weight:700;white-space:nowrap}
+.cw-table tr:last-child td{border-bottom:0}
+.cw-table td:first-child{white-space:nowrap;font-weight:700}
+
+/* ---------- 时序图 ---------- */
+.cw-seq{display:grid;grid-template-columns:minmax(0,1fr) 566px;gap:28px;align-items:stretch}
+.cw-seq-fig{margin:0;padding:14px 18px 10px;display:flex;align-items:center;min-width:0}
+.cw-seq-fig svg{width:100%;max-width:var(--fig-max,940px);height:auto;display:block;font-family:var(--font-sans);margin:0 auto}
+.cw-cover-art svg{width:100%;height:auto;display:block;font-family:var(--font-sans)}
+.cw-seq-side{display:flex;flex-direction:column;gap:16px;min-width:0}
+.cw-seq-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;flex:1}
+.cw-seq-steps button{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;width:100%;text-align:left;align-items:start;
+  padding:12px 16px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font:inherit;color:inherit;transition:opacity .25s,background .25s,border-color .25s}
+.cw-seq-steps .cw-n{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:1.5px solid var(--text-2);font:800 17px/1 var(--font-mono);margin-top:2px}
+.cw-seq-steps .cw-t{display:block;font-size:22px;font-weight:700;line-height:1.35}
+.cw-seq-steps .cw-d{display:block;font-size:19.5px;line-height:1.42;color:var(--text-2);margin-top:4px}
+.cw-seq-steps li.client .cw-n{border-color:var(--c-client);color:var(--c-client)}
+.cw-seq-steps li.server .cw-n{border-color:var(--c-server);color:var(--c-server)}
+.cw-seq.has-focus .cw-seq-steps button{opacity:.55}
+.cw-seq.has-focus .cw-seq-steps li.on button{opacity:1;background:color-mix(in srgb,var(--c-now) 12%,var(--surface));border-color:var(--c-now);box-shadow:inset 5px 0 0 var(--c-now)}
+.cw-seq-steps li.on .cw-n{background:var(--c-now);border-color:var(--c-now);color:var(--accent-ink)}
+.cw-seq-legend{font-size:17px;color:var(--text-3);line-height:1.5;margin:0}
+/* SVG 部分 */
+.sq-box{fill:var(--surface);stroke:var(--border-strong);stroke-width:2.5}
+.sq-box.client{stroke:var(--c-client)}
+.sq-box.server{stroke:var(--c-server)}
+.sq-name{font-size:25px;font-weight:700;fill:var(--text-1)}
+.sq-sub{font:18px var(--font-mono);fill:var(--text-2)}
+.sq-life{stroke:var(--text-3);stroke-width:2;stroke-dasharray:9 8}
+.sq-bar{stroke-width:2.5}
+.sq-bar.client{fill:color-mix(in srgb,var(--c-client) 17%,var(--surface));stroke:var(--c-client)}
+.sq-bar.server{fill:color-mix(in srgb,var(--c-server) 17%,var(--surface));stroke:var(--c-server)}
+.sq-barlab{font:600 17px var(--font-mono);fill:var(--text-2)}
+.sq-bar-group.on .sq-bar{stroke-width:4.5;fill:color-mix(in srgb,var(--c-now) 26%,var(--surface));stroke:var(--c-now)}
+.sq-step{transition:opacity .3s}
+.cw-seq.has-focus .sq-step{opacity:.42}
+.cw-seq.has-focus .sq-step.on{opacity:1}
+.sq-arrow{stroke-width:3.5;fill:none}
+.sq-step.client .sq-arrow{stroke:var(--c-client)}
+.sq-step.server .sq-arrow{stroke:var(--c-server)}
+.sq-step.neutral .sq-arrow{stroke:var(--text-2);stroke-dasharray:10 8}
+.sq-step.on .sq-arrow{stroke-width:6}
+.sq-step .sq-arrow.server{stroke:var(--c-server)}
+/* 没送达的一封：红色虚线滑向中途并打 ✕ */
+.sq-arrow.lost{stroke:var(--c-bad);stroke-dasharray:12 10;stroke-width:4}
+.sq-step.on .sq-arrow.lost{stroke-width:5.5}
+.sq-lostmark{font:800 30px/1 var(--font-sans);fill:var(--c-bad)}
+.sq-step.bad .sq-arrow{stroke:var(--c-bad)}
+.sq-step.bad .sq-label,.sq-step.lost .sq-label{fill:var(--c-bad)}
+.sq-label{font-size:23px;font-weight:700;fill:var(--text-1)}
+.sq-label.code{font:600 21px var(--font-mono)}
+.sq-cap{font:17.5px var(--font-mono);fill:var(--text-2)}
+.sq-num{font:800 17px var(--font-mono);fill:var(--text-1)}
+.sq-numbg{fill:var(--surface);stroke:var(--text-3);stroke-width:1.5}
+.sq-step.on .sq-numbg{fill:var(--c-now);stroke:var(--c-now)}
+.sq-step.on .sq-num{fill:var(--accent-ink)}
+.sq-note{font-size:18px;fill:var(--text-2)}
+.sq-note.code{font:600 17px var(--font-mono)}
+.sq-end{font-size:19px;font-weight:700;fill:var(--text-2)}
+.sq-dot{opacity:0}
+.sq-axis{font:16px var(--font-mono);fill:var(--text-3);letter-spacing:.1em}
+
+/* ---------- 拟物场景：寄明信片 ---------- */
+.cw-scene-card{margin:0;padding:4px 10px 0}
+.cw-post{display:block;width:100%;max-width:1170px;height:auto;margin:0 auto}
+.po-line{stroke:var(--pc-ink);stroke-opacity:.3;stroke-width:2}
+.po-hatch{stroke:var(--pc-ink);stroke-opacity:.18;stroke-width:1.5}
+.po-route{fill:none;stroke:var(--text-3);stroke-width:3;stroke-dasharray:10 12;opacity:.45}
+.po-route-t{font:600 15px var(--font-mono);fill:var(--text-2)}
+.po-desk-top{fill:var(--surface);stroke:var(--pc-ink);stroke-width:2.5}
+.po-leg{fill:var(--surface);stroke:var(--pc-ink);stroke-width:2.5}
+.po-screen{fill:#d6e9d9;stroke:var(--pc-ink);stroke-opacity:.55;stroke-width:2}
+.po-screen-t{font:700 20px var(--font-mono);fill:#173e2b}
+.po-led{fill:#b9b3a4;stroke:var(--pc-ink);stroke-opacity:.5;stroke-width:1.5;transition:fill .3s}
+.po-led.wait{fill:var(--c-server);animation:po-breathe 1.8s ease-in-out infinite}
+.po-led.send{fill:var(--c-client)}
+.po-led.on{fill:var(--c-server)}
+@keyframes po-breathe{50%{opacity:.3}}
+.po-pole{fill:#7e2b1a}
+.po-boxbody{fill:#c0432b;stroke:#7e2b1a;stroke-width:2.5}
+.po-slot{fill:var(--pc-ink)}
+.po-box-t{font:700 16px var(--font-mono);fill:#fffef9}
+.po-name{font-size:23px;font-weight:700;fill:var(--text-1)}
+.po-sub{font:600 17px var(--font-mono);fill:var(--text-2)}
+.po-tray{fill:none;stroke:var(--pc-ink);stroke-width:3;stroke-linejoin:round}
+.po-stack rect{fill:none;stroke:var(--text-3);stroke-dasharray:7 7;stroke-width:2;opacity:.7;transition:opacity .4s}
+.cw-post.fly1 .po-stack.c1 rect,.cw-post.got1 .po-stack.c1 rect{opacity:.1}
+.cw-post.fly2 .po-stack.c2 rect,.cw-post.got2 .po-stack.c2 rect{opacity:.1}
+.po-card{opacity:0;transition:transform .9s cubic-bezier(.5,0,.2,1.1);transform:translate(224px,200px)}
+.cw-post.fly1 .po-card.c1{opacity:1}
+.cw-post.got1 .po-card.c1{opacity:1;transform:translate(1030px,200px) rotate(-4deg)}
+.po-card.c2{transform:translate(244px,222px)}
+.cw-post.fly2 .po-card.c2{opacity:1}
+.cw-post.got2 .po-card.c2{opacity:1;transform:translate(1110px,212px) rotate(5deg)}
+.po-card rect{fill:#fffdf4;stroke:var(--pc-ink);stroke-width:2.5}
+.po-stamp{fill:var(--surface-2);stroke:var(--pc-ink);stroke-dasharray:4 3;stroke-width:1.5}
+.po-addr{stroke:var(--pc-ink);stroke-opacity:.35;stroke-width:2.5;stroke-linecap:round}
+.po-msg{font:700 21px var(--font-mono);fill:var(--text-1)}
+.po-bytes{font:600 14px var(--font-mono);fill:var(--text-2)}
+.po-q{opacity:0;transition:opacity .4s}
+.cw-post.noreceipt .po-q{opacity:1;animation:po-bob 1.6s ease-in-out infinite}
+@keyframes po-bob{50%{transform:translateY(-8px)}}
+.po-q circle{fill:var(--surface);stroke:var(--c-bad);stroke-width:3}
+.po-q text{font:800 34px var(--font-sans);fill:var(--c-bad)}
+
+/* 场景 ↔ Java 对照 */
+.cw-map{margin-top:16px}
+.cw-map .card{padding:13px 18px}
+.cw-map .cw-t{font-size:22px;font-weight:700;margin:0 0 6px}
+.cw-map .cw-j{font:600 19px/1.4 var(--font-mono);color:var(--accent-2);margin:0;overflow-wrap:anywhere}
+.cw-map .cw-who{font-size:17px;font-weight:400;color:var(--text-3);margin:0 0 0 8px;white-space:nowrap}
+.cw-call-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.45fr) minmax(0,1fr);gap:24px;align-items:stretch;margin-top:14px}
+.cw-side{padding:14px 20px}
+.cw-side p{font:600 21px/1.4 var(--font-mono);margin:0;overflow-wrap:anywhere;min-height:2.4em}
+.cw-side.client p{color:var(--c-client)}
+.cw-side.server p{color:var(--c-server)}
+
+/* ---------- 自检折叠 ---------- */
+.cw-reveal{border:2px dashed var(--border-strong);background:var(--surface);padding:0;margin:0}
+.cw-reveal summary{cursor:pointer;padding:15px 22px;font-size:22px;font-weight:700;color:var(--accent-2);list-style:none;user-select:none}
+.cw-reveal summary::-webkit-details-marker{display:none}
+.cw-reveal summary::before{content:'▸ ';font-family:var(--font-mono)}
+.cw-reveal[open] summary::before{content:'▾ '}
+.cw-reveal .body{padding:0 22px 18px;font-size:23px;line-height:1.5}
+.cw-reveal .body p{margin:0 0 10px}
+.cw-reveal .body p:last-child{margin:0}
+
+/* ---------- 课堂检查 ---------- */
+.cw-quiz{padding:30px 34px}
+.cw-quiz .cw-q{font-size:27px;font-weight:700;line-height:1.4;margin:0 0 20px}
+.cw-quiz label{display:flex;align-items:flex-start;gap:16px;padding:16px 20px;border:1px solid var(--border-strong);margin-bottom:14px;cursor:pointer;font-size:25px;line-height:1.45;background:var(--surface);transition:background .2s,border-color .2s}
+.cw-quiz label:has(input:checked){background:color-mix(in srgb,var(--accent-2) 9%,var(--surface));border-color:var(--accent-2)}
+.cw-quiz input{width:24px;height:24px;margin:5px 0 0;accent-color:var(--accent-2);flex:none}
+.cw-quiz .cw-result{min-height:1.6em;font-weight:700;color:var(--accent-2);font-size:24px;margin:16px 0 0}
+
+/* ---------- 验收清单（来自 todo-checklist 布局） ---------- */
+.cw-todo{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.cw-todo li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:16px;align-items:start;padding:16px 20px;border:1px solid var(--border);background:var(--surface);margin:0;font-size:24px;line-height:1.45}
+.cw-todo .cw-b{width:26px;height:26px;border:2.5px solid var(--border-strong);margin-top:4px}
+.cw-todo .cw-tag{font:600 17px var(--font-mono);color:var(--text-3);white-space:nowrap;margin-top:4px}
+
+/* ---------- 字节带 ---------- */
+.cw-bytes{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0}
+.cw-byte{display:inline-flex;min-width:64px;height:54px;align-items:center;justify-content:center;border:2px solid var(--border-strong);background:var(--surface);font:700 23px var(--font-mono);padding:0 10px}
+.cw-byte.hot{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.cw-byte.old{border-style:dashed;border-color:var(--text-3);color:var(--text-3);background:none;font-weight:400}
+.cw-byte.mini{min-width:48px;height:42px;font-size:19px}
+.cw-sep{color:var(--accent-2);font-weight:800;font-size:26px;padding:0 6px}
+
+/* ---------- 帧格子：21 字节的解剖条与校验演示共用 ---------- */
+.cw-frame-wrap{position:relative;margin:6px 0 0}
+.cw-frame-strip{display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;padding:4px 2px 8px;scrollbar-width:thin}
+.cw-fcell{flex:0 0 auto;width:58px;height:66px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:2px solid var(--border-strong);background:var(--surface);font:700 22px var(--font-mono);color:var(--text-1)}
+.cw-fcell i{font:400 14px var(--font-mono);font-style:normal;color:var(--text-3);margin-top:3px;font-variant-numeric:tabular-nums}
+.cw-fcell.f-head,.cw-fcell.f-tail{background:color-mix(in srgb,var(--text-3) 9%,var(--surface))}
+.cw-fcell.f-id,.cw-fcell.f-cmd{background:color-mix(in srgb,var(--c-client) 9%,var(--surface))}
+.cw-fcell.f-len{background:color-mix(in srgb,var(--c-now) 14%,var(--surface))}
+.cw-fcell.f-pay{background:color-mix(in srgb,var(--c-server) 9%,var(--surface))}
+.cw-fcell.f-sum{background:color-mix(in srgb,var(--c-bad) 9%,var(--surface))}
+.cw-fcell.lit{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.cw-fcell.lit i{color:color-mix(in srgb,var(--accent-ink) 75%,var(--accent))}
+.cw-frame-sumbar{position:absolute;top:100%;left:calc(8px + 2 * 66px);width:calc(16 * 66px - 8px);height:12px;margin-top:2px;
+  background:color-mix(in srgb,var(--c-now) 30%,transparent);border-left:2px solid var(--c-now);border-right:2px solid var(--c-now)}
+.cw-frame-sumbar b{position:absolute;left:50%;top:12px;transform:translateX(-50%);white-space:nowrap;
+  font:700 17px var(--font-mono);color:var(--c-now)}
+.cw-frame-fields{display:flex;gap:10px;flex-wrap:wrap;margin-top:44px}
+.cw-ffield{border:2px solid var(--border-strong);background:var(--surface);padding:10px 16px 8px;font:600 21px/1.3 var(--font-sans);cursor:pointer;text-align:left;color:var(--text-1)}
+.cw-ffield code{display:block;font:700 17px/1.4 var(--font-mono);color:var(--text-2);margin-top:3px;background:none;border:0;padding:0;white-space:nowrap}
+.cw-ffield[aria-pressed="true"]{border-color:var(--c-now);background:color-mix(in srgb,var(--c-now) 12%,var(--surface));box-shadow:inset 0 -4px 0 var(--c-now)}
+.cw-ffield:focus-visible{outline:3px solid var(--c-now);outline-offset:2px}
+.cw-frame-detail{min-height:2.4em;font-size:23px;line-height:1.5;margin:16px 0 0}
+.cw-frame-detail b{color:var(--c-now)}
+
+/* ---------- 校验盲区三态演示 ---------- */
+.cw-checksim-bar{display:flex;gap:10px;flex-wrap:wrap}
+.cw-fcell.cs{width:52px;height:60px;font-size:20px}
+.cw-fcell.chg{border-color:var(--c-bad);background:color-mix(in srgb,var(--c-bad) 10%,var(--surface));box-shadow:inset 0 -5px 0 var(--c-bad)}
+.cw-fcell.chg i em{font-style:normal;color:var(--c-bad);font-weight:700;margin-left:4px}
+.cw-cs-line{font:600 22px/1.5 var(--font-mono);margin:0}
+.cw-cs-line code{font-size:1em}
+.cw-ok{color:var(--c-server);font-weight:800}
+.cw-no{color:var(--c-bad);font-weight:800}
+.cw-checksim-note{margin:16px 0 0;font-size:23px;line-height:1.5}
+
+/* ---------- 封面 ---------- */
+.cw-cover{justify-content:center}
+.cw-cover-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:70px;align-items:center}
+.cw-cover .h1{font-size:112px;line-height:1.06;margin:6px 0 26px;letter-spacing:-.02em}
+.cw-cover .lede{max-width:34ch;font-weight:400}
+.cw-cover .pill{font-size:19px;padding:8px 16px;font-family:var(--font-sans);letter-spacing:.02em}
+.cw-cover-art{padding:22px 24px 12px}
+.cw-cover-art figcaption{font-size:17px;color:var(--text-3);text-align:center;margin-top:4px}
+.cw-cover .anim-stagger-list>*{animation-duration:.7s}
+
+/* ---------- 动效偏好 ---------- */
+@media (prefers-reduced-motion:reduce){
+  .cw-post *,.cw-seq *,.cw-btn,.cw-seq-steps button,.deck-header{transition:none!important;animation:none!important}
+}
+
+/* 补充：迷你时序图 */
+.cw-seq svg.mini .sq-name{font-size:21px}
+.cw-seq svg.mini .sq-label{font-size:20px}
+.cw-seq svg.mini .sq-label.code{font-size:18px}
+.cw-seq svg.mini .sq-life{stroke-dasharray:7 6}
+.cw-seq svg.mini .sq-arrow{stroke-width:3}
+
+/* ---------- 代码片段（标明出自哪个类的节选） ---------- */
+.cw-snippet{margin:0 0 16px;padding:16px 20px;background:var(--surface-2);border:1px solid var(--border);font:21px/1.5 var(--font-mono);
+  color:var(--text-1);white-space:pre-wrap;overflow-wrap:anywhere;tab-size:4}
+.cw-snippet.sm{font-size:19px;padding:12px 16px}
+
+.cw-seqbox{display:block}
+
+/* ---------- 正文在标题下方居中；文字较少的页用更大字号 ---------- */
+.cw-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:safe center}
+.slide.roomy{font-size:27px}
+.roomy .card p{font-size:27px}
+.roomy .card h3{font-size:33px}
+.roomy li{font-size:26px}
+.roomy .cw-snippet{font-size:24px;line-height:1.45}
+.roomy .cw-snippet.sm{font-size:20px}
+.roomy .cw-callout{font-size:26px;padding:20px 28px}
+.roomy .cw-term{font-size:26px}
+.roomy .cw-term.compact{font-size:21px}
+.roomy .cw-ide{font-size:26px}
+.roomy .cw-ide-form{font-size:21px}
+.roomy .cw-step p{font-size:25px}
+.roomy .cw-step h4{font-size:28px}
+.roomy .cw-table{font-size:26px}
+.roomy .cw-table th{font-size:19px}
+.roomy .cw-quiz label{font-size:28px;padding:20px 24px}
+.roomy .cw-quiz .cw-q{font-size:30px}
+.roomy .cw-todo li{font-size:27px;padding:20px 24px}
+.roomy .cw-reveal summary{font-size:25px}
+.roomy .cw-reveal .body{font-size:26px}
+.roomy .cw-byte{min-width:72px;height:62px;font-size:26px}
+.roomy .cw-byte.mini{min-width:52px;height:46px;font-size:20px}
+.roomy .cw-map-list p{font-size:24px}
+.roomy .cw-keyhint{font-size:19px}
+.roomy .cw-frame-detail{font-size:26px}
+.roomy .cw-checksim-note{font-size:26px}
+
+</style>
+</head>
+<body>
+<div class="deck">
+  <div class="deck-header"><span class="now" id="cw-section">第 17 讲</span><span>Java 程序设计 · 第三部分 · 第 17 讲</span></div>
+
+  <!-- 1 封面 -->
+  <section class="slide cw-cover" data-title="封面" data-section="第 17 讲" data-chrome="off">
+    <div class="cw-cover-grid">
+      <div class="anim-stagger-list" data-anim-target>
+        <p class="kicker">第三部分 · 第 17 讲</p>
+        <h1 class="h1">一次发送，<br>一份数据报</h1>
+        <p class="lede">UDP 和自定义遥测帧。沿用第 16 讲的 hello java：这次不建连接，每一份数据报自己走完全程；再把第 15 讲的坐标字节拼成一条能检错的帧。</p>
+        <div class="row wrap mt-l"><span class="pill pill-accent">任务一 · 两包文字</span><span class="pill">任务二 · 一条 21 字节帧</span><span class="pill">JDK 21 · 本机回环 16017</span></div>
+      </div>
+      <figure class="card cw-cover-art" data-seq="cover">
+        <figcaption>本讲主线：先交接两包文字，再拼一条 21 字节遥测帧</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- 2 从第 16 讲接过来 -->
+  <section class="slide roomy" data-title="同一句话，这次整包整包地寄" data-section="开场">
+    <header class="cw-head">
+      <p class="kicker">从第 16 讲接过来</p>
+      <h2 class="h2">同一句话，这次整包整包地寄</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="card">
+        <div class="cw-role">第 16 讲 · TCP 字节流</div>
+        <h3>连上以后，Continuous 地读写</h3>
+<pre class="cw-snippet"><code>out.write(message + "\n");
+out.flush();
+String line = in.readLine();</code></pre>
+        <p class="dim">先建立连接，再沿一条字节流读写；一行的结束靠换行约定。</p>
+      </div>
+      <div class="card accent">
+        <div class="cw-role client">这一节课 · UDP 数据报</div>
+        <h3>每次发送，都是完整的一封</h3>
+<pre class="cw-snippet"><code>socket.send(packet);
+socket.receive(packet);
+int length = packet.getLength();</code></pre>
+        <p class="dim">不建立连接。两次 <code>send()</code> 提交两份独立的数据报；接收时用 <code>getLength()</code> 认出本包的有效字节。</p>
+      </div>
+    </div>
+    <div class="cw-callout cw-gap">还是发送 <code>hello java</code> 和 <code>ok</code>，这次<strong>两条都不加换行</strong>——数据报自带边界，不需要行结束符。上次先 <code>connect()</code> 再收发；这次没有连接这一步，写上地址直接寄。</div>
+    </div>
+  </section>
+
+  <!-- 3 今天的两个任务 -->
+  <section class="slide roomy" data-title="两个任务，留下两段能运行的程序" data-section="开场">
+    <header class="cw-head">
+      <p class="kicker">今天要完成的两件事</p>
+      <h2 class="h2">两个任务，留下两段能运行的程序</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="card accent">
+        <div class="cw-role">TASK 01 · 两包文字</div>
+        <h3>hello java 和 ok，各寄一封</h3>
+        <ul>
+          <li>在 IDEA 里先运行接收端，再运行发送端，两个程序同时跑。</li>
+          <li>认识 <code>send()</code> 和 <code>receive()</code>：谁在寄，谁在等。</li>
+          <li>只发一包，解释接收端为什么超时、发送端为什么毫无感知。</li>
+        </ul>
+        <p class="dim cw-gap"><strong>完成标志：</strong>说出两包各自的字节数，并解释数组 64 格为什么只读 10 格和 2 格。</p>
+      </div>
+      <div class="card accent">
+        <div class="cw-role">TASK 02 · 一条 21 字节帧</div>
+        <h3>把三个坐标拼成一条遥测帧</h3>
+        <ul>
+          <li>沿用第 15 讲的三个坐标，装进一条 21 字节的帧。</li>
+          <li>逐字段数出布局 <code>2+1+1+1+13+1+2</code>，认出长度字节和校验字节。</li>
+          <li>先预测再核对：电量 87 改 90 后，哪些字节会变。</li>
+        </ul>
+        <p class="dim cw-gap"><strong>完成标志：</strong>解释累加和为什么有一加一减的盲区，CRC 凭什么能发现。</p>
+      </div>
+    </div>
+    <div class="cw-callout cw-gap">全程只用本机回环 <code>127.0.0.1</code>，端口默认 <code>16017</code>，不需要联网。每个任务都留下<strong>一段能运行的程序</strong>和<strong>一条你能解释的输出</strong>。</div>
+    </div>
+  </section>
+
+  <!-- 4 拟物动画：把 UDP 想成寄明信片 -->
+  <section class="slide" data-title="把 UDP 想成寄明信片" data-section="任务一 · 两包文字">
+    <header class="cw-head tight">
+      <p class="kicker">先建立直觉 · send() 和 receive() 各在做什么</p>
+      <h2 class="h2">把 UDP 想成寄明信片</h2>
+    </header>
+    <div class="cw-body">
+    <div class="cw-callbox" data-post data-stepper>
+      <figure class="card cw-scene-card">
+        <svg class="cw-post" viewBox="0 0 1500 520" role="img" aria-labelledby="post-t post-d">
+          <title id="post-t">把 UDP 想成寄明信片：发送端逐封投递，接收端逐封拆看，没有回执</title>
+          <desc id="post-d"></desc>
+          <defs>
+            <pattern id="po-hatch" width="16" height="12" patternUnits="userSpaceOnUse">
+              <path d="M0 0 L-12 12 M16 0 L4 12 M32 0 L20 12" class="po-hatch"/>
+            </pattern>
+            <g id="po-card-tpl">
+              <rect x="0" y="0" width="176" height="108" rx="10"/>
+              <rect class="po-stamp" x="128" y="12" width="34" height="42"/>
+              <path class="po-addr" d="M124 66 H164 M124 80 H150"/>
+            </g>
+          </defs>
+
+          <!-- 桌面 -->
+          <line class="po-line" x1="40" y1="452" x2="1460" y2="452"/>
+          <rect x="40" y="452" width="1420" height="12" fill="url(#po-hatch)"/>
+
+          <!-- 邮路 -->
+          <path class="po-route" d="M340 250 Q752 60 1140 250"/>
+          <text class="po-route-t" x="752" y="94" text-anchor="middle">邮路</text>
+
+          <!-- 邮筒 -->
+          <rect class="po-pole" x="743" y="396" width="14" height="56"/>
+          <path class="po-boxbody" d="M698 396 v-66 a52 52 0 0 1 104 0 v66 z"/>
+          <rect class="po-slot" x="722" y="318" width="56" height="9" rx="4"/>
+          <text class="po-box-t" x="750" y="350" text-anchor="middle">本机</text>
+          <text class="po-box-t" x="750" y="372" text-anchor="middle">127.0.0.1</text>
+
+          <!-- 发送端的桌 -->
+          <g transform="translate(180,296)">
+            <rect class="po-leg" x="18" y="24" width="16" height="132"/>
+            <rect class="po-leg" x="306" y="24" width="16" height="132"/>
+            <rect class="po-desk-top" x="0" y="0" width="340" height="24" rx="4"/>
+            <g class="po-stack c1"><rect x="44" y="-96" width="176" height="108" rx="10"/></g>
+            <g class="po-stack c2"><rect x="64" y="-74" width="176" height="108" rx="10"/></g>
+            <rect class="po-screen" x="24" y="-176" width="292" height="64" rx="8"/>
+            <circle class="po-led" data-post-led="sender" cx="298" cy="-160" r="9"/>
+            <text class="po-screen-t" data-post-lcd="sender" x="170" y="-136" text-anchor="middle">待寄 2 封</text>
+          </g>
+          <!-- 接收端的桌 -->
+          <g transform="translate(990,296)">
+            <rect class="po-leg" x="18" y="24" width="16" height="132"/>
+            <rect class="po-leg" x="306" y="24" width="16" height="132"/>
+            <rect class="po-desk-top" x="0" y="0" width="340" height="24" rx="4"/>
+            <path class="po-tray" d="M30 -8 V-104 H310 V-8 M30 -8 H310"/>
+            <rect class="po-screen" x="24" y="-176" width="292" height="64" rx="8"/>
+            <circle class="po-led" data-post-led="receiver" cx="298" cy="-160" r="9"/>
+            <text class="po-screen-t" data-post-lcd="receiver" x="170" y="-136" text-anchor="middle">等待 receive()</text>
+          </g>
+
+          <!-- 没有回执时的问号 -->
+          <g class="po-q" transform="translate(516,124)">
+            <circle r="26"/>
+            <text y="12" text-anchor="middle">?</text>
+          </g>
+
+          <!-- 两封会飞走的明信片 -->
+          <g class="po-card c1">
+            <use href="#po-card-tpl"/>
+            <text class="po-msg" x="62" y="60" text-anchor="middle">hello java</text>
+            <text class="po-bytes" x="62" y="86" text-anchor="middle">10 字节</text>
+          </g>
+          <g class="po-card c2">
+            <use href="#po-card-tpl"/>
+            <text class="po-msg" x="62" y="60" text-anchor="middle">ok</text>
+            <text class="po-bytes" x="62" y="86" text-anchor="middle">2 字节</text>
+          </g>
+
+          <!-- 两端身份 -->
+          <text class="po-name" x="350" y="478">发送端</text>
+          <text class="po-sub" x="350" y="502">UdpGreetingSender · 寄往 127.0.0.1:16017</text>
+          <text class="po-name" x="1160" y="478">接收端</text>
+          <text class="po-sub" x="1150" y="502">UdpGreetingReceiver · 守着 16017</text>
+        </svg>
+      </figure>
+      <div class="cw-call-row">
+        <div class="card client cw-side">
+          <div class="cw-role client">SENDER · 发送端正在执行</div>
+          <p data-post-now="sender">main() 开始</p>
+        </div>
+        <div class="cw-stepper-ui">
+          <div class="cw-stepbar">
+            <button type="button" class="cw-btn ghost" data-step-prev>← 上一步</button>
+            <button type="button" class="cw-btn" data-step-next>下一步 →</button>
+            <button type="button" class="cw-btn ghost sm" data-step-reset>重置</button>
+            <span class="cw-count" data-step-count>0 / 5</span>
+          </div>
+          <p class="cw-caption" data-step-caption aria-live="polite"></p>
+        </div>
+        <div class="card server cw-side">
+          <div class="cw-role server">RECEIVER · 接收端正在执行</div>
+          <p data-post-now="receiver">receive() 等待中</p>
+        </div>
+      </div>
+    </div>
+    <div class="grid g4 cw-map">
+      <div class="card client"><p class="cw-t">寄出 <span class="cw-who">发送端</span></p><p class="cw-j">socket.send(packet)</p></div>
+      <div class="card server"><p class="cw-t">守着端口等 <span class="cw-who">接收端</span></p><p class="cw-j">socket.receive(packet)</p></div>
+      <div class="card"><p class="cw-t">拆封 <span class="cw-who">本包有效范围</span></p><p class="cw-j">getOffset() · getLength()</p></div>
+      <div class="card"><p class="cw-t">回执 <span class="cw-who">UDP 不提供</span></p><p class="cw-j">确认要应用程序自己约定</p></div>
+    </div>
+    <div class="cw-callout cw-gap tight">这是比喻：明信片对应数据报，邮筒对应 UDP 的寄送服务。真实程序里没有桌子和邮筒——能看到的是 <code>send()</code>、<code>receive()</code> 和两端的控制台。</div>
+    </div>
+  </section>
+
+  <!-- 5 时序图：两个程序怎样交接两包 -->
+  <section class="slide" data-title="两个程序怎样交接两包？" data-section="任务一 · 两包文字">
+    <header class="cw-head tight">
+      <p class="kicker">先看任务 · 时序图</p>
+      <h2 class="h2">两个程序怎样交接两包？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="cw-seqbox" data-seq="udpflow" data-stepper style="--fig-max:840px" data-intro="整张图始终可见。竖条是“正在执行、还在等”的调用，箭头是数据报的方向。按 <kbd>→</kbd> 或点击右侧步骤，逐步讲解。">
+      <div class="cw-seq">
+        <div class="cw-seq-side">
+          <div class="cw-stepbar">
+            <button type="button" class="cw-btn ghost" data-step-prev>← 上一步</button>
+            <button type="button" class="cw-btn" data-step-next>下一步 →</button>
+            <button type="button" class="cw-btn ghost sm" data-step-reset>重置</button>
+            <span class="cw-count" data-step-count>0 / 5</span>
+          </div>
+        </div>
+      </div>
+      <div class="cw-callout cw-gap" data-step-caption aria-live="polite"></div>
+    </div>
+    </div>
+  </section>
+
+  <!-- 6 机房实操：运行顺序 -->
+  <section class="slide roomy" data-title="先开接收端，再开发送端" data-section="任务一 · 两包文字">
+    <header class="cw-head tight">
+      <p class="kicker">机房实操 · IDEA · JDK 21</p>
+      <h2 class="h2">先开接收端，再开发送端</h2>
+      <p class="cw-lede">用本机回环地址 <code>127.0.0.1</code>。两端使用同一个端口，默认 <code>16017</code>。</p>
+    </header>
+    <div class="cw-body">
+    <div class="cw-steps" style="--n:3">
+      <div class="cw-step"><div class="num">1</div><h4>新建两个文件</h4><p>在 IDEA 的同一个项目里新建 <code>UdpGreetingReceiver.java</code> 和 <code>UdpGreetingSender.java</code>，用后两页的按钮复制完整代码。</p></div>
+      <div class="cw-step server"><div class="num">2</div><h4>先运行接收端</h4><p>打开 <code>UdpGreetingReceiver.java</code>，点类名左侧的绿色 ▶，选「运行」。看到<strong>「正在等待两个数据报」</strong>后先别动：它停在 <code>receive()</code>，等数据报上门。这次没有“等连接”这回事，绑定端口后就在等。</p></div>
+      <div class="cw-step client"><div class="num">3</div><h4>再运行发送端</h4><p>对 <code>UdpGreetingSender.java</code> 做同样的操作。发送端不等接收端“接听”：两封寄出、打印两行<strong>「已发出」</strong>后程序就结束。盯着接收端标签页看输出。</p></div>
+    </div>
+    <div class="cw-ide cw-gap" data-ide>
+      <div class="cw-ide-bar"><i></i><i></i><i></i><span>IDEA 示意 · 底部的「运行」窗口：一个标签页就是一个程序</span></div>
+      <div class="cw-ide-tool"><b class="rerun">↻ 重新运行</b><b class="stop">■ 停止</b><span>只作用于选中的标签页</span></div>
+      <div class="cw-ide-tabs" role="tablist" aria-label="运行窗口的标签页">
+        <button type="button" role="tab" class="on" aria-selected="true" data-ide-tab="r">UdpGreetingReceiver</button>
+        <button type="button" role="tab" aria-selected="false" data-ide-tab="s">UdpGreetingSender</button>
+      </div>
+<pre class="on" role="tabpanel" data-ide-pane="r">正在等待两个数据报，端口 16017   <span class="cw-o">← 看到这一行，再运行发送端</span>
+第 1 包：10 字节 | hello java
+第 2 包：2 字节 | ok</pre>
+<pre role="tabpanel" data-ide-pane="s">已发出：hello java
+已发出：ok   <span class="cw-o">← 发送端不等回复，发完就退出</span></pre>
+    </div>
+    <div class="cw-callout cw-gap">重跑时<strong>先选中接收端标签页点 ↻，再重跑发送端</strong>。顺序反了，两封就寄给了已退出的接收端——UDP 不报错，只是静默丢掉，发送端照样打印「已发出」。</div>
+    </div>
+  </section>
+
+  <!-- 7 接收端完整代码 -->
+  <section class="slide" data-title="接收端：等两包，按实际长度解码" data-section="任务一 · 两包文字">
+    <header class="cw-head tight">
+      <p class="kicker">机房实操 · 接收端</p>
+      <h2 class="h2">接收端：等两包，按实际长度解码</h2>
+    </header>
+    <div class="cw-body">
+    <div class="cw-codegrid">
+      <div class="card cw-code" data-marks='[{"find":"try (DatagramSocket socket = new DatagramSocket(","badge":"①","span":2},{"find":"socket.setSoTimeout(30_000)","badge":"②"},{"find":"socket.receive(packet)","badge":"③"},{"find":"int length = packet.getLength()","badge":"④"},{"find":"new String(packet.getData()","badge":"⑤","span":3}]'>
+        <div class="cw-code-head">
+          <span class="file">UdpGreetingReceiver.java</span>
+          <span class="meta">完整程序 · 26 行</span>
+          <button type="button" class="cw-btn sm" data-copy="UdpGreetingReceiver.java">复制完整代码</button>
+        </div>
+        <div class="cw-code-scroll" tabindex="0" data-scroll aria-label="UdpGreetingReceiver.java 源代码，内容较长时可滚动">
+<pre class="cw-src" id="UdpGreetingReceiver.java">import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+
+public class UdpGreetingReceiver {
+    public static void main(String[] args) throws Exception {
+        int port = args.length == 0 ? 16017 : Integer.parseInt(args[0]);
+        try (DatagramSocket socket = new DatagramSocket(
+                new InetSocketAddress("127.0.0.1", port))) {
+            socket.setSoTimeout(30_000);
+            System.out.println("正在等待两个数据报，端口 " + port);
+
+            byte[] buffer = new byte[64];
+            for (int i = 1; i &lt;= 2; i++) {
+                // 可以复用数组，每次接收都用一个新的 packet 对象。
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                socket.receive(packet);
+                int length = packet.getLength();
+                String text = new String(packet.getData(), packet.getOffset(),
+                        length, StandardCharsets.UTF_8);
+                System.out.println("第 " + i + " 包：" + length + " 字节 | " + text);
+            }
+        }
+    }
+}</pre>
+        </div>
+      </div>
+      <aside class="cw-code-side">
+        <div class="card server">
+          <div class="cw-role">RECEIVER · 对照左边的序号</div>
+          <ol class="cw-map-list">
+            <li><b class="cw-b">①</b><div><p>绑定 <code>127.0.0.1:16017</code>。UDP 接收端不用等连接，绑好端口就能收。</p></div></li>
+            <li><b class="cw-b">②</b><div><p>给 <code>receive()</code> 设 30 秒上限：等不到下一包就抛 <code>SocketTimeoutException</code>。</p></div></li>
+            <li><b class="cw-b">③</b><div><p>停在这里等下一份数据报；到达后，这份数据就装在 <code>packet</code> 里。</p></div></li>
+            <li><b class="cw-b">④</b><div><p>本包有效长度：10 或 2，由对方发来的内容决定，不是数组容量 64。</p></div></li>
+            <li><b class="cw-b">⑤</b><div><p>从本包起点 <code>getData()[getOffset()]</code> 起、按 <code>length</code> 解码；数组其余格子不参与。</p></div></li>
+          </ol>
+        </div>
+        <div class="cw-term compact">
+          <div class="cw-term-bar"><i></i><i></i><i></i><span>接收端启动后</span></div>
+<pre>正在等待两个数据报，端口 16017<span class="cw-caret"></span></pre>
+        </div>
+        <p class="cw-keyhint">保存为 UdpGreetingReceiver.java 后运行。import 默认折叠，复制时包含全部。</p>
+      </aside>
+    </div>
+    </div>
+  </section>
+
+  <!-- 8 发送端完整代码 -->
+  <section class="slide" data-title="发送端：把每条文字装进一包" data-section="任务一 · 两包文字">
+    <header class="cw-head tight">
+      <p class="kicker">机房实操 · 发送端</p>
+      <h2 class="h2">发送端：把每条文字装进一包</h2>
+    </header>
+    <div class="cw-body">
+    <div class="cw-codegrid">
+      <div class="card cw-code" data-marks='[{"find":"String[] messages","badge":"①"},{"find":"new DatagramPacket(data, data.length, host, port)","badge":"②"},{"find":"socket.send(packet)","badge":"③"}]'>
+        <div class="cw-code-head">
+          <span class="file">UdpGreetingSender.java</span>
+          <span class="meta">完整程序 · 22 行</span>
+          <button type="button" class="cw-btn sm" data-copy="UdpGreetingSender.java">复制完整代码</button>
+        </div>
+        <div class="cw-code-scroll" tabindex="0" data-scroll aria-label="UdpGreetingSender.java 源代码">
+<pre class="cw-src" id="UdpGreetingSender.java">import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
+
+public class UdpGreetingSender {
+    public static void main(String[] args) throws Exception {
+        int port = args.length == 0 ? 16017 : Integer.parseInt(args[0]);
+        InetAddress host = InetAddress.getByName("127.0.0.1");
+        String[] messages = {"hello java", "ok"};
+        try (DatagramSocket socket = new DatagramSocket()) {
+            for (String text : messages) {
+                // 每次 send 提交一份数据报，本例没有应用层回执。
+                byte[] data = text.getBytes(StandardCharsets.UTF_8);
+                DatagramPacket packet = new DatagramPacket(data, data.length, host, port);
+                socket.send(packet);
+                System.out.println("已发出：" + text);
+            }
+        }
+    }
+}</pre>
+        </div>
+      </div>
+      <aside class="cw-code-side">
+        <div class="card client">
+          <div class="cw-role">SENDER · 对照左边的序号</div>
+          <ol class="cw-map-list">
+            <li><b class="cw-b">①</b><div><p>两句要发的话，<strong>都不加换行</strong>——数据报的边界不靠它。</p></div></li>
+            <li><b class="cw-b">②</b><div><p>把字节数组、长度和收件地址端口装进一封“明信片”。</p></div></li>
+            <li><b class="cw-b">③</b><div><p>投出去就返回：UDP 不确认、不重发；两封寄完程序结束。</p></div></li>
+          </ol>
+        </div>
+        <div class="cw-term compact">
+          <div class="cw-term-bar"><i></i><i></i><i></i><span>发送端运行后</span></div>
+<pre>已发出：hello java
+已发出：ok</pre>
+        </div>
+        <p class="cw-keyhint">保存为 UdpGreetingSender.java 后运行。</p>
+      </aside>
+    </div>
+    </div>
+  </section>
+
+  <!-- 9 两边的控制台 -->
+  <section class="slide roomy" data-title="两边的控制台应该出现什么？" data-section="任务一 · 两包文字">
+    <header class="cw-head">
+      <p class="kicker">第一次交接 · 检查结果</p>
+      <h2 class="h2">两边的控制台应该出现什么？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="cw-term">
+        <div class="cw-term-bar"><i></i><i></i><i></i><span>运行窗口 · 标签页 UdpGreetingReceiver（接收端）</span></div>
+<pre>正在等待两个数据报，端口 16017
+第 1 包：10 字节 | hello java
+第 2 包：2 字节 | ok</pre>
+      </div>
+      <div class="cw-term">
+        <div class="cw-term-bar"><i></i><i></i><i></i><span>运行窗口 · 标签页 UdpGreetingSender（发送端）</span></div>
+<pre>已发出：hello java
+已发出：ok</pre>
+      </div>
+    </div>
+    <p class="dim" style="margin-top:14px">IDEA 会在每个程序退出后自动加一行“进程已结束，退出代码 0”（英文界面为 <code>Process finished with exit code 0</code>），它不是程序打印的。</p>
+    <div class="card now cw-gap">
+      <div class="cw-role">动手 · 改一处再跑</div>
+      <p>把发送端的 <code>messages</code> 改成 <code>{"hi", "udp!"}</code>。<strong>先写下你预计两包各是多少字节</strong>（提示：都是 ASCII 字符，一字节一个，空格也算），再按顺序重跑两端核对。</p>
+      <p class="dim">两包的长度变了，接收端的“N 字节”跟着变；文字内容仍按 UTF-8 解码。</p>
+    </div>
+    </div>
+  </section>
+
+  <!-- 10 64 格数组 -->
+  <section class="slide roomy" data-title="64 格数组，为什么第二包只读 2 格？" data-section="任务一 · 两包文字">
+    <header class="cw-head tight">
+      <p class="kicker">对照第 15 讲 · 只用有效数据</p>
+      <h2 class="h2">64 格数组，为什么第二包只读 2 格？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="card">
+        <div class="cw-role">第 15 讲 · 分批读文件</div>
+<pre class="cw-snippet">int count = in.read(buffer);</pre>
+        <p class="dim">本次读多少，由 <code>read</code> 的返回值给出。</p>
+      </div>
+      <div class="card accent">
+        <div class="cw-role">这里 · 收一个数据报</div>
+<pre class="cw-snippet">socket.receive(packet);
+int length = packet.getLength();</pre>
+        <p class="dim">按本包的起点和长度解码，数组的其余位置不用参与。</p>
+      </div>
+    </div>
+    <div class="card server cw-gap">
+      <div class="cw-role">RECEIVER · 同一个 byte[64] buffer，两次接收后各是什么样？</div>
+      <div class="cw-role" style="color:var(--text-1)">第 1 包（length = 10）</div>
+      <div class="cw-bytes" style="margin:6px 0 14px"><span class="cw-byte mini hot">68</span><span class="cw-byte mini hot">65</span><span class="cw-byte mini hot">6C</span><span class="cw-byte mini hot">6C</span><span class="cw-byte mini hot">6F</span><span class="cw-byte mini hot">20</span><span class="cw-byte mini hot">6A</span><span class="cw-byte mini hot">61</span><span class="cw-byte mini hot">76</span><span class="cw-byte mini hot">61</span><span class="cw-byte mini old">… 其余 54 格是旧数据</span></div>
+      <div class="cw-role" style="color:var(--text-1)">第 2 包（length = 2）</div>
+      <div class="cw-bytes" style="margin:6px 0 0"><span class="cw-byte mini hot">6F</span><span class="cw-byte mini hot">6B</span><span class="cw-byte mini old">… 其余 62 格是旧数据</span></div>
+    </div>
+    <div class="cw-callout cw-gap">数组容量 64 是“最多装多少”；<code>getLength()</code> 才是“这包实际多少”。如果接收数组比数据报小，超出部分会被<strong>截掉</strong>——所以缓冲区要留够。重复使用同一个 <code>DatagramPacket</code> 接收时，长度每轮都会变。</div>
+    </div>
+  </section>
+
+  <!-- 11 UDP 是什么 -->
+  <section class="slide roomy" data-title="UDP 是什么：一封封独立寄送的明信片" data-section="任务一 · 两包文字">
+    <header class="cw-head">
+      <p class="kicker">概念 · 把名词说清楚</p>
+      <h2 class="h2">UDP 是什么：一封封独立寄送的明信片</h2>
+    </header>
+    <div class="cw-body">
+    <div class="card accent cw-gap">
+      <div class="cw-role">定义</div>
+      <p><strong>UDP</strong>（User Datagram Protocol，用户数据报协议）：规定两个程序如何以一封封<strong>独立的数据报</strong>收发消息的通信协议。<code>DatagramSocket</code> / <code>DatagramPacket</code> 是 Java 里使用它的入口。它也建在 IP 之上：IP 只管把一个个包尽力送到对方机器，UDP 再加上<strong>端口</strong>与<strong>长度</strong>，其余交给你。</p>
+    </div>
+    <div class="grid g2 cw-gap">
+      <div class="card now">
+        <div class="cw-role">UDP 保证</div>
+        <ul>
+          <li>保留每次 <code>send()</code> 的边界——一份数据报一次交付，长度各自为准。</li>
+          <li>无需先建立连接：写上地址端口就能寄，没有握手。</li>
+          <li>没有确认、重传的额外开销，轻量。</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="cw-role">UDP 不管</div>
+        <ul>
+          <li>不保证送达、顺序，也不去重。</li>
+          <li>不给发送端任何回执：丢了还是到了，发送端都不知道。</li>
+          <li>数据报里每段字节的含义，仍由应用约定——任务二见。</li>
+        </ul>
+      </div>
+    </div>
+    <div class="cw-callout cw-gap">TCP 像一通电话：先接通、边说边确认；UDP 像寄明信片：每张独立寄出，可能丢、可能迟到，邮局不给回执。第 16 讲的可靠由连接保证，这一讲的可靠要靠<strong>应用自己</strong>。</div>
+    </div>
+  </section>
+
+  <!-- 12 DatagramSocket 与 DatagramPacket -->
+  <section class="slide roomy" data-title="收发用 DatagramSocket，数据装进 DatagramPacket" data-section="任务一 · 两包文字">
+    <header class="cw-head tight">
+      <p class="kicker">回看程序 · 对照两端</p>
+      <h2 class="h2">收发用 DatagramSocket，数据装进 DatagramPacket</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="card server">
+        <div class="cw-role">接收端代码片段 · UdpGreetingReceiver.java</div>
+<pre class="cw-snippet">DatagramPacket packet =
+        new DatagramPacket(buffer, buffer.length);
+socket.receive(packet);</pre>
+        <p class="dim">构造时只给“装东西的盘子”：等 <code>receive()</code> 把一份数据报装进去。</p>
+      </div>
+      <div class="card client">
+        <div class="cw-role">发送端代码片段 · UdpGreetingSender.java</div>
+<pre class="cw-snippet">DatagramPacket packet = new DatagramPacket(
+        data, data.length, host, port);
+socket.send(packet);</pre>
+        <p class="dim">构造时还要写清内容和收件地址端口——明信片上那几行字。</p>
+      </div>
+    </div>
+    <div class="card cw-gap" style="padding:4px 20px">
+      <table class="cw-table">
+        <thead><tr><th>对象</th><th>谁使用</th><th>负责什么</th><th>打比方</th></tr></thead>
+        <tbody>
+          <tr><td>DatagramSocket</td><td>两端各一个</td><td>绑定端口；<code>send()</code> 寄出、<code>receive()</code> 收下</td><td>邮筒：寄件、收件都走它</td></tr>
+          <tr><td>DatagramPacket</td><td>每次收发一份</td><td>装着 <code>byte[]</code> 数据＋长度＋地址端口</td><td>明信片：内容与收件地址写在一起</td></tr>
+          <tr><td>ServerSocket / Socket</td><td>第 16 讲 · TCP</td><td>先接通，再沿连接读写流</td><td>电话：先拨通，再连续说话</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="cw-callout cw-gap">同一个 <code>DatagramSocket</code> 既能收也能发；差别只在构造 packet 时写没写收件地址，以及调用 <code>send</code> 还是 <code>receive</code>。</div>
+    </div>
+  </section>
+
+  <!-- 13 时序图：模拟丢包 -->
+  <section class="slide" data-title="发送了两包，就能保证收到两包吗？" data-section="任务一 · 两包文字">
+    <header class="cw-head tight">
+      <p class="kicker">动画 · 模拟一次丢包</p>
+      <h2 class="h2">发送了两包，就能保证收到两包吗？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="cw-seqbox" data-seq="loss" data-stepper style="--fig-max:840px" data-intro="整张图始终可见。第 ② 步是课堂模拟：本机回环几乎不丢包，真实网络里丢包、乱序都可能发生；下一页用“只发一包”做真实对照。按 <kbd>→</kbd> 或点击右侧步骤，逐步讲解。">
+      <div class="cw-seq">
+        <div class="cw-seq-side">
+          <div class="cw-stepbar">
+            <button type="button" class="cw-btn ghost" data-step-prev>← 上一步</button>
+            <button type="button" class="cw-btn" data-step-next>下一步 →</button>
+            <button type="button" class="cw-btn ghost sm" data-step-reset>重置</button>
+            <span class="cw-count" data-step-count>0 / 4</span>
+          </div>
+        </div>
+      </div>
+      <div class="cw-callout cw-gap" data-step-caption aria-live="polite"></div>
+    </div>
+    <div class="cw-callout cw-gap tight">UDP 只把“每一封完整地交出去、收进来”，<strong>不负责送达与顺序</strong>。想让丢失能被发现，得由应用自己约定——回执、编号或超时重发，这正是课程设计里“心跳与确认”的来源。</div>
+    </div>
+  </section>
+
+  <!-- 14 只发一包实验 -->
+  <section class="slide roomy" data-title="只发一包，看接收端超时" data-section="任务一 · 两包文字">
+    <header class="cw-head">
+      <p class="kicker">机房实操 · 只改一处</p>
+      <h2 class="h2">只发一包，看接收端超时</h2>
+    </header>
+    <div class="cw-body">
+    <div class="card now">
+      <div class="cw-role">先预测，再让两个程序验证</div>
+      <ol>
+        <li>把发送端的 <code>messages</code> 改成只剩 <code>{"ok"}</code> 一包（删掉 <code>"hello java"</code>）。</li>
+        <li>按顺序重新运行两端。<strong>先预测：</strong>接收端会打印什么？之后会停在哪儿？</li>
+        <li>等约 30 秒，把接收端的报错抄下来；再把 <code>messages</code> 改回两包重跑，确认恢复。</li>
+      </ol>
+    </div>
+    <details class="cw-reveal cw-gap">
+      <summary>做完实验后核对</summary>
+      <div class="body">
+        <p>接收端打印「第 1 包：2 字节 | ok」后，第二个 <code>receive()</code> 一直等不到下一包：约 30 秒后抛出 <code>java.net.SocketTimeoutException: Receive timed out</code>，指向 <code>receive()</code> 所在行。</p>
+        <p>发送端毫无感知——它的一封已经“寄出”，程序正常结束。对照第 13 页：那次丢在途中，这次干脆没寄，接收端的表现一模一样。</p>
+      </div>
+    </details>
+    <div class="cw-callout cw-gap">这个实验里没有动画，是程序<strong>真实的等待与超时</strong>。UDP 不会替你发现“少了一包”——发现与补救是应用的事。</div>
+    </div>
+  </section>
+
+  <!-- 15 排错 -->
+  <section class="slide roomy" data-title="看到错误，先检查哪一端？" data-section="任务一 · 两包文字">
+    <header class="cw-head">
+      <p class="kicker">机房排错 · 从现象定位</p>
+      <h2 class="h2">看到错误，先检查哪一端？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="card bad">
+        <div class="cw-role">现象一 · 发送端一切正常，接收端没反应</div>
+        <p>发送端打印两行「已发出」就结束，接收端却一直在等。</p>
+        <p class="dim cw-gap">UDP <strong>没有“连接被拒绝”</strong>：寄给没人在听的端口不会报错（对照第 16 讲 TCP 的 <code>Connection refused</code>）。先确认接收端还在运行、两端端口一致。</p>
+      </div>
+      <div class="card bad">
+        <div class="cw-role">现象二 · 接收端刚启动就报错</div>
+        <div class="cw-term compact">
+<pre><span class="cw-err">Exception in thread "main"
+java.net.BindException: Address already in use</span>
+    …
+    at UdpGreetingReceiver.main(UdpGreetingReceiver.java:9)</pre>
+        </div>
+        <p class="dim cw-gap"><strong>端口被占用：</strong>上一个接收端还没退出。选中它的标签页点 ■ 停止；或两端一起换端口（例如 <code>16027</code>，在「运行 → 编辑配置…」的「程序实参」里填，做法见第 26 页）。</p>
+      </div>
+      <div class="card now">
+        <div class="cw-role">现象三 · 接收端等第二包超时</div>
+        <p>约 30 秒后报 <code>SocketTimeoutException: Receive timed out</code>。</p>
+        <p class="dim">按第 14 页核对发送端到底发了几包；重跑时记住先接收端、后发送端。</p>
+      </div>
+      <div class="card">
+        <div class="cw-role">现象四 · 收到的文字多出字符</div>
+        <p>解码结果混进了上一包的旧字节。</p>
+        <p class="dim">检查是否用了 <code>getOffset()</code> 和 <code>getLength()</code>，不要把整个 <code>buffer</code> 都当成这一包。</p>
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <!-- 16 TCP 还是 UDP -->
+  <section class="slide roomy" data-title="什么时候选 TCP，什么时候考虑 UDP？" data-section="任务一 · 两包文字">
+    <header class="cw-head">
+      <p class="kicker">从两个实验比较</p>
+      <h2 class="h2">什么时候选 TCP，什么时候考虑 UDP？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="card">
+        <div class="cw-role">TCP · 需要有序、可靠的字节流</div>
+        <p>例如文件传输、登录、指令下发：少一个字节都不行。</p>
+        <p class="dim">应用仍要自己规定消息边界（第 18 讲）。</p>
+      </div>
+      <div class="card accent">
+        <div class="cw-role">UDP · 独立报文，可容忍遗漏</div>
+        <p>例如周期性状态上报：较新的状态可以替代旧的，丢一帧，下一帧很快就来。</p>
+        <p class="dim">要确认、排序或去重时，由应用程序自己做。</p>
+      </div>
+    </div>
+    <div class="cw-callout cw-gap">选择看<strong>业务要求</strong>，不看“哪个更快”。本机两个实验都快，不能据此下结论。课程设计的设备遥测走 UDP：周期上报加心跳，正合适——丢了能靠下一条补，断了能靠心跳发现。</div>
+    </div>
+  </section>
+
+  <!-- 17 从报文到字段 -->
+  <section class="slide roomy" data-title="收到一整包，怎么知道哪一段是坐标？" data-section="任务二 · 一条遥测帧">
+    <header class="cw-head">
+      <p class="kicker">任务二 · 从报文边界到应用字段</p>
+      <h2 class="h2">收到一整包，怎么知道哪一段是坐标？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="card">
+        <div class="cw-role">第 15 讲 · 已经会读三组 float</div>
+<pre class="cw-snippet">float x = in.getFloat();
+float y = in.getFloat();
+float z = in.getFloat();</pre>
+        <p class="dim">大端顺序读出 <code>(1.5, -2.0, 0.5)</code>——那会儿从文件读，起点是数组开头。</p>
+      </div>
+      <div class="card accent">
+        <div class="cw-role">现在 · 两端交接一条遥测记录</div>
+        <p>沿用三个坐标，再加上<strong>设备编号</strong>和<strong>电量</strong>。双方事先约定：字段顺序、每段字节数、校验方法。</p>
+        <p class="dim">这份约定就是一份小小的“应用协议”。</p>
+      </div>
+    </div>
+    <div class="cw-callout cw-gap">UDP 只交给你“一整包”；包里每个字节的含义和边界是<strong>应用协议</strong>的事。下面先在本机的数组里拼装、检查这条 21 字节的帧——约定一份数据报恰好承载一条帧。</div>
+    </div>
+  </section>
+
+  <!-- 18 帧解剖（交互） -->
+  <section class="slide roomy" data-title="把 21 字节按字段分开看" data-section="任务二 · 一条遥测帧">
+    <header class="cw-head tight">
+      <p class="kicker">交互 · 点选字段看索引</p>
+      <h2 class="h2">把 21 字节按字段分开看</h2>
+    </header>
+    <div class="cw-body">
+    <div class="card" data-frame>
+      <div class="cw-frame-wrap">
+        <div class="cw-frame-strip" data-frame-cells aria-label="21 字节的帧，每格下方是数组索引"></div>
+        <div class="cw-frame-sumbar" aria-hidden="true"><b>累加和的覆盖范围 · 索引 2–17</b></div>
+      </div>
+      <div class="cw-frame-fields" role="group" aria-label="帧的字段">
+        <button type="button" class="cw-ffield" data-f="head" aria-pressed="false">帧头<code>EB 90</code></button>
+        <button type="button" class="cw-ffield" data-f="id" aria-pressed="false">设备 ID<code>01</code></button>
+        <button type="button" class="cw-ffield" data-f="cmd" aria-pressed="false">命令字<code>01</code></button>
+        <button type="button" class="cw-ffield" data-f="len" aria-pressed="false">载荷长度<code>0D</code></button>
+        <button type="button" class="cw-ffield" data-f="pay" aria-pressed="false">载荷<code>13 字节</code></button>
+        <button type="button" class="cw-ffield" data-f="sum" aria-pressed="false">累加和<code>64</code></button>
+        <button type="button" class="cw-ffield" data-f="tail" aria-pressed="false">帧尾<code>0D 0A</code></button>
+      </div>
+      <p class="cw-frame-detail" data-frame-detail aria-live="polite">点一个字段，看它在数组中的位置和用途。</p>
+    </div>
+    <div class="cw-callout cw-gap">布局共 <code>2+1+1+1+13+1+2＝21</code> 字节；载荷 13＝<code>4+4+4+1</code>。帧头、长度、校验、帧尾都是<strong>双方的协议约定</strong>，不是 UDP 提供的。</div>
+    </div>
+  </section>
+
+  <!-- 19 先检查格式，再恢复坐标 -->
+  <section class="slide roomy" data-title="先检查格式，再恢复三个坐标" data-section="任务二 · 一条遥测帧">
+    <header class="cw-head">
+      <p class="kicker">拆解程序 · 字段位置</p>
+      <h2 class="h2">先检查格式，再恢复三个坐标</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="card">
+        <div class="cw-role">写的一侧 · encode()</div>
+        <p>按帧表组装：表头四字节 → <code>putFloat()</code> 写三个坐标 → 电量 → 按索引 2–17 算出校验 → 最后写校验字节和帧尾。</p>
+        <p class="dim">先放内容、后补校验：因为校验覆盖的是已经放好的字节。</p>
+      </div>
+      <div class="card accent">
+        <div class="cw-role">读的一侧 · inspect()</div>
+<pre class="cw-snippet">ByteBuffer in = ByteBuffer.wrap(frame)
+        .order(ByteOrder.BIG_ENDIAN);
+in.position(5);
+float x = in.getFloat();</pre>
+        <p class="dim">确认总长、固定字段和校验值之后，才从第 5 格开始读。</p>
+      </div>
+    </div>
+    <div class="cw-callout cw-gap">这里的 <code>position(5)</code> 把读取起点从第 15 讲的数组开头，移到本帧的载荷。顺序不能反：<strong>先检查长度和格式，再访问固定索引</strong>——总长不是 21，就谈不上“索引 17 是电量”。</div>
+    </div>
+  </section>
+
+  <!-- 20 TelemetryFrameLab 完整代码 -->
+  <section class="slide" data-title="拼装与检查一条帧：TelemetryFrameLab" data-section="任务二 · 一条遥测帧">
+    <header class="cw-head tight">
+      <p class="kicker">任务二 · 可运行的完整程序</p>
+      <h2 class="h2">拼装与检查一条帧：TelemetryFrameLab</h2>
+    </header>
+    <div class="cw-body">
+    <div class="cw-codegrid">
+      <div class="card cw-code" style="--code-max:700px;--code-fs:18px;--code-lh:24px" data-marks='[{"find":"byte[] frame = encode(1","badge":"①"},{"find":"static byte[] sendAndReceive","badge":"③"},{"find":"static byte[] encode(","badge":"②"},{"find":"if (frame.length != 21","badge":"④","span":4},{"find":"if ((frame[18] & 0xFF) != checksum(frame))","badge":"⑤"},{"find":"static int checksum(","badge":"⑥"},{"find":"static int crc16(","badge":"⑦"}]'>
+        <div class="cw-code-head">
+          <span class="file">TelemetryFrameLab.java</span>
+          <span class="meta">完整程序 · 105 行 · 可滚动</span>
+          <button type="button" class="cw-btn sm" data-copy="TelemetryFrameLab.java">复制完整代码</button>
+        </div>
+        <div class="cw-code-scroll" tabindex="0" data-scroll aria-label="TelemetryFrameLab.java 源代码，内容较长，可滚动查看">
+<pre class="cw-src" id="TelemetryFrameLab.java">import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
+import java.util.HexFormat;
+
+public class TelemetryFrameLab {
+    public static void main(String[] args) throws Exception {
+        byte[] frame = encode(1, 1.5f, -2.0f, 0.5f, 87);
+        if (args.length &gt; 0 &amp;&amp; args[0].equals("udp")) {
+            frame = sendAndReceive(frame);
+            System.out.println("UDP 收到：" + frame.length + " 字节");
+        }
+        String hex = HexFormat.ofDelimiter(" ").withUpperCase()
+                .formatHex(frame);
+        System.out.println("原帧：" + hex);
+        inspect(frame);
+
+        byte[] changed = frame.clone();
+        changed[17] = 86; // 模拟数据变化，保留原校验字节。
+        System.out.print("只改电量：");
+        inspect(changed);
+
+        changed[2] = 2; // 编号 +1，抵消电量 -1。
+        System.out.print("再改编号：");
+        inspect(changed);
+        System.out.printf("CRC-16 对照：%04X → %04X%n",
+                crc16(frame), crc16(changed));
+    }
+
+    static byte[] sendAndReceive(byte[] frame) throws Exception {
+        InetAddress loopback = InetAddress.getByName("127.0.0.1");
+        // 接收端已经绑定，发送后再取出排队的数据报。
+        try (DatagramSocket receiver = new DatagramSocket(
+                     new InetSocketAddress(loopback, 0));
+             DatagramSocket sender = new DatagramSocket()) {
+            receiver.setSoTimeout(3_000);
+            sender.send(new DatagramPacket(frame, frame.length,
+                    loopback, receiver.getLocalPort()));
+            byte[] buffer = new byte[64];
+            DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+            receiver.receive(packet);
+            return Arrays.copyOfRange(buffer, packet.getOffset(),
+                    packet.getOffset() + packet.getLength());
+        }
+    }
+
+    static byte[] encode(int id, float x, float y, float z, int battery) {
+        ByteBuffer out = ByteBuffer.allocate(21).order(ByteOrder.BIG_ENDIAN);
+        out.put((byte) 0xEB).put((byte) 0x90);
+        out.put((byte) id).put((byte) 1).put((byte) 13);
+        out.putFloat(x).putFloat(y).putFloat(z).put((byte) battery);
+        byte[] frame = out.array();
+        out.put((byte) checksum(frame)).put((byte) 0x0D).put((byte) 0x0A);
+        return frame;
+    }
+
+    static void inspect(byte[] frame) {
+        // 先检查长度，才能安全地检查固定索引。
+        if (frame.length != 21 || (frame[0] &amp; 0xFF) != 0xEB
+                || (frame[1] &amp; 0xFF) != 0x90
+                || frame[19] != 0x0D || frame[20] != 0x0A
+                || frame[3] != 1 || frame[4] != 13) {
+            System.out.println("拒绝：帧格式错误");
+            return;
+        }
+        if ((frame[18] &amp; 0xFF) != checksum(frame)) {
+            System.out.println("拒绝：累加和不匹配");
+            return;
+        }
+        // 第 15 讲的坐标读取方式，起点改为载荷索引 5。
+        ByteBuffer in = ByteBuffer.wrap(frame).order(ByteOrder.BIG_ENDIAN);
+        in.position(5);
+        float x = in.getFloat();
+        float y = in.getFloat();
+        float z = in.getFloat();
+        int battery = in.get() &amp; 0xFF;
+        System.out.printf("设备 %d，坐标 (%s, %s, %s) m，电量 %d%%%n",
+                frame[2] &amp; 0xFF, x, y, z, battery);
+    }
+
+    static int checksum(byte[] frame) {
+        int sum = 0;
+        for (int i = 2; i &lt; 18; i++) {
+            sum += frame[i] &amp; 0xFF;
+        }
+        return sum &amp; 0xFF;
+    }
+
+    // CRC-16/CCITT-FALSE，保护同一段数据。
+    static int crc16(byte[] frame) {
+        int crc = 0xFFFF;
+        for (int i = 2; i &lt; 18; i++) {
+            crc ^= (frame[i] &amp; 0xFF) &lt;&lt; 8;
+            for (int bit = 0; bit &lt; 8; bit++) {
+                int polynomial = (crc &amp; 0x8000) == 0 ? 0 : 0x1021;
+                crc = ((crc &lt;&lt; 1) ^ polynomial) &amp; 0xFFFF;
+            }
+        }
+        return crc;
+    }
+}</pre>
+        </div>
+      </div>
+      <aside class="cw-code-side">
+        <div class="card">
+          <div class="cw-role">对照左边的序号</div>
+          <ol class="cw-map-list">
+            <li><b class="cw-b">①</b><div><p>生成原帧：设备 1，坐标 <code>(1.5, -2.0, 0.5)</code>，电量 87。</p></div></li>
+            <li><b class="cw-b">②</b><div><p><code>encode()</code>：按帧表组装 21 字节，最后回填校验与帧尾。</p></div></li>
+            <li><b class="cw-b">③</b><div><p><code>sendAndReceive()</code>：带 <code>udp</code> 参数时才调用，第 26–27 页展开。</p></div></li>
+            <li><b class="cw-b">④</b><div><p><code>inspect()</code> 第一步：长度或固定字段不对，直接拒绝。</p></div></li>
+            <li><b class="cw-b">⑤</b><div><p>第二步：重算索引 2–17 的和，与第 18 字节比对。</p></div></li>
+            <li><b class="cw-b">⑥</b><div><p><code>checksum()</code>：无符号加总，只留低 8 位。</p></div></li>
+            <li><b class="cw-b">⑦</b><div><p><code>crc16()</code>：CRC-16 对照，不是本帧的校验字段。</p></div></li>
+          </ol>
+        </div>
+        <p class="cw-keyhint">保存为 TelemetryFrameLab.java 后直接运行；本页不需要先启动任何 UDP 程序。课堂先跑出结果，再按序号讲读关键段。</p>
+      </aside>
+    </div>
+    </div>
+  </section>
+
+  <!-- 21 运行观察 -->
+  <section class="slide roomy" data-title="运行一次，观察正常帧和两种变化" data-section="任务二 · 一条遥测帧">
+    <header class="cw-head">
+      <p class="kicker">机房实操 · 编码与检查</p>
+      <h2 class="h2">运行一次，观察正常帧和两种变化</h2>
+    </header>
+    <div class="cw-body">
+    <div class="cw-term">
+      <div class="cw-term-bar"><i></i><i></i><i></i><span>运行窗口 · TelemetryFrameLab（真实输出）</span></div>
+<pre>原帧：EB 90 01 01 0D 3F C0 00 00 C0 00 00 00 3F 00 00 00 57 64 0D 0A
+设备 1，坐标 (1.5, -2.0, 0.5) m，电量 87%
+只改电量：拒绝：累加和不匹配
+再改编号：设备 2，坐标 (1.5, -2.0, 0.5) m，电量 86%
+CRC-16 对照：2F7C → D710</pre>
+    </div>
+    <div class="card accent cw-gap">
+      <div class="cw-role">你来检查</div>
+      <ol>
+        <li>第三行为什么被拒绝？被改动的是哪个字节？</li>
+        <li>第四行为什么又通过了？此时电量和设备号各是多少？</li>
+        <li>最后一行两个 CRC 为什么不同？</li>
+      </ol>
+    </div>
+    <div class="cw-callout cw-gap">只改电量：和减 1，被抓住；再改编号：+1 与 −1 相抵，混过了累加和。下一页把这笔账算清楚。</div>
+    </div>
+  </section>
+
+  <!-- 22 累加和 -->
+  <section class="slide roomy" data-title="只改电量，原来的校验字节还对吗？" data-section="任务二 · 一条遥测帧">
+    <header class="cw-head">
+      <p class="kicker">检错 · 累加和</p>
+      <h2 class="h2">只改电量，原来的校验字节还对吗？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="card">
+        <div class="cw-role">怎么计算</div>
+        <p>把索引 2–17 的字节按无符号数加起来：<code>1+1+13+63+192+…+87＝612＝0x264</code>，只留低 8 位 → <code>0x64</code>，写进索引 18。</p>
+        <p class="dim">改动任何一个被覆盖的字节，和几乎都会变。</p>
+      </div>
+      <div class="card accent">
+        <div class="cw-role">先预测</div>
+        <p>只把电量从 87 改成 86，旧的校验字节 <code>64</code> 还匹配吗？</p>
+        <p>如果<strong>同时</strong>把设备号从 1 改成 2 呢？</p>
+      </div>
+    </div>
+    <details class="cw-reveal cw-gap">
+      <summary>核对结果</summary>
+      <div class="body">
+        <p>只改电量：和变 <code>0x63 ≠ 0x64</code>，拒绝。设备号 +1 与电量 −1 相抵：和回到 <code>0x64</code>，通过——同一帧里的两处改动，累加和只看总量。</p>
+      </div>
+    </details>
+    <div class="cw-callout cw-gap">接收端不能因为“校验通过”就相信每个字节都没被动过——这个盲区，下一页拆开看。</div>
+    </div>
+  </section>
+
+  <!-- 23 CRC 对照（交互） -->
+  <section class="slide roomy" data-title="一加一减骗过累加和，为什么骗不过 CRC？" data-section="任务二 · 一条遥测帧">
+    <header class="cw-head tight">
+      <p class="kicker">检错 · 从总量到位序列</p>
+      <h2 class="h2">一加一减骗过累加和，为什么骗不过 CRC？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="card" data-checksim>
+      <div class="cw-checksim-bar" role="group" aria-label="选择帧的状态">
+        <button type="button" class="cw-btn ghost sm on" data-cs="0" aria-pressed="true">原帧（电量 87）</button>
+        <button type="button" class="cw-btn ghost sm" data-cs="1" aria-pressed="false">只改电量 87→86</button>
+        <button type="button" class="cw-btn ghost sm" data-cs="2" aria-pressed="false">再改设备号 1→2</button>
+      </div>
+      <div class="cw-frame-wrap">
+        <div class="cw-frame-strip" data-cs-cells aria-label="帧的 21 个字节，被改动的格子标红色"></div>
+      </div>
+      <div class="grid g2 cw-gap">
+        <div class="card" data-cs-sum></div>
+        <div class="card" data-cs-crc></div>
+      </div>
+      <p class="cw-checksim-note" data-cs-note aria-live="polite"></p>
+    </div>
+    <div class="grid g2 cw-gap">
+      <div class="card">
+        <div class="cw-role">累加和看的是总量</div>
+        <p class="dim">不同位置的字节一加一减可以相抵；字节挪位也可能凑出同一个和。</p>
+      </div>
+      <div class="card accent">
+        <div class="cw-role">CRC 按顺序处理每一位</div>
+        <p class="dim">把字节串当作多项式，用约定的生成多项式做模 2 除法（异或当减法）。位置和顺序都影响余数——同样的一加一减，余数不同。</p>
+      </div>
+    </div>
+    <div class="cw-callout cw-gap">代码里的 CRC-16/CCITT-FALSE（初值 <code>FFFF</code>、多项式 <code>1021</code>、覆盖索引 2–17）只作对照，本帧真正用的是 1 字节累加和。若协议改用 CRC-16，双方必须统一参数、覆盖范围和字段长度；CRC 也仍可能漏检，只是难得多。上图的数值都来自左边程序的真实运行。</div>
+    </div>
+  </section>
+
+  <!-- 24 quiz：长度字节 -->
+  <section class="slide roomy" data-title="长度字节 0D 说的是多少？" data-section="任务二 · 一条遥测帧">
+    <header class="cw-head">
+      <p class="kicker">课堂检查</p>
+      <h2 class="h2">长度字节 0D 说的是多少？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="card cw-quiz" data-quiz data-answer="1" data-explanation="UDP 的接收长度（getLength()）与协议的载荷长度是两层概念。本例约定一个数据报恰好承载这 21 字节。" data-hint="再想一想：数一数——整条帧 21 字节里，属于载荷的是哪 13 个？">
+      <p class="cw-q">同一帧里，索引 4 的载荷长度 <code>0D</code> 说的是多少？</p>
+      <label><input type="radio" name="udp-frame-length" value="0"> 整个 UDP 数据报为 13 字节。</label>
+      <label><input type="radio" name="udp-frame-length" value="1"> 应用帧的载荷为 13 字节，本例整帧为 21 字节。</label>
+      <button type="button" class="cw-btn ghost" data-check>检查答案</button>
+      <p class="cw-result" aria-live="polite"></p>
+    </div>
+    </div>
+  </section>
+
+  <!-- 25 电量 87→90 实验 -->
+  <section class="slide roomy" data-title="把电量改成 90，哪个字段会变化？" data-section="任务二 · 一条遥测帧">
+    <header class="cw-head">
+      <p class="kicker">机房验收 · 先预测再改数据</p>
+      <h2 class="h2">把电量改成 90，哪个字段会变化？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="card">
+      <div class="cw-role">验证动手结果</div>
+      <ol>
+        <li>找到 <code>encode(1, 1.5f, -2.0f, 0.5f, 87)</code>，把最后一个参数改成 <code>90</code>。</li>
+        <li><strong>先写下预测：</strong>原帧的索引 17、18 会变成什么？三个坐标的字节变不变？</li>
+        <li>重新运行，对照「原帧」那一行核对，再和第一次解析的输出比对。</li>
+      </ol>
+    </div>
+    <details class="cw-reveal cw-gap">
+      <summary>核对结果</summary>
+      <div class="body">
+        <p>索引 17 的电量 <code>57</code> → <code>5A</code>（十进制 90）；索引 18 的累加和 <code>64</code> → <code>67</code>（90−87＝3）。三个坐标的 12 个字节原样不动，第一次解析输出「电量 90%」。</p>
+      </div>
+    </details>
+    <div class="cw-callout cw-gap">电量先保持在 0–100：Java 的 <code>byte</code> 打印出来是有符号数（<code>0x57</code> 也显示 87），别把显示方式和协议的取值范围混为一谈。做完把参数改回 87。</div>
+    </div>
+  </section>
+
+  <!-- 26 装进 UDP 数据报 -->
+  <section class="slide roomy" data-title="把同一帧装进 UDP 数据报" data-section="任务二 · 一条遥测帧">
+    <header class="cw-head tight">
+      <p class="kicker">机房实操 · 加一个运行参数</p>
+      <h2 class="h2">把同一帧装进 UDP 数据报</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="card client">
+        <div class="cw-role">发送端 · sendAndReceive() 里</div>
+<pre class="cw-snippet sm">sender.send(new DatagramPacket(
+    frame, frame.length, loopback, port));</pre>
+        <p class="dim">把 21 字节交给 UDP——和寄文字是<strong>同一个动作</strong>。</p>
+      </div>
+      <div class="card server">
+        <div class="cw-role">接收端 · 同一个方法里</div>
+<pre class="cw-snippet sm">receiver.receive(packet);
+return Arrays.copyOfRange(buffer, packet.getOffset(),
+    packet.getOffset() + packet.getLength());</pre>
+        <p class="dim">像收文字一样先取有效长度，取出字节后交给同一套解析。</p>
+      </div>
+    </div>
+    <div class="cw-ide cw-gap">
+      <div class="cw-ide-bar"><i></i><i></i><i></i><span>IDEA 示意 · 菜单「运行 → 编辑配置…」：「程序实参」里填 udp</span></div>
+      <div class="cw-ide-form">
+        <span>名称</span><div class="cw-ide-field"><code>TelemetryFrameLab</code></div>
+        <span>程序实参</span><div class="cw-ide-field"><code>udp</code><em>填一次即可；留空就直接在数组上做实验</em></div>
+        <div class="cw-ide-btns"><span>取消</span><span>应用</span><span class="on">确定</span></div>
+      </div>
+    </div>
+    <div class="cw-callout cw-gap">预期先出现 <code>UDP 收到：21 字节</code>，然后是与刚才完全相同的一组解析结果——帧在数据报里<strong>原封不动</strong>。数据报不关心内容是文字还是二进制。</div>
+    </div>
+  </section>
+
+  <!-- 27 同一进程的两个套接字 -->
+  <section class="slide roomy" data-title="同一进程里的两个套接字" data-section="任务二 · 一条遥测帧">
+    <header class="cw-head">
+      <p class="kicker">看清演示的边界</p>
+      <h2 class="h2">同一进程里的两个套接字</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="card">
+        <div class="cw-role">sendAndReceive() 做了什么</div>
+        <ol>
+          <li>receiver 绑定 <code>127.0.0.1:0</code>——端口填 0，由系统挑一个空闲的。</li>
+          <li>sender 向 <code>receiver.getLocalPort()</code> 寄出这 21 字节。</li>
+          <li><code>receiver.receive()</code> 取出排队的数据报，按 <code>getLength()</code> 截取有效部分返回。</li>
+        </ol>
+      </div>
+      <div class="card accent">
+        <div class="cw-role">它演示了什么、没演示什么</div>
+        <p>演示：一条帧可以完整装进数据报、原样取出，再通过同一套检查。</p>
+        <p class="dim">没演示：两台机器和真实网络——同一进程里两步就到，不会丢包。</p>
+      </div>
+    </div>
+    <div class="cw-callout cw-gap">真实的两端，就是第 7、8 页那样的两个独立程序。课程设计里，模拟设备和主机也是这样两个进程——中间才是真正的网络路径，丢包、延迟都从那里来。</div>
+    </div>
+  </section>
+
+  <!-- 28 走向下一讲 -->
+  <section class="slide roomy" data-title="收到整包之后，边界就完事了吗？" data-section="任务二 · 一条遥测帧">
+    <header class="cw-head">
+      <p class="kicker">从实验走向下一讲</p>
+      <h2 class="h2">收到整包之后，边界就完事了吗？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="grid g2">
+      <div class="card">
+        <div class="cw-role">今天的约定</div>
+        <p>一个数据报恰好承载一条 21 字节帧；字段的位置和含义由帧表约定，接收端按表检查、再解析。</p>
+      </div>
+      <div class="card accent">
+        <div class="cw-role">下一讲 · 同一条帧进入 TCP 字节流</div>
+        <p>一次 <code>read()</code> 可能只读到<strong>半帧</strong>，也可能一次读到<strong>连在一起的两帧</strong>。接收端要先找到边界——固定长度、分隔符、长度字段或状态机——再交给本讲的解析方法。</p>
+      </div>
+    </div>
+    <div class="cw-callout cw-gap">UDP 的边界到数据报为止。TCP 的字节流里没有数据报，边界全靠应用自己找——这是第 18 讲的主线。</div>
+    </div>
+  </section>
+
+  <!-- 29 课堂检查 -->
+  <section class="slide roomy" data-title="写了两次，对方一定收到两份数据报吗？" data-section="任务二 · 一条遥测帧">
+    <header class="cw-head">
+      <p class="kicker">课堂检查</p>
+      <h2 class="h2">写了两次，对方一定收到两份数据报吗？</h2>
+    </header>
+    <div class="cw-body">
+    <div class="card cw-quiz" data-quiz data-answer="1" data-explanation="UDP 不保证送达与顺序；它保证的是交付的每一份数据报都完整、边界清楚。要可靠，就得应用自己加回执和重发。" data-hint="再想一想：丢包模拟和“只发一包”实验里，UDP 分别没保证什么、保证了什么？">
+      <p class="cw-q">用今天的眼光判断下面哪一句是对的。</p>
+      <label><input type="radio" name="udp-boundary" value="0"> 一定：UDP 保留每次 send 的边界，所以两封都会到。</label>
+      <label><input type="radio" name="udp-boundary" value="1"> 不一定到齐：可能丢、可能乱序；但每次 receive() 交出的都是完整的一份数据报。</label>
+      <button type="button" class="cw-btn ghost" data-check>检查答案</button>
+      <p class="cw-result" aria-live="polite"></p>
+    </div>
+    </div>
+  </section>
+
+  <!-- 30 本讲验收 -->
+  <section class="slide roomy" data-title="把 hello java 装进了两份数据报" data-section="本讲验收">
+    <header class="cw-head">
+      <p class="kicker">本讲验收</p>
+      <h2 class="h2">把 hello java 装进了两份数据报</h2>
+    </header>
+    <div class="cw-body">
+    <div class="card">
+      <div class="cw-role">自己完成一遍，每一项都能说出“为什么”</div>
+      <ul class="cw-todo cw-gap">
+        <li><span class="cw-b"></span><span>先启动接收端再启动发送端，收到 10 字节和 2 字节两包。</span><span class="cw-tag">任务一</span></li>
+        <li><span class="cw-b"></span><span>修改发送的消息，先预测两包长度，再重跑两端验证。</span><span class="cw-tag">任务一</span></li>
+        <li><span class="cw-b"></span><span>只发一包复现超时，说出接收端停在哪一行、发送端为什么毫无感知。</span><span class="cw-tag">receive() · 30 秒</span></li>
+        <li><span class="cw-b"></span><span>数出 21 字节帧的 2+1+1+1+13+1+2，说清长度字节 0D 数的是哪一段。</span><span class="cw-tag">任务二</span></li>
+        <li><span class="cw-b"></span><span>预测电量 87→90 后索引 17、18 的变化，运行 TelemetryFrameLab 核对。</span><span class="cw-tag">任务二</span></li>
+        <li><span class="cw-b"></span><span>举出一加一减骗过累加和的例子，说出 CRC 凭什么能发现。</span><span class="cw-tag">校验</span></li>
+      </ul>
+    </div>
+    <div class="cw-callout cw-gap">回到开头：还是那句 hello java——这次没有连接，<strong>每一份数据报自己走完全程</strong>；最后还把三个坐标拼成了一条能检错、能解析的遥测帧。下一讲，让它游进 TCP 的字节流。</div>
+    </div>
+  </section>
+
+  <div class="deck-footer"><span>← → 翻页 · F 全屏 · O 总览</span><span class="slide-number" data-current="1" data-total="29"></span></div>
+</div>
+<script>
+/* ===== html-ppt runtime.js (verbatim except 1 x '</script' written as '<\/script' so it can live inline) ===== */
+/* html-ppt :: runtime.js
+ * Keyboard-driven deck runtime. Zero dependencies.
+ *
+ * Features:
+ *   ← → / space / PgUp PgDn / Home End  navigation
+ *   F  fullscreen
+ *   S  presenter mode (opens a NEW WINDOW with current/next slide preview + notes + timer)
+ *       The original window stays as audience view, synced via BroadcastChannel.
+ *       Slide previews use CSS transform:scale() at design resolution for pixel-perfect layout.
+ *   N  quick notes overlay (bottom drawer)
+ *   O  slide overview grid
+ *   T  cycle themes (reads data-themes on <html> or <body>)
+ *   A  cycle demo animation on current slide
+ *   URL hash #/N  deep-link to slide N (1-based)
+ *   Progress bar auto-managed
+ */
+(function () {
+  'use strict';
+
+  const ANIMS = ['fade-up','fade-down','fade-left','fade-right','rise-in','drop-in',
+    'zoom-pop','blur-in','glitch-in','typewriter','neon-glow','shimmer-sweep',
+    'gradient-flow','stagger-list','counter-up','path-draw','parallax-tilt',
+    'card-flip-3d','cube-rotate-3d','page-turn-3d','perspective-zoom',
+    'marquee-scroll','kenburns','confetti-burst','spotlight','morph-shape','ripple-reveal'];
+
+  /* Every class the runtime treats as speaker notes. base.css hides the same
+   * set from the audience — if you add one here, add it there too. */
+  const NOTE_SEL = '.notes, aside.notes, .speaker-notes';
+
+  function ready(fn){ if(document.readyState!='loading')fn(); else document.addEventListener('DOMContentLoaded',fn);}
+
+  /* ========== Parse URL for preview-only mode ==========
+   * When loaded as iframe.src = "index.html?preview=3", runtime enters a
+   * locked single-slide mode: only slide N is visible, no chrome, no keys,
+   * no hash updates. This is how the presenter window shows pixel-perfect
+   * previews — by loading the actual deck file in an iframe and telling it
+   * to display only a specific slide.
+   */
+  function getPreviewIdx() {
+    const m = /[?&]preview=(\d+)/.exec(location.search || '');
+    return m ? parseInt(m[1], 10) - 1 : -1;
+  }
+
+  /* ========== Design-canvas fit (issue #20) ==========
+   * Slides are authored against a fixed canvas (1920x1080 by default). The
+   * canvas is scaled — never reflowed — to fit whatever viewport it lands in,
+   * so the browser view, the presenter preview, the overview thumbnail and a
+   * headless PNG render are all the same picture.
+   *
+   * Opt out with <body data-fit="fluid">. Override the canvas per deck with
+   * <div class="deck" data-w="1080" data-h="1440"> (e.g. a 3:4 小红书 post).
+   */
+  function initCanvasFit(deck) {
+    if (document.body.getAttribute('data-fit') === 'fluid') return;
+
+    const w = parseInt(deck.getAttribute('data-w'), 10) || 1920;
+    const h = parseInt(deck.getAttribute('data-h'), 10) || 1080;
+    deck.style.setProperty('--deck-w', w + 'px');
+    deck.style.setProperty('--deck-h', h + 'px');
+
+    function fit() {
+      const scale = Math.min(window.innerWidth / w, window.innerHeight / h);
+      deck.style.setProperty('--deck-scale', String(scale));
+    }
+    fit();
+    window.addEventListener('resize', fit);
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', fit);
+    /* Webfonts can land after first paint; re-fit once they do. */
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit).catch(function(){});
+  }
+
+  ready(function () {
+    const deck = document.querySelector('.deck');
+    if (!deck) return;
+    const slides = Array.from(deck.querySelectorAll('.slide'));
+    if (!slides.length) return;
+
+    initCanvasFit(deck);
+
+    /* ===== custom logo (issue #11) =====
+     * Deliberately initialised BEFORE the preview-mode branch below: the
+     * presenter's "pixel-perfect" preview is the audience view, so it has to
+     * carry the logo too. A hand-authored <img class="deck-logo"> is left
+     * exactly where it is — base.css styles both paths identically, so a deck
+     * can have a logo with runtime.js absent entirely.
+     */
+    const logoEl = (function initLogo(){
+      const attr = (n) => document.body.getAttribute(n) || document.documentElement.getAttribute(n);
+      let el = deck.querySelector(':scope > .deck-logo');
+      if (!el) {
+        const src = attr('data-logo');
+        if (!src) return null;
+        el = document.createElement('img');
+        el.className = 'deck-logo';
+        el.src = src;
+        el.alt = attr('data-logo-alt') || '';
+        deck.appendChild(el);
+      }
+      if (!el.hasAttribute('data-pos')) {
+        el.setAttribute('data-pos', attr('data-logo-position') || 'top-right');
+      }
+      /* Custom props go on .deck, not on the element: the element inherits
+         them, and the print rules (which paint the logo per page on
+         .slide::after) can read them too. An inline --logo-* on a
+         hand-authored element wins for the element, so mirror it up. */
+      const mirror = (attrName, prop) => {
+        const v = (attrName && attr(attrName)) || el.style.getPropertyValue(prop);
+        if (v) deck.style.setProperty(prop, v.trim());
+      };
+      mirror('data-logo-size', '--logo-size');
+      mirror('data-logo-opacity', '--logo-opacity');
+      mirror(null, '--logo-inset-x');
+      mirror(null, '--logo-inset-y');
+
+      /* Print can't use the element itself — see the @media print note in
+         base.css. Hand the URL and the corner to the per-page painter.
+         Use el.src, not getAttribute('src'): a relative url() inside a custom
+         property is resolved against the stylesheet that *uses* the var()
+         (assets/base.css), not against the deck, so it must be absolute. */
+      const src = el.src;
+      if (src) {
+        deck.style.setProperty('--logo-print', 'url("' + src.replace(/["\\]/g, '\\$&') + '")');
+        deck.setAttribute('data-logo-print', el.getAttribute('data-pos'));
+      }
+      return el;
+    })();
+
+    /* Per-slide opt-out: <section class="slide" data-no-logo> — covers and
+       full-bleed image slides usually carry their own branding. */
+    function syncLogo(slide){
+      if (!logoEl) return;
+      logoEl.style.display = (slide && slide.hasAttribute('data-no-logo')) ? 'none' : '';
+    }
+
+    const previewOnlyIdx = getPreviewIdx();
+    const isPreviewMode = previewOnlyIdx >= 0 && previewOnlyIdx < slides.length;
+
+    /* ===== Preview-only mode: show one slide, hide everything else ===== */
+    if (isPreviewMode) {
+      function showSlide(i) {
+        slides.forEach((s, j) => {
+          const active = (j === i);
+          s.classList.toggle('is-active', active);
+          s.style.display = active ? '' : 'none';
+          if (active) {
+            s.style.opacity = '1';
+            s.style.transform = 'none';
+            s.style.pointerEvents = 'auto';
+          }
+        });
+      }
+      showSlide(previewOnlyIdx);
+      syncLogo(slides[previewOnlyIdx]);
+      /* Hide chrome that the presenter shouldn't see in preview */
+      const hideSel = '.progress-bar, .notes-overlay, .overview, ' + NOTE_SEL;
+      document.querySelectorAll(hideSel).forEach(el => { el.style.display = 'none'; });
+      document.documentElement.setAttribute('data-preview', '1');
+      document.body.setAttribute('data-preview', '1');
+      /* Auto-detect theme base path for theme switching in preview mode */
+      function getPreviewThemeBase() {
+        const base = document.documentElement.getAttribute('data-theme-base');
+        if (base) return base;
+        const tl = document.getElementById('theme-link');
+        if (tl) {
+          const raw = tl.getAttribute('href') || '';
+          const ls = raw.lastIndexOf('/');
+          if (ls >= 0) return raw.substring(0, ls + 1);
+        }
+        return 'assets/themes/';
+      }
+      const previewThemeBase = getPreviewThemeBase();
+
+      /* Listen for postMessage from parent presenter window:
+       *  - preview-goto: switch visible slide WITHOUT reloading
+       *  - preview-theme: switch theme CSS link to match audience window */
+      window.addEventListener('message', function(e) {
+        if (!e.data) return;
+        if (e.data.type === 'preview-goto') {
+          const n = parseInt(e.data.idx, 10);
+          if (n >= 0 && n < slides.length) { showSlide(n); syncLogo(slides[n]); }
+        } else if (e.data.type === 'preview-theme' && e.data.name) {
+          let link = document.getElementById('theme-link');
+          if (!link) {
+            link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.id = 'theme-link';
+            document.head.appendChild(link);
+          }
+          link.href = previewThemeBase + e.data.name + '.css';
+          document.documentElement.setAttribute('data-theme', e.data.name);
+        }
+      });
+      /* Signal to parent that preview iframe is ready */
+      try { window.parent && window.parent.postMessage({ type: 'preview-ready' }, '*'); } catch(e) {}
+      return;
+    }
+
+    let idx = 0;
+    const total = slides.length;
+
+    /* ===== BroadcastChannel for presenter sync ===== */
+    const CHANNEL_NAME = 'html-ppt-presenter-' + location.pathname;
+    let bc;
+    try { bc = new BroadcastChannel(CHANNEL_NAME); } catch(e) { bc = null; }
+
+    // Are we running inside the presenter popup? (legacy flag, now unused)
+    const isPresenterWindow = false;
+
+    /* ===== progress bar ===== */
+    let bar = document.querySelector('.progress-bar');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.className = 'progress-bar';
+      bar.innerHTML = '<span></span>';
+      document.body.appendChild(bar);
+    }
+    const barFill = bar.querySelector('span');
+
+    /* ===== notes overlay (N key) ===== */
+    let notes = document.querySelector('.notes-overlay');
+    if (!notes) {
+      notes = document.createElement('div');
+      notes.className = 'notes-overlay';
+      document.body.appendChild(notes);
+    }
+
+    /* ===== overview grid (O key) ===== */
+    let overview = document.querySelector('.overview');
+    if (!overview) {
+      overview = document.createElement('div');
+      overview.className = 'overview';
+      slides.forEach((s, i) => {
+        const t = document.createElement('div');
+        t.className = 'thumb';
+        // Force 16:9 aspect ratio robustly
+        t.style.padding = '0 0 56.25% 0';
+        t.style.height = '0';
+        t.style.position = 'relative';
+        t.style.overflow = 'hidden';
+
+        const title = s.getAttribute('data-title') ||
+          (s.querySelector('h1,h2,h3')||{}).textContent || ('Slide '+(i+1));
+        
+        // Create a container for the mini-slide
+        const mini = document.createElement('div');
+        mini.className = 'mini-slide';
+        mini.style.position = 'absolute';
+        mini.style.top = '0';
+        mini.style.left = '0';
+        mini.style.width = '1920px';
+        mini.style.height = '1080px';
+        mini.style.transformOrigin = 'top left';
+        mini.style.pointerEvents = 'none';
+        mini.style.background = 'var(--bg)';
+        
+        // Clone the slide content
+        const clone = s.cloneNode(true);
+        clone.className = 'slide is-active'; // force active styles
+        clone.style.position = 'absolute';
+        clone.style.inset = '0';
+        clone.style.transform = 'none';
+        clone.style.opacity = '1';
+        clone.style.padding = '72px 96px'; // ensure padding is kept
+        
+        mini.appendChild(clone);
+        t.appendChild(mini);
+
+        // Add the number and title overlay
+        const overlay = document.createElement('div');
+        overlay.style.position = 'absolute';
+        overlay.style.inset = '0';
+        overlay.style.background = 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.8) 100%)';
+        overlay.style.color = '#fff';
+        overlay.style.zIndex = '10';
+        overlay.style.pointerEvents = 'none';
+        
+        const n = document.createElement('div');
+        n.className = 'n';
+        n.textContent = i + 1;
+        n.style.position = 'absolute';
+        n.style.top = '12px';
+        n.style.left = '16px';
+        n.style.fontWeight = '700';
+        n.style.fontSize = '16px';
+        n.style.color = '#fff';
+        n.style.textShadow = '0 1px 4px rgba(0,0,0,0.8)';
+        
+        const text = document.createElement('div');
+        text.className = 't';
+        text.textContent = title.trim().slice(0,80);
+        text.style.position = 'absolute';
+        text.style.bottom = '12px';
+        text.style.left = '16px';
+        text.style.right = '16px';
+        text.style.fontWeight = '600';
+        text.style.fontSize = '14px';
+        text.style.color = '#fff';
+        text.style.textShadow = '0 1px 4px rgba(0,0,0,0.8)';
+        
+        overlay.appendChild(n);
+        overlay.appendChild(text);
+        t.appendChild(overlay);
+
+        t.addEventListener('click', () => { go(i); toggleOverview(false); });
+        overview.appendChild(t);
+      });
+      document.body.appendChild(overview);
+    }
+
+    /* ===== navigation ===== */
+    function go(n, fromRemote){
+      n = Math.max(0, Math.min(total-1, n));
+      slides.forEach((s,i) => {
+        s.classList.toggle('is-active', i===n);
+        s.classList.toggle('is-prev', i<n);
+      });
+      idx = n;
+      syncLogo(slides[n]);
+      barFill.style.width = ((n+1)/total*100)+'%';
+      const numEl = document.querySelector('.slide-number');
+      if (numEl) { numEl.setAttribute('data-current', n+1); numEl.setAttribute('data-total', total); }
+
+      // notes (bottom overlay)
+      const note = slides[n].querySelector(NOTE_SEL);
+      notes.innerHTML = note ? note.innerHTML : '';
+
+      // hash
+      const hashTarget = '#/'+(n+1);
+      if (location.hash !== hashTarget && !isPresenterWindow) {
+        history.replaceState(null,'', hashTarget);
+      }
+
+      // re-trigger entry animations
+      slides[n].querySelectorAll('[data-anim]').forEach(el => {
+        const a = el.getAttribute('data-anim');
+        el.classList.remove('anim-'+a);
+        void el.offsetWidth;
+        el.classList.add('anim-'+a);
+      });
+
+      // counter-up
+      slides[n].querySelectorAll('.counter').forEach(el => {
+        const target = parseFloat(el.getAttribute('data-to')||el.textContent);
+        const dur = parseInt(el.getAttribute('data-dur')||'1200',10);
+        const start = performance.now();
+        const from = 0;
+        function tick(now){
+          const t = Math.min(1,(now-start)/dur);
+          const v = from + (target-from)*(1-Math.pow(1-t,3));
+          el.textContent = (target % 1 === 0) ? Math.round(v) : v.toFixed(1);
+          if (t<1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      });
+
+      // Broadcast to other window (audience ↔ presenter)
+      if (!fromRemote && bc) {
+        bc.postMessage({ type: 'go', idx: n });
+      }
+    }
+
+    /* ===== listen for remote navigation / theme changes ===== */
+    if (bc) {
+      bc.onmessage = function(e) {
+        if (!e.data) return;
+        if (e.data.type === 'go' && typeof e.data.idx === 'number') {
+          go(e.data.idx, true);
+        } else if (e.data.type === 'theme' && e.data.name) {
+          /* Sync theme across windows */
+          const i = themes.indexOf(e.data.name);
+          if (i >= 0) themeIdx = i;
+          applyTheme(e.data.name);
+        }
+      };
+    }
+
+    function toggleNotes(force){ notes.classList.toggle('open', force!==undefined?force:!notes.classList.contains('open')); }
+    function toggleOverview(force){
+      const isOpen = force!==undefined ? force : !overview.classList.contains('open');
+      overview.classList.toggle('open', isOpen);
+      if (isOpen) {
+        requestAnimationFrame(() => {
+          const thumbs = overview.querySelectorAll('.thumb');
+          if (thumbs.length) {
+            const scale = thumbs[0].clientWidth / 1920;
+            overview.querySelectorAll('.mini-slide').forEach(m => {
+              m.style.transform = 'scale(' + scale + ')';
+            });
+          }
+        });
+      }
+    }
+
+    /* ========== PRESENTER MODE — Magnetic-card popup window ========== */
+    /* Opens a new window with 4 draggable, resizable cards:
+     *   CURRENT  — iframe(?preview=N)   pixel-perfect preview of current slide
+     *   NEXT     — iframe(?preview=N+1) pixel-perfect preview of next slide
+     *   SCRIPT   — large speaker notes (逐字稿)
+     *   TIMER    — elapsed timer + page counter + controls
+     * Cards remember position/size in localStorage.
+     * Two windows sync via BroadcastChannel.
+     */
+    let presenterWin = null;
+
+    function openPresenterWindow() {
+      if (presenterWin && !presenterWin.closed) {
+        presenterWin.focus();
+        return;
+      }
+
+      // Build absolute URL of THIS deck file (without hash/query)
+      const deckUrl = location.protocol + '//' + location.host + location.pathname;
+
+      // Collect slide titles + notes (HTML strings)
+      const slideMeta = slides.map((s, i) => {
+        const note = s.querySelector(NOTE_SEL);
+        return {
+          title: s.getAttribute('data-title') ||
+            (s.querySelector('h1,h2,h3')||{}).textContent || ('Slide '+(i+1)),
+          notes: note ? note.innerHTML : ''
+        };
+      });
+
+      /* Capture current theme so presenter previews match the audience */
+      const currentTheme = root.getAttribute('data-theme') || (themes[themeIdx] || '');
+      const presenterHTML = buildPresenterHTML(deckUrl, slideMeta, total, idx, CHANNEL_NAME, currentTheme);
+
+      presenterWin = window.open('', 'html-ppt-presenter', 'width=1280,height=820,menubar=no,toolbar=no');
+      if (!presenterWin) {
+        alert('请允许弹出窗口以使用演讲者视图');
+        return;
+      }
+      presenterWin.document.open();
+      presenterWin.document.write(presenterHTML);
+      presenterWin.document.close();
+    }
+
+    function buildPresenterHTML(deckUrl, slideMeta, total, startIdx, channelName, currentTheme) {
+      /* Notes are authored HTML. Escaping "<" keeps a literal <\/script> in a
+         slide's notes from closing the inline script that carries this JSON —
+         which would kill the whole presenter init. */
+      const embed = (v) => JSON.stringify(v).replace(/</g, '\\u003c');
+      const metaJSON = embed(slideMeta);
+      const deckUrlJSON = embed(deckUrl);
+      const channelJSON = embed(channelName);
+      const themeJSON = embed(currentTheme || '');
+      const storageKey = 'html-ppt-presenter:' + location.pathname;
+
+      // Build the document as a single template string for clarity
+      return `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Presenter View</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #1a1d24;
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(88,166,255,.04), transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(188,140,255,.04), transparent 50%);
+    color: #e6edf3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+  }
+  /* Stage: positioned area where cards live */
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+
+  /* Magnetic card */
+  .pcard {
+    position: absolute;
+    background: #0d1117;
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.02);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    min-width: 180px; min-height: 100px;
+    transition: box-shadow .2s, border-color .2s;
+  }
+
+  /* Default geometry. The cards used to get position and size ONLY from
+     applyLayout(), which runs at the very end of the init — so anything that
+     stopped that script (a blocked inline script under CSP, a stale layout in
+     localStorage, any throw in the wiring above it) left four cards collapsed
+     on top of each other and just the hint bar visible (#14). These rules make
+     the presenter usable with zero JS; applyLayout() overrides them with px. */
+  #card-cur   { left: 16px; top: 16px;
+                width: calc(55% - 24px);  height: calc((100% - 36px) * 0.62 - 16px); }
+  #card-nxt   { left: calc(55% + 8px); top: 16px;
+                width: calc(45% - 24px);  height: calc((100% - 36px) * 0.42 - 16px); }
+  #card-notes { left: calc(55% + 8px); top: calc((100% - 36px) * 0.42 + 8px);
+                width: calc(45% - 24px);  height: calc((100% - 36px) * 0.58 - 16px); }
+  #card-timer { left: 16px; top: calc((100% - 36px) * 0.62 + 8px);
+                width: calc(55% - 24px);  height: calc((100% - 36px) * 0.38 - 16px); }
+
+  .pcard.dragging { box-shadow: 0 16px 48px rgba(0,0,0,.6), 0 0 0 2px rgba(88,166,255,.5); border-color: #58a6ff; transition: none; z-index: 9999; }
+  .pcard.resizing { box-shadow: 0 16px 48px rgba(0,0,0,.6), 0 0 0 2px rgba(63,185,80,.5); border-color: #3fb950; transition: none; z-index: 9999; }
+  .pcard:hover { border-color: rgba(88,166,255,.3); }
+
+  /* Card header (drag handle) */
+  .pcard-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,.04);
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    cursor: move;
+    user-select: none;
+    flex-shrink: 0;
+  }
+  .pcard-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dot-color, #58a6ff); flex-shrink: 0; }
+  .pcard-title {
+    font-size: 11px; letter-spacing: .15em; text-transform: uppercase;
+    font-weight: 700; color: #8b949e; flex: 1;
+  }
+  .pcard-meta { font-size: 11px; color: #6e7681; }
+
+  /* Card body */
+  .pcard-body { flex: 1; position: relative; overflow: hidden; min-height: 0; }
+
+  /* Preview cards (CURRENT/NEXT) — iframe-based pixel-perfect render */
+  .pcard-preview .pcard-body { background: #000; }
+  .pcard-preview iframe {
+    position: absolute; top: 0; left: 0;
+    width: 1920px; height: 1080px;
+    border: none;
+    transform-origin: top left;
+    pointer-events: none;
+    background: transparent;
+  }
+  .pcard-preview .preview-end {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: #484f58; font-size: 14px; letter-spacing: .12em;
+  }
+
+  /* Notes card */
+  .pcard-notes .pcard-body {
+    padding: 14px 18px;
+    overflow-y: auto;
+    font-size: 18px; line-height: 1.75;
+    color: #d0d7de;
+    font-family: "Noto Sans SC", -apple-system, sans-serif;
+  }
+  .pcard-notes .pcard-body p { margin: 0 0 .7em 0; }
+  .pcard-notes .pcard-body strong { color: #f0883e; }
+  .pcard-notes .pcard-body em { color: #58a6ff; font-style: normal; }
+  .pcard-notes .pcard-body code {
+    font-family: "SF Mono", monospace; font-size: .9em;
+    background: rgba(255,255,255,.08); padding: 1px 6px; border-radius: 4px;
+  }
+  .pcard-notes .empty { color: #484f58; font-style: italic; }
+
+  /* Timer card */
+  .pcard-timer .pcard-body {
+    display: flex; flex-direction: column; gap: 14px;
+    padding: 18px 20px; justify-content: center;
+  }
+  .timer-display {
+    font-family: "SF Mono", "JetBrains Mono", monospace;
+    font-size: 42px; font-weight: 700;
+    color: #3fb950;
+    letter-spacing: .04em;
+    line-height: 1;
+  }
+  .timer-row {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 14px; color: #8b949e;
+  }
+  .timer-row .label { font-size: 10px; letter-spacing: .15em; text-transform: uppercase; color: #6e7681; }
+  .timer-row .val { color: #e6edf3; font-weight: 600; font-family: "SF Mono", monospace; }
+  .timer-controls { display: flex; gap: 8px; flex-wrap: wrap; }
+  .timer-btn {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    color: #e6edf3;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .timer-btn:hover { background: rgba(88,166,255,.15); border-color: #58a6ff; }
+  .timer-btn:active { transform: translateY(1px); }
+
+  /* Resize handle */
+  .pcard-resize {
+    position: absolute; right: 0; bottom: 0;
+    width: 18px; height: 18px;
+    cursor: nwse-resize;
+    background: linear-gradient(135deg, transparent 50%, rgba(255,255,255,.25) 50%, rgba(255,255,255,.25) 60%, transparent 60%, transparent 70%, rgba(255,255,255,.25) 70%, rgba(255,255,255,.25) 80%, transparent 80%);
+    z-index: 5;
+  }
+  .pcard-resize:hover { background: linear-gradient(135deg, transparent 50%, #58a6ff 50%, #58a6ff 60%, transparent 60%, transparent 70%, #58a6ff 70%, #58a6ff 80%, transparent 80%); }
+
+  /* Bottom hint bar */
+  .hint-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,.6);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255,255,255,.08);
+    padding: 6px 16px;
+    font-size: 11px; color: #8b949e;
+    display: flex; gap: 18px; align-items: center;
+    z-index: 1000;
+  }
+  .hint-bar kbd {
+    background: rgba(255,255,255,.08);
+    padding: 1px 6px; border-radius: 3px;
+    font-family: "SF Mono", monospace;
+    font-size: 10px;
+    border: 1px solid rgba(255,255,255,.1);
+    color: #e6edf3;
+  }
+  .hint-bar .reset-layout {
+    margin-left: auto;
+    background: transparent; border: 1px solid rgba(255,255,255,.15);
+    color: #8b949e; padding: 3px 10px; border-radius: 4px;
+    font-size: 11px; cursor: pointer; font-family: inherit;
+  }
+  .hint-bar .reset-layout:hover { background: rgba(248,81,73,.15); border-color: #f85149; color: #f85149; }
+
+  body.is-dragging-card * { user-select: none !important; }
+  body.is-dragging-card iframe { pointer-events: none !important; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div class="pcard pcard-preview" id="card-cur" style="--dot-color:#58a6ff">
+    <div class="pcard-head" data-drag>
+      <span class="pcard-dot"></span>
+      <span class="pcard-title">CURRENT</span>
+      <span class="pcard-meta" id="cur-meta">—</span>
+    </div>
+    <div class="pcard-body"><iframe id="iframe-cur"></iframe></div>
+    <div class="pcard-resize" data-resize></div>
+  </div>
+
+  <div class="pcard pcard-preview" id="card-nxt" style="--dot-color:#bc8cff">
+    <div class="pcard-head" data-drag>
+      <span class="pcard-dot"></span>
+      <span class="pcard-title">NEXT</span>
+      <span class="pcard-meta" id="nxt-meta">—</span>
+    </div>
+    <div class="pcard-body"><iframe id="iframe-nxt"></iframe></div>
+    <div class="pcard-resize" data-resize></div>
+  </div>
+
+  <div class="pcard pcard-notes" id="card-notes" style="--dot-color:#f0883e">
+    <div class="pcard-head" data-drag>
+      <span class="pcard-dot"></span>
+      <span class="pcard-title">SPEAKER SCRIPT · 逐字稿</span>
+    </div>
+    <div class="pcard-body" id="notes-body"></div>
+    <div class="pcard-resize" data-resize></div>
+  </div>
+
+  <div class="pcard pcard-timer" id="card-timer" style="--dot-color:#3fb950">
+    <div class="pcard-head" data-drag>
+      <span class="pcard-dot"></span>
+      <span class="pcard-title">TIMER</span>
+    </div>
+    <div class="pcard-body">
+      <div class="timer-display" id="timer-display">00:00</div>
+      <div class="timer-row">
+        <span class="label">Slide</span>
+        <span class="val" id="timer-count">1 / ${total}</span>
+      </div>
+      <div class="timer-controls">
+        <button class="timer-btn" id="btn-prev">← Prev</button>
+        <button class="timer-btn" id="btn-next">Next →</button>
+        <button class="timer-btn" id="btn-reset">⏱ Reset</button>
+      </div>
+    </div>
+    <div class="pcard-resize" data-resize></div>
+  </div>
+</div>
+
+<div class="hint-bar">
+  <span><kbd>← →</kbd> 翻页</span>
+  <span><kbd>R</kbd> 重置计时</span>
+  <span><kbd>Esc</kbd> 关闭</span>
+  <span style="color:#6e7681">拖动卡片头部移动 · 拖动右下角调整大小</span>
+  <button class="reset-layout" id="reset-layout">重置布局</button>
+</div>
+
+<script>
+(function(){
+  var slideMeta = ${metaJSON};
+  var total = ${total};
+  var idx = ${startIdx};
+  var deckUrl = ${deckUrlJSON};
+  var STORAGE_KEY = ${embed(storageKey)};
+  var bc;
+  try { bc = new BroadcastChannel(${channelJSON}); } catch(e) {}
+
+  var iframeCur = document.getElementById('iframe-cur');
+  var iframeNxt = document.getElementById('iframe-nxt');
+  var notesBody = document.getElementById('notes-body');
+  var curMeta = document.getElementById('cur-meta');
+  var nxtMeta = document.getElementById('nxt-meta');
+  var timerDisplay = document.getElementById('timer-display');
+  var timerCount = document.getElementById('timer-count');
+
+  /* Lay the cards out before anything else. This used to be the LAST statement
+     of the init, so every line below it was a single point of failure for the
+     whole presenter's visibility (#14). Function declarations hoist, so this is
+     safe here. */
+  applyLayout(readLayout());
+
+  /* ===== Default card layout ===== */
+  var CARD_IDS = ['card-cur','card-nxt','card-notes','card-timer'];
+  var MIN_W = 180, MIN_H = 100;
+
+  function defaultLayout() {
+    /* A popup that opened minimised or in a background tab can report 0 here;
+       the old code turned that into negative widths, which CSS discards. */
+    var w = Math.max(640, window.innerWidth || 0);
+    var h = Math.max(400, (window.innerHeight || 0) - 36); /* room for hint bar */
+    return {
+      'card-cur':   { x: 16,        y: 16,            w: Math.round(w*0.55) - 24, h: Math.round(h*0.62) - 16 },
+      'card-nxt':   { x: Math.round(w*0.55) + 8, y: 16, w: w - Math.round(w*0.55) - 24, h: Math.round(h*0.42) - 16 },
+      'card-notes': { x: Math.round(w*0.55) + 8, y: Math.round(h*0.42) + 8, w: w - Math.round(w*0.55) - 24, h: h - Math.round(h*0.42) - 16 },
+      'card-timer': { x: 16,        y: Math.round(h*0.62) + 8, w: Math.round(w*0.55) - 24, h: h - Math.round(h*0.62) - 16 }
+    };
+  }
+
+  /* ===== Apply / save / restore layout ===== */
+  function applyLayout(layout) {
+    Object.keys(layout).forEach(function(id){
+      var el = document.getElementById(id);
+      var l = layout[id];
+      if (el && l) {
+        el.style.left = l.x + 'px';
+        el.style.top = l.y + 'px';
+        el.style.width = l.w + 'px';
+        el.style.height = l.h + 'px';
+      }
+    });
+    rescaleAll();
+  }
+  /* A layout restored from localStorage was written against whatever window
+     size the deck was last presented at. Replayed in a smaller window it puts
+     every card off-screen, and there is no way back because the layout is
+     sticky — so clamp it into view and reject anything malformed. */
+  function sanitizeLayout(layout) {
+    if (!layout || typeof layout !== 'object') return null;
+    var vw = Math.max(MIN_W, window.innerWidth || 0);
+    var vh = Math.max(MIN_H, window.innerHeight || 0);
+    var out = {};
+    for (var i = 0; i < CARD_IDS.length; i++) {
+      var l = layout[CARD_IDS[i]];
+      if (!l) return null;
+      var cw = Math.min(Math.max(+l.w || 0, MIN_W), vw);
+      var ch = Math.min(Math.max(+l.h || 0, MIN_H), vh);
+      var cx = Math.min(Math.max(+l.x || 0, 0), Math.max(0, vw - MIN_W));
+      var cy = Math.min(Math.max(+l.y || 0, 0), Math.max(0, vh - 40));
+      if (!isFinite(cw) || !isFinite(ch) || !isFinite(cx) || !isFinite(cy)) return null;
+      out[CARD_IDS[i]] = { x: cx, y: cy, w: cw, h: ch };
+    }
+    return out;
+  }
+  function readLayout() {
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch(e) {}
+    return sanitizeLayout(saved) || defaultLayout();
+  }
+  function saveLayout() {
+    var layout = {};
+    CARD_IDS.forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) {
+        layout[id] = {
+          x: parseInt(el.style.left,10) || 0,
+          y: parseInt(el.style.top,10) || 0,
+          w: parseInt(el.style.width,10) || 300,
+          h: parseInt(el.style.height,10) || 200
+        };
+      }
+    });
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(layout)); } catch(e) {}
+  }
+
+  /* ===== iframe rescale to fit card body ===== */
+  function rescaleIframe(iframe) {
+    if (!iframe || iframe.style.display === 'none') return;
+    var body = iframe.parentElement;
+    var cw = body.clientWidth, ch = body.clientHeight;
+    if (!cw || !ch) return;
+    var s = Math.min(cw / 1920, ch / 1080);
+    iframe.style.transform = 'scale(' + s + ')';
+    /* Center the scaled iframe in the body */
+    var sw = 1920 * s, sh = 1080 * s;
+    iframe.style.left = Math.max(0, (cw - sw) / 2) + 'px';
+    iframe.style.top = Math.max(0, (ch - sh) / 2) + 'px';
+  }
+  function rescaleAll() {
+    rescaleIframe(iframeCur);
+    rescaleIframe(iframeNxt);
+  }
+  window.addEventListener('resize', rescaleAll);
+
+  /* ===== Drag (move card by header) ===== */
+  document.querySelectorAll('[data-drag]').forEach(function(handle){
+    handle.addEventListener('mousedown', function(e){
+      if (e.button !== 0) return;
+      var card = handle.closest('.pcard');
+      if (!card) return;
+      e.preventDefault();
+      card.classList.add('dragging');
+      document.body.classList.add('is-dragging-card');
+      var startX = e.clientX, startY = e.clientY;
+      var startL = parseInt(card.style.left,10) || 0;
+      var startT = parseInt(card.style.top,10)  || 0;
+      function onMove(ev){
+        var nx = Math.max(0, Math.min(window.innerWidth - 100, startL + ev.clientX - startX));
+        var ny = Math.max(0, Math.min(window.innerHeight - 50, startT + ev.clientY - startY));
+        card.style.left = nx + 'px';
+        card.style.top = ny + 'px';
+      }
+      function onUp(){
+        card.classList.remove('dragging');
+        document.body.classList.remove('is-dragging-card');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        saveLayout();
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  });
+
+  /* ===== Resize (drag bottom-right corner) ===== */
+  document.querySelectorAll('[data-resize]').forEach(function(handle){
+    handle.addEventListener('mousedown', function(e){
+      if (e.button !== 0) return;
+      var card = handle.closest('.pcard');
+      if (!card) return;
+      e.preventDefault(); e.stopPropagation();
+      card.classList.add('resizing');
+      document.body.classList.add('is-dragging-card');
+      var startX = e.clientX, startY = e.clientY;
+      var startW = parseInt(card.style.width,10)  || card.offsetWidth;
+      var startH = parseInt(card.style.height,10) || card.offsetHeight;
+      function onMove(ev){
+        var nw = Math.max(180, startW + ev.clientX - startX);
+        var nh = Math.max(100, startH + ev.clientY - startY);
+        card.style.width = nw + 'px';
+        card.style.height = nh + 'px';
+        if (card.querySelector('iframe')) rescaleIframe(card.querySelector('iframe'));
+      }
+      function onUp(){
+        card.classList.remove('resizing');
+        document.body.classList.remove('is-dragging-card');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        rescaleAll();
+        saveLayout();
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  });
+
+  /* ===== Preview iframe ready tracking =====
+   * Each iframe loads the deck ONCE with ?preview=1 on init. Subsequent
+   * slide changes are sent via postMessage('preview-goto') so the iframe
+   * just toggles visibility of a different .slide — no reload, no flicker.
+   */
+  var iframeReady = { cur: false, nxt: false };
+  var currentTheme = ${themeJSON};
+  window.addEventListener('message', function(e) {
+    if (!e.data || e.data.type !== 'preview-ready') return;
+    var iframe = null;
+    if (e.source === iframeCur.contentWindow) {
+      iframeReady.cur = true;
+      iframe = iframeCur;
+      postPreviewGoto(iframeCur, idx);
+    } else if (e.source === iframeNxt.contentWindow) {
+      iframeReady.nxt = true;
+      iframe = iframeNxt;
+      postPreviewGoto(iframeNxt, idx + 1 < total ? idx + 1 : idx);
+    }
+    /* Sync current theme to the iframe */
+    if (iframe && currentTheme) {
+      try { iframe.contentWindow.postMessage({ type: 'preview-theme', name: currentTheme }, '*'); } catch(err) {}
+    }
+    if (iframe) rescaleIframe(iframe);
+  });
+
+  function postPreviewGoto(iframe, n) {
+    try {
+      iframe.contentWindow.postMessage({ type: 'preview-goto', idx: n }, '*');
+    } catch(e) {}
+  }
+
+  /* ===== Update content =====
+   * Smooth (no-reload) navigation: send postMessage to iframes instead of
+   * resetting src. Iframes stay loaded, just switch visible .slide.
+   */
+  function update(n) {
+    n = Math.max(0, Math.min(total - 1, n));
+    idx = n;
+
+    /* Current preview — postMessage (smooth) */
+    if (iframeReady.cur) postPreviewGoto(iframeCur, n);
+    curMeta.textContent = (n + 1) + '/' + total;
+
+    /* Next preview */
+    if (n + 1 < total) {
+      iframeNxt.style.display = '';
+      var endEl = document.querySelector('#card-nxt .preview-end');
+      if (endEl) endEl.remove();
+      if (iframeReady.nxt) postPreviewGoto(iframeNxt, n + 1);
+      nxtMeta.textContent = (n + 2) + '/' + total;
+    } else {
+      iframeNxt.style.display = 'none';
+      var body = document.querySelector('#card-nxt .pcard-body');
+      if (body && !body.querySelector('.preview-end')) {
+        var end = document.createElement('div');
+        end.className = 'preview-end';
+        end.textContent = '— END OF DECK —';
+        body.appendChild(end);
+      }
+      nxtMeta.textContent = 'END';
+    }
+
+    /* Notes */
+    var note = slideMeta[n].notes;
+    notesBody.innerHTML = note || '<span class="empty">（这一页还没有逐字稿）</span>';
+
+    /* Timer count */
+    timerCount.textContent = (n + 1) + ' / ' + total;
+  }
+
+  /* ===== Timer ===== */
+  var tStart = Date.now();
+  setInterval(function(){
+    var s = Math.floor((Date.now() - tStart) / 1000);
+    var mm = String(Math.floor(s/60)).padStart(2,'0');
+    var ss = String(s%60).padStart(2,'0');
+    timerDisplay.textContent = mm + ':' + ss;
+  }, 1000);
+  function resetTimer(){ tStart = Date.now(); timerDisplay.textContent = '00:00'; }
+
+  /* ===== BroadcastChannel sync ===== */
+  if (bc) {
+    bc.onmessage = function(e){
+      if (!e.data) return;
+      if (e.data.type === 'go') update(e.data.idx);
+      else if (e.data.type === 'theme' && e.data.name) {
+        currentTheme = e.data.name;
+        /* Forward theme change to preview iframes */
+        [iframeCur, iframeNxt].forEach(function(iframe){
+          try {
+            iframe.contentWindow.postMessage({ type: 'preview-theme', name: e.data.name }, '*');
+          } catch(err) {}
+        });
+      }
+    };
+  }
+  function go(n) {
+    update(n);
+    if (bc) bc.postMessage({ type: 'go', idx: idx });
+  }
+
+  /* ===== Buttons ===== */
+  document.getElementById('btn-prev').addEventListener('click', function(){ go(idx - 1); });
+  document.getElementById('btn-next').addEventListener('click', function(){ go(idx + 1); });
+  document.getElementById('btn-reset').addEventListener('click', resetTimer);
+  document.getElementById('reset-layout').addEventListener('click', function(){
+    if (confirm('恢复默认卡片布局？')) {
+      try { localStorage.removeItem(STORAGE_KEY); } catch(e){}
+      applyLayout(defaultLayout());
+    }
+  });
+
+  /* ===== Keyboard ===== */
+  document.addEventListener('keydown', function(e){
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    switch(e.key) {
+      case 'ArrowRight': case ' ': case 'PageDown': go(idx + 1); e.preventDefault(); break;
+      case 'ArrowLeft':  case 'PageUp':   go(idx - 1); e.preventDefault(); break;
+      case 'Home': go(0); break;
+      case 'End':  go(total - 1); break;
+      case 'r': case 'R': resetTimer(); break;
+      case 'Escape': window.close(); break;
+    }
+  });
+
+  /* ===== Iframe load → rescale (catches initial size) ===== */
+  iframeCur.addEventListener('load', function(){ rescaleIframe(iframeCur); });
+  iframeNxt.addEventListener('load', function(){ rescaleIframe(iframeNxt); });
+
+  /* ===== Init =====
+   * Load each iframe ONCE with the deck file. After they post
+   * 'preview-ready', all subsequent navigation is via postMessage
+   * (smooth, no reload, no flicker).
+   */
+  try {
+    iframeCur.src = deckUrl + '?preview=' + (idx + 1);
+    if (idx + 1 < total) iframeNxt.src = deckUrl + '?preview=' + (idx + 2);
+    /* Initialize notes/timer/count without touching iframes */
+    var m = slideMeta[idx] || {};
+    notesBody.innerHTML = m.notes || '<span class="empty">（这一页还没有逐字稿）</span>';
+    curMeta.textContent = (idx + 1) + '/' + total;
+    nxtMeta.textContent = (idx + 2) + '/' + total;
+    timerCount.textContent = (idx + 1) + ' / ' + total;
+  } catch (e) {
+    /* Report it, but never let it blank the cards. */
+    if (window.console && console.error) console.error('[html-ppt] presenter init:', e);
+  }
+})();
+</` + `script>
+</body></html>`;
+    }
+
+    function fullscreen(){ const el=document.documentElement;
+      if (!document.fullscreenElement) el.requestFullscreen&&el.requestFullscreen();
+      else document.exitFullscreen&&document.exitFullscreen();
+    }
+
+    // theme cycling
+    const root = document.documentElement;
+    const themesAttr = root.getAttribute('data-themes') || document.body.getAttribute('data-themes');
+    const themes = themesAttr ? themesAttr.split(',').map(s=>s.trim()).filter(Boolean) : [];
+    let themeIdx = 0;
+
+    // Auto-detect theme base path from existing <link id="theme-link">
+    let themeBase = root.getAttribute('data-theme-base');
+    if (!themeBase) {
+      const existingLink = document.getElementById('theme-link');
+      if (existingLink) {
+        // el.getAttribute('href') gives the raw relative path written in HTML
+        const rawHref = existingLink.getAttribute('href') || '';
+        const lastSlash = rawHref.lastIndexOf('/');
+        themeBase = lastSlash >= 0 ? rawHref.substring(0, lastSlash + 1) : 'assets/themes/';
+      } else {
+        themeBase = 'assets/themes/';
+      }
+    }
+
+    function applyTheme(name) {
+      let link = document.getElementById('theme-link');
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.id = 'theme-link';
+        document.head.appendChild(link);
+      }
+      link.href = themeBase + name + '.css';
+      root.setAttribute('data-theme', name);
+      const ind = document.querySelector('.theme-indicator');
+      if (ind) ind.textContent = name;
+    }
+    function cycleTheme(fromRemote){
+      if (!themes.length) return;
+      themeIdx = (themeIdx+1) % themes.length;
+      const name = themes[themeIdx];
+      applyTheme(name);
+      /* Broadcast to other window (audience ↔ presenter) */
+      if (!fromRemote && bc) bc.postMessage({ type: 'theme', name: name });
+    }
+
+    // animation cycling on current slide
+    let animIdx = 0;
+    function cycleAnim(){
+      animIdx = (animIdx+1) % ANIMS.length;
+      const a = ANIMS[animIdx];
+      const target = slides[idx].querySelector('[data-anim-target]') || slides[idx];
+      ANIMS.forEach(x => target.classList.remove('anim-'+x));
+      void target.offsetWidth;
+      target.classList.add('anim-'+a);
+      target.setAttribute('data-anim', a);
+      const ind = document.querySelector('.anim-indicator');
+      if (ind) ind.textContent = a;
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.metaKey||e.ctrlKey||e.altKey) return;
+      switch (e.key) {
+        case 'ArrowRight': case ' ': case 'PageDown': case 'Enter': go(idx+1); e.preventDefault(); break;
+        case 'ArrowLeft': case 'PageUp': case 'Backspace': go(idx-1); e.preventDefault(); break;
+        case 'Home': go(0); break;
+        case 'End': go(total-1); break;
+        case 'f': case 'F': fullscreen(); break;
+        case 's': case 'S': openPresenterWindow(); break;
+        case 'n': case 'N': toggleNotes(); break;
+        case 'o': case 'O': toggleOverview(); break;
+        case 't': case 'T': cycleTheme(); break;
+        case 'a': case 'A': cycleAnim(); break;
+        case 'Escape': toggleOverview(false); toggleNotes(false); break;
+      }
+    });
+
+    /* ===== Touch navigation =====
+     * Phones have no arrow keys (#15). Swipe left for next, right for prev.
+     *
+     * Deliberately passive: we never call preventDefault, so pinch-zoom and
+     * any native scrolling keep working and the browser is free to scroll
+     * while we are still deciding. A gesture only counts as a swipe if it is
+     * single-finger, clearly horizontal, long enough and quick enough —
+     * otherwise it falls through untouched.
+     */
+    (function initTouchNav(){
+      /* No capability sniffing on purpose. Touch listeners cost nothing on a
+         device that never fires them, and `ontouchstart in window` /
+         maxTouchPoints both misreport on touchscreen laptops and some
+         tablets — a guard here would silently remove the feature on exactly
+         the devices that need it. */
+      var SWIPE_MIN_PX = 50;    // shorter than this is a tap or a wobble
+      var SWIPE_RATIO  = 1.5;   // must be this much more horizontal than vertical
+      var SWIPE_MAX_MS = 800;   // slower than this is a drag, not a swipe
+
+      var x0 = 0, y0 = 0, t0 = 0, tracking = false;
+
+      function interactive(target) {
+        if (!target || !target.closest) return false;
+        /* Don't steal the gesture from the overview grid, the notes drawer,
+           or anything the author made scrollable or tappable. */
+        return !!target.closest('.overview, .notes-overlay, a, button, input, textarea, select, [data-no-swipe]');
+      }
+
+      document.addEventListener('touchstart', function(e){
+        if (e.touches.length !== 1 || interactive(e.target)) { tracking = false; return; }
+        x0 = e.touches[0].clientX;
+        y0 = e.touches[0].clientY;
+        t0 = Date.now();
+        tracking = true;
+      }, { passive: true });
+
+      document.addEventListener('touchmove', function(e){
+        /* A second finger means pinch-zoom — abandon the swipe. */
+        if (e.touches.length > 1) tracking = false;
+      }, { passive: true });
+
+      document.addEventListener('touchend', function(e){
+        if (!tracking) return;
+        tracking = false;
+        var t = e.changedTouches && e.changedTouches[0];
+        if (!t) return;
+        if (Date.now() - t0 > SWIPE_MAX_MS) return;
+        var dx = t.clientX - x0, dy = t.clientY - y0;
+        if (Math.abs(dx) < SWIPE_MIN_PX) return;
+        if (Math.abs(dx) < Math.abs(dy) * SWIPE_RATIO) return;
+        go(dx < 0 ? idx + 1 : idx - 1);
+      }, { passive: true });
+
+      document.addEventListener('touchcancel', function(){ tracking = false; }, { passive: true });
+    })();
+
+    // hash deep-link
+    function fromHash(){
+      const m = /^#\/(\d+)/.exec(location.hash||'');
+      if (m) go(Math.max(0, parseInt(m[1],10)-1));
+    }
+    window.addEventListener('hashchange', fromHash);
+    fromHash();
+    go(idx);
+  });
+})();
+
+</script>
+<script>
+/* ===== lec17 deck.js ===== */
+/* ==========================================================================
+   第 17 讲课件脚本
+   运行在 html-ppt 的 runtime.js 之后：翻页、进度条、总览仍由 runtime 负责，
+   这里只补充课堂需要的部分——分步讲解、时序图、拟物场景、代码卡、复制与测验。
+   本脚本在 runtime 的 DOMContentLoaded 回调之前同步执行，
+   因此总览缩略图克隆到的是已经画好的页面。
+   ========================================================================== */
+(() => {
+  'use strict';
+
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  const svgEl = (name, attrs = {}) => {
+    const node = document.createElementNS(SVG_NS, name);
+    for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+    return node;
+  };
+  const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const CIRCLED = '⓪①②③④⑤⑥⑦⑧⑨';
+  /* 把反引号包住的部分排成代码，其余按纯文本处理 */
+  const rich = (text) => String(text).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
+    .replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  const deck = $('.deck');
+  const slides = $$('.deck > .slide');
+  const activeSlide = () => $('.deck > .slide.is-active');
+
+  /* ------------------------------------------------------------------
+   * 分步控件：时序图和明信片场景共用。
+   * set(n, via) 的 via 用来区分“逐步前进”和“跳转”，只有逐步前进才播放飞行动画。
+   * ------------------------------------------------------------------ */
+  const steppers = new Map();
+
+  function makeStepper(root, { max, onChange, captionFor }) {
+    let cur = 0;
+    const prevBtn = $('[data-step-prev]', root);
+    const nextBtn = $('[data-step-next]', root);
+    const resetBtn = $('[data-step-reset]', root);
+    const count = $('[data-step-count]', root);
+    const caption = $('[data-step-caption]', root);
+
+    const release = (btn) => { if (btn && document.activeElement === btn) btn.blur(); };
+    const paint = () => {
+      if (count) count.textContent = `${cur} / ${max}`;
+      if (prevBtn) { prevBtn.disabled = cur === 0; release(prevBtn); }
+      if (nextBtn) { nextBtn.disabled = cur === max; release(nextBtn); }
+    };
+    const set = (n, via = 'jump') => {
+      n = Math.max(0, Math.min(max, n));
+      const old = cur;
+      cur = n;
+      root.dataset.step = String(n);
+      onChange(n, old, via);
+      if (caption && captionFor) { caption.innerHTML = captionFor(n); caption.classList.toggle('now', n > 0); }
+      paint();
+    };
+
+    if (prevBtn) prevBtn.addEventListener('click', () => set(cur - 1, 'prev'));
+    if (nextBtn) nextBtn.addEventListener('click', () => set(cur + 1, 'next'));
+    if (resetBtn) resetBtn.addEventListener('click', () => set(0, 'reset'));
+    set(0, 'init');
+    const api = { root, max, get: () => cur, set };
+    steppers.set(root, api);
+    return api;
+  }
+
+  /* ------------------------------------------------------------------
+   * 按键门控（捕获阶段，先于 runtime 的 document 监听）
+   *  - 课堂用不到的键（换主题、演讲者视图、备注、试动效）直接屏蔽，避免误触。
+   *  - 焦点在按钮、单选框、折叠标题上时，空格和回车交给控件自己。
+   *  - 当前页有分步内容时，→ 先推进一步，走完最后一步后才翻页；← 同理。
+   * ------------------------------------------------------------------ */
+  const HIDDEN_KEYS = new Set(['s', 'S', 'n', 'N', 't', 'T', 'a', 'A']);
+  const FIELD_KEYS = new Set(['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', ' ', 'PageDown', 'PageUp', 'Enter', 'Backspace', 'Home', 'End']);
+  const FWD = new Set(['ArrowRight', ' ', 'PageDown', 'Enter']);
+  const BACK = new Set(['ArrowLeft', 'PageUp', 'Backspace']);
+  const canScroll = (box, key) => {
+    if (key === 'PageDown' || key === ' ') return box.scrollHeight - box.scrollTop - box.clientHeight > 2;
+    if (key === 'PageUp') return box.scrollTop > 2;
+    return false;
+  };
+
+  window.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (HIDDEN_KEYS.has(e.key)) { e.stopPropagation(); e.preventDefault(); return; }
+    const target = e.target instanceof Element ? e.target : null;
+    if (target && target.closest('input, select, textarea') && FIELD_KEYS.has(e.key)) { e.stopPropagation(); return; }
+    if (target && target.closest('button, summary, a[href], [contenteditable]:not([contenteditable="false"])')
+      && (e.key === ' ' || e.key === 'Enter')) { e.stopPropagation(); return; }
+    const box = target && target.closest('[data-scroll]');
+    if (box && canScroll(box, e.key)) { e.stopPropagation(); return; }
+
+    const slide = activeSlide();
+    if (!slide) return;
+    for (const st of steppers.values()) {
+      if (!slide.contains(st.root)) continue;
+      if (FWD.has(e.key) && st.get() < st.max) { st.set(st.get() + 1, 'next'); e.stopPropagation(); e.preventDefault(); return; }
+      if (BACK.has(e.key) && st.get() > 0) { st.set(st.get() - 1, 'prev'); e.stopPropagation(); e.preventDefault(); return; }
+    }
+  }, true);
+
+  /* ------------------------------------------------------------------
+   * 页眉：显示当前页所在的板块；封面不显示页眉。
+   * ------------------------------------------------------------------ */
+  const sectionLabel = $('#cw-section');
+  const syncChrome = () => {
+    const current = activeSlide();
+    if (!current) return;
+    deck.classList.toggle('no-chrome', current.hasAttribute('data-chrome'));
+    if (sectionLabel) sectionLabel.textContent = current.getAttribute('data-section') || '';
+  };
+  const chromeObserver = new MutationObserver(syncChrome);
+  slides.forEach((s) => chromeObserver.observe(s, { attributes: true, attributeFilter: ['class'] }));
+  syncChrome();
+
+  /* ------------------------------------------------------------------
+   * 时序图：一张规格表 → SVG + 右侧步骤列表。
+   * 约定：竖条表示“正在执行、还在等”的调用；箭头从发送方指向接收方；时间从上往下。
+   * lost: true 的箭头画成红色虚线并在中途打 ✕，表示这一份没有送达。
+   * ------------------------------------------------------------------ */
+  const SEQ = {
+    cover: {
+      w: 660, h: 468, mini: true,
+      actors: [{ id: 'sender', x: 170 }, { id: 'receiver', x: 490 }],
+      steps: [
+        { from: 'sender', to: 'receiver', y: 160, label: [{ m: 'send()' }, ' ', { b: 'hello java' }] },
+        { from: 'sender', to: 'receiver', y: 248, label: [{ m: 'send()' }, ' ', { b: 'ok' }] },
+        { from: 'receiver', to: 'sender', y: 372, label: ['没有回执'], tone: 'neutral' },
+      ],
+    },
+    udpflow: {
+      w: 1040, h: 596, axis: '时间 ↓',
+      actors: [
+        { id: 'sender', x: 250, name: '发送端', sub: 'UdpGreetingSender' },
+        { id: 'receiver', x: 790, name: '接收端', sub: 'UdpGreetingReceiver' },
+      ],
+      bars: [
+        { id: 'recv1', actor: 'receiver', y1: 176, y2: 330, side: 'right', label: 'receive() 等待第 1 包' },
+        { id: 'recv2', actor: 'receiver', y1: 352, y2: 500, side: 'right', label: 'receive() 等待第 2 包' },
+      ],
+      steps: [
+        { self: true, from: 'receiver', y: 150, label: [{ m: 'bind(127.0.0.1:16017)' }], focus: ['recv1'],
+          t: '接收端先启动', d: '绑定端口后，`receive()` 停在这里等数据报。注意：没有 `accept()`——UDP 不需要先接通。' },
+        { from: 'sender', to: 'receiver', y: 330, label: [{ m: 'send()' }, ' ', { b: '"hello java"' }], cap: '无连接：直接写给 127.0.0.1:16017', focus: ['recv1'],
+          t: '寄出第一封', d: '`send()` 把 10 个字节交给 UDP 就返回，不等对方确认——是寄明信片，不是打电话。' },
+        { self: true, from: 'receiver', y: 376, label: [{ m: 'receive()' }, ' 返回，', { m: 'getLength() = 10' }],
+          t: '第一封交付', d: '拿到完整的一份数据报：从 `getOffset()` 起、共 10 个字节，边界由 UDP 保留。' },
+        { from: 'sender', to: 'receiver', y: 500, label: [{ m: 'send()' }, ' ', { b: '"ok"' }], cap: '同一个 socket，再寄一封',
+          t: '寄出第二封', d: '还是那个 `DatagramSocket`。两封之间没有任何联系，也不会粘在一起。' },
+        { self: true, from: 'receiver', y: 542, label: [{ m: 'receive()' }, ' 返回，', { m: 'getLength() = 2' }],
+          t: '第二封交付，两端结束', d: '第二封 2 字节。接收端收满两包后关闭；发送端早已退出——全程没有一次握手或挥手。' },
+      ],
+      notes: [
+        { actor: 'sender', y: 262, side: 'left', text: 'send() 立即返回' },
+      ],
+      ends: [{ actor: 'sender', text: '两封寄出后程序结束' }, { actor: 'receiver', text: '收满两包，程序结束' }],
+    },
+    loss: {
+      w: 1040, h: 620,
+      actors: [
+        { id: 'sender', x: 250, name: '发送端', sub: '已寄出两封' },
+        { id: 'receiver', x: 790, name: '接收端', sub: '仍在等两包' },
+      ],
+      bars: [
+        { id: 'recv1', actor: 'receiver', y1: 176, y2: 330, side: 'right', label: 'receive() 等待第 1 包' },
+        { id: 'recv2', actor: 'receiver', y1: 354, y2: 470, side: 'right', label: 'receive() 等待第 2 包' },
+      ],
+      steps: [
+        { self: true, from: 'receiver', y: 150, label: [{ m: 'bind()' }, ' → ', { m: 'receive()' }, ' 等待'], focus: ['recv1'],
+          t: '接收端先启动', d: '和刚才一样绑定 16017，等两份数据报。' },
+        { from: 'sender', to: 'receiver', y: 262, label: [{ b: '"hello java"' }, '（10 字节）'], lost: true,
+          t: '第一封在途中丢失', d: '这是课堂模拟。真实网络里 UDP 数据报可能丢失；本机回环几乎不丢，所以用动画和下一页的实验来对照。' },
+        { from: 'sender', to: 'receiver', y: 340, label: [{ b: '"ok"' }], cap: '第二封顺利到达', capBelow: true,
+          t: '第二封到达', d: '`receive()` 返回：2 字节 `ok`。接收端把它当成“第 1 包”打印——它无从知道前面丢过一封。' },
+        { self: true, from: 'receiver', y: 502, label: [{ m: 'SocketTimeoutException' }], tone: 'bad', focus: ['recv2'],
+          t: '等不到下一包，超时', d: '第二个 `receive()` 等到 30 秒上限后抛出异常。UDP 不会告诉接收端“少了一封”，也不会通知发送端“没送到”。' },
+      ],
+      notes: [
+        { actor: 'sender', y: 400, side: 'left', text: '程序早已结束' },
+        { actor: 'receiver', y: 536, side: 'right', text: '打印「第 1 包：2 字节 | ok」' },
+      ],
+      ends: [{ actor: 'sender', text: '不知道第一封丢了' }, { actor: 'receiver', text: '约 30 秒后超时退出' }],
+    },
+  };
+
+  let seqSeq = 0;
+
+  function segText(parent, segs, x, y, cls, anchor) {
+    if (typeof segs === 'string') segs = [segs];
+    const text = svgEl('text', { x, y, class: cls, 'text-anchor': anchor || 'middle' });
+    for (const seg of segs) {
+      if (typeof seg === 'string') { text.appendChild(document.createTextNode(seg)); continue; }
+      const span = svgEl('tspan', seg.b ? { class: 'sq-label', 'font-weight': '700' } : { class: 'sq-label code' });
+      span.textContent = seg.m || seg.b || '';
+      text.appendChild(span);
+    }
+    parent.appendChild(text);
+    return text;
+  }
+
+  function renderSeq(node, key) {
+    const spec = SEQ[key];
+    const grid = node.matches('.cw-seq') ? node : $('.cw-seq', node);
+    const uid = `sq${++seqSeq}`;
+    const mini = !!spec.mini;
+    const interactive = node.hasAttribute('data-stepper');
+    const withBadges = interactive || node.hasAttribute('data-badges');
+    const W = spec.w;
+    const H = spec.h;
+    const actor = (id) => spec.actors.find((a) => a.id === id);
+    const toneOf = (id) => (id === 'sender' ? 'client' : id === 'receiver' ? 'server' : 'neutral');
+    const boxW = mini ? 220 : 310;
+    const boxH = mini ? 68 : 84;
+
+    const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-labelledby': `${uid}-t ${uid}-d`, class: mini ? 'mini' : '' });
+    svg.appendChild(svgEl('title', { id: `${uid}-t` })).textContent = spec.title || key;
+    const desc = svg.appendChild(svgEl('desc', { id: `${uid}-d` }));
+    desc.textContent = (spec.steps || []).map((s, i) => `${CIRCLED[i + 1]} ${(s.label || []).map((x) => (typeof x === 'string' ? x : x.m || x.b)).join('')}`).join('；');
+
+    const defs = svg.appendChild(svgEl('defs'));
+    for (const tone of ['client', 'server', 'neutral', 'bad']) {
+      const marker = svgEl('marker', { id: `${uid}-${tone}`, viewBox: '0 0 12 12', refX: '11', refY: '6', markerWidth: '22', markerHeight: '22', orient: 'auto-start-reverse', markerUnits: 'userSpaceOnUse' });
+      marker.appendChild(svgEl('path', { d: 'M1 1.5 L11 6 L1 10.5 Z', fill: tone === 'client' ? 'var(--c-client)' : tone === 'server' ? 'var(--c-server)' : tone === 'bad' ? 'var(--c-bad)' : 'var(--text-2)' }));
+      defs.appendChild(marker);
+    }
+
+    if (spec.axis) segText(svg, spec.axis, 14, 30, 'sq-axis', 'start');
+
+    /* 参与者与生命线 */
+    for (const a of spec.actors) {
+      const tone = toneOf(a.id);
+      svg.appendChild(svgEl('line', { x1: a.x, y1: boxH + 8, x2: a.x, y2: H - 40, class: 'sq-life' }));
+      svg.appendChild(svgEl('rect', { x: a.x - boxW / 2, y: 4, width: boxW, height: boxH, class: `sq-box ${tone}` }));
+      segText(svg, a.name || (a.id === 'sender' ? '发送端' : '接收端'), a.x, mini ? 46 : 40, 'sq-name');
+      if (a.sub) segText(svg, a.sub, a.x, boxH - 14, 'sq-sub');
+    }
+
+    /* 执行条：正在执行、还没返回的调用 */
+    const bars = new Map();
+    for (const b of spec.bars || []) {
+      const a = actor(b.actor);
+      const g = svg.appendChild(svgEl('g', { class: `sq-bar-group`, 'data-bar': b.id }));
+      g.appendChild(svgEl('rect', { x: a.x - 10, y: b.y1, width: 20, height: b.y2 - b.y1, class: `sq-bar ${toneOf(b.actor)}` }));
+      if (b.label) segText(g, b.label, a.x + (b.side === 'left' ? -22 : 22), (b.y1 + b.y2) / 2 + 6, 'sq-barlab', b.side === 'left' ? 'end' : 'start');
+      bars.set(b.id, g);
+    }
+
+    /* 一条消息（箭头或自环） */
+    const drawMessage = (group, msg) => {
+      const A = actor(msg.from);
+      const B = actor(msg.to || msg.from);
+      const y = msg.y;
+      const tone = msg.tone || toneOf(msg.from);
+      if (msg.self) {
+        const dir = A.x < W / 2 ? 1 : -1;
+        const x1 = A.x + dir * 88;
+        const r = 9;
+        const d = dir > 0
+          ? `M${A.x} ${y - 11} H${x1 - r} A${r} ${r} 0 0 1 ${x1} ${y - 11 + r} V${y + 13 - r} A${r} ${r} 0 0 1 ${x1 - r} ${y + 13} H${A.x + 3}`
+          : `M${A.x} ${y - 11} H${x1 + r} A${r} ${r} 0 0 0 ${x1} ${y - 11 + r} V${y + 13 - r} A${r} ${r} 0 0 0 ${x1 + r} ${y + 13} H${A.x - 3}`;
+        group.appendChild(svgEl('path', { d, class: `sq-arrow ${tone}`, 'marker-end': `url(#${uid}-${tone})` }));
+        segText(group, msg.label, x1 + dir * 14, y + 8, 'sq-label', dir > 0 ? 'start' : 'end');
+        return null;
+      }
+      const dir = B.x > A.x ? 1 : -1;
+      const x1 = A.x + dir * 2;
+      const x2 = B.x - dir * 14;
+      if (msg.lost) {
+        /* 没送达的一封：红色虚线滑向中途，末端画 ✕，不落到对方生命线上 */
+        const xl = x1 + (x2 - x1) * 0.62;
+        const yl = y + 34;
+        group.appendChild(svgEl('line', { x1, y1: y, x2: xl, y2: yl, class: 'sq-arrow lost' }));
+        const cross = svgEl('text', { x: xl + 4, y: yl + 4, class: 'sq-lostmark' });
+        cross.textContent = '✕';
+        group.appendChild(cross);
+        segText(group, msg.label, (x1 + xl) / 2, y - 9, 'sq-label');
+        return null;
+      }
+      const line = group.appendChild(svgEl('line', { x1, y1: y, x2, y2: y, class: 'sq-arrow', 'marker-end': `url(#${uid}-${tone})` }));
+      /* capBelow：说明放到箭头下方（丢包图用，避免和上一封的 ✕ 挤在同一行） */
+      if (msg.cap) segText(group, msg.cap, (x1 + x2) / 2, msg.capBelow ? y + 22 : y - 36, 'sq-cap');
+      segText(group, msg.label, (x1 + x2) / 2, y - 9, 'sq-label');
+      const dot = group.appendChild(svgEl('circle', { cx: 0, cy: y, r: 8, fill: tone === 'client' ? 'var(--c-client)' : tone === 'server' ? 'var(--c-server)' : tone === 'bad' ? 'var(--c-bad)' : 'var(--text-2)', class: 'sq-dot' }));
+      dot.dataset.from = String(x1);
+      dot.dataset.to = String(x2);
+      return dot;
+    };
+
+    (spec.steps || []).forEach((st, i) => {
+      const k = i + 1;
+      const group = svg.appendChild(svgEl('g', { class: `sq-step ${st.tone || toneOf(st.from)}${st.lost ? ' lost' : ''}`, 'data-step': k }));
+      const dot = drawMessage(group, st);
+      if (st.also) drawMessage(group, st.also);   /* 同一步里的自环按它自己的动作方着色 */
+      if (withBadges) {
+        const A = actor(st.self ? st.from : st.from);
+        const dir = A.x < W / 2 ? 1 : -1;
+        /* 丢失的箭头：序号放在起点下方，避开中途的说明文字 */
+        const bx = st.lost ? A.x + dir * 30 : st.self ? A.x + dir * 46 : A.x + dir * 48;
+        const by = st.lost ? st.y + 30 : st.y - (st.self ? 32 : st.cap ? 24 : 22);
+        group.appendChild(svgEl('circle', { cx: bx, cy: by, r: 15, class: 'sq-numbg' }));
+        const n = segText(group, CIRCLED[k], bx, by + 6, 'sq-num');
+        n.setAttribute('font-size', '17');
+        n.style.fontFamily = 'var(--font-sans)';
+      }
+    });
+
+    for (const note of spec.notes || []) {
+      const a = actor(note.actor);
+      segText(svg, note.text, a.x + (note.side === 'left' ? -20 : 20), note.y, 'sq-note code', note.side === 'left' ? 'end' : 'start');
+    }
+    (spec.ends || []).forEach((end) => segText(svg, end.text, actor(end.actor).x, H - 16, 'sq-end'));
+
+    if (!interactive) { node.prepend(svg); return svg; }   /* 静态引用：只画图，不带步骤列表 */
+    const fig = document.createElement('figure');
+    fig.className = 'card cw-seq-fig';
+    fig.appendChild(svg);
+    grid.prepend(fig);
+
+    /* 右侧步骤列表 */
+    const list = document.createElement('ol');
+    list.className = 'cw-seq-steps';
+    {
+      spec.steps.forEach((st, i) => {
+        const li = document.createElement('li');
+        li.className = st.tone === 'neutral' || st.tone === 'bad' ? '' : toneOf(st.from);
+        li.dataset.step = String(i + 1);
+        li.innerHTML = `<button type="button" data-go="${i + 1}" aria-label="高亮第 ${i + 1} 步：${st.t}"><span class="cw-n">${CIRCLED[i + 1]}</span><span><span class="cw-t">${st.t}</span><span class="cw-d">${rich(st.d)}</span></span></button>`;
+        list.appendChild(li);
+      });
+    }
+
+    const intro = node.dataset.intro || '整张图始终可见。按 → 或点击右侧步骤，逐步讲解。';
+    makeStepper(node, {
+      max: spec.steps.length,
+      captionFor: (n) => (n === 0 ? intro : `<b>${CIRCLED[n]} ${spec.steps[n - 1].t}</b>　${rich(spec.steps[n - 1].d)}`),
+      onChange: (n, old, via) => {
+        node.classList.toggle('has-focus', n > 0);
+        node.dataset.current = String(n);
+        $$('.sq-step', svg).forEach((g) => g.classList.toggle('on', Number(g.dataset.step) === n));
+        bars.forEach((g, id) => g.classList.toggle('on', n > 0 && (spec.steps[n - 1].focus || []).includes(id)));
+        $$('li', list).forEach((li) => li.classList.toggle('on', Number(li.dataset.step) === n));
+        const st = spec.steps[n - 1];
+        const stepGroup = st && $(`.sq-step[data-step="${n}"]`, svg);
+        const dot = stepGroup && $('.sq-dot', stepGroup);
+        if (dot && via === 'next' && n === old + 1 && !reduceMotion()) {
+          const x1 = Number(dot.dataset.from);
+          const x2 = Number(dot.dataset.to);
+          dot.getAnimations().forEach((a) => a.cancel());
+          dot.animate([{ transform: `translateX(${x1}px)`, opacity: 1 }, { transform: `translateX(${x2}px)`, opacity: 1, offset: 0.92 }, { transform: `translateX(${x2}px)`, opacity: 0 }],
+            { duration: 900, easing: 'ease-in-out' });
+        }
+      },
+    });
+    list.addEventListener('click', (e) => {
+      const btn = e.target instanceof Element && e.target.closest('[data-go]');
+      if (!btn) return;
+      const api = steppers.get(node);
+      const k = Number(btn.dataset.go);
+      api.set(api.get() === k ? 0 : k, 'jump');
+    });
+    $('.cw-seq-side', grid).prepend(list);
+    return svg;
+  }
+
+  $$('[data-seq]').forEach((node) => renderSeq(node, node.dataset.seq));
+
+  /* ------------------------------------------------------------------
+   * 拟物场景：把 UDP 想成寄明信片。
+   * 每一步同时更新桌面状态屏、指示灯、明信片位置和两端“正在执行”的调用。
+   * ------------------------------------------------------------------ */
+  const POST = [
+    { t: '待命：接收端先启动', cls: [], lcd: ['待寄 2 封', '等待 receive()'], led: ['off', 'wait'],
+      now: ['main() 开始', 'receive() 等待中'],
+      d: '接收端绑定 `127.0.0.1:16017` 后，`receive()` 停在这里等数据报上门。发送端桌上摆好了两封要寄的明信片。' },
+    { t: '寄出第一封：hello java', cls: ['fly1'], lcd: ['寄出第 1 封…', '等待 receive()'], led: ['send', 'wait'],
+      now: ['send(packet)', 'receive() 等待中'],
+      d: '不先“接通”谁：把 10 个字节写进明信片，写上 `127.0.0.1:16017`，投进邮筒——`send()` 立即返回。' },
+    { t: '第一封到达', cls: ['got1'], lcd: ['已寄 1 封', '第 1 包：10 字节'], led: ['send', 'on'],
+      now: ['send() 已返回', 'receive() 返回 → 10 字节'],
+      d: '`receive()` 返回：这一封从第 0 格起、共 `getLength()＝10` 字节。一封就是一份数据报，边界完整。' },
+    { t: '寄出第二封：ok', cls: ['got1', 'fly2'], lcd: ['寄出第 2 封…', '等下一封'], led: ['send', 'wait'],
+      now: ['send(packet)', 'receive() 等待中'],
+      d: '还是那个 `DatagramSocket`，再寄一封。两封之间没有联系，也不会粘在一起。' },
+    { t: '第二封到达', cls: ['got1', 'got2'], lcd: ['已寄 2 封', '第 2 包：2 字节'], led: ['send', 'on'],
+      now: ['socket 关闭', 'receive() 返回 → 2 字节'],
+      d: '第二封只有 2 字节。两次 `receive()` 对应两份独立的数据报：长度各自为准，不需要换行来分辨。' },
+    { t: '没有回执', cls: ['got1', 'got2', 'noreceipt'], lcd: ['有收到吗？', '收满两包'], led: ['off', 'off'],
+      now: ['程序结束（无回执）', '程序结束'],
+      d: '邮局不给回执：UDP 不报告投递结果。发送端想知道对方收没收到，得靠应用程序自己约定回信。' },
+  ];
+  const POST_CLASSES = ['fly1', 'fly2', 'got1', 'got2', 'noreceipt'];
+
+  function initPost(node) {
+    const scene = $('.cw-post', node);
+    if (!scene) return;
+    const lcd = { sender: $('[data-post-lcd="sender"]', scene), receiver: $('[data-post-lcd="receiver"]', scene) };
+    const led = { sender: $('[data-post-led="sender"]', scene), receiver: $('[data-post-led="receiver"]', scene) };
+    const now = { sender: $('[data-post-now="sender"]', node), receiver: $('[data-post-now="receiver"]', node) };
+    const desc = $('desc', scene);
+    const cards = { c1: $('.po-card.c1', scene), c2: $('.po-card.c2', scene) };
+
+    /* 沿弧线飞一封：起点在发送端桌上，途经邮筒上方，落进接收端的信槽 */
+    const fly = (card, from, ctrl, to) => {
+      const frames = [];
+      const N = 30;
+      for (let i = 0; i <= N; i++) {
+        const t = i / N; const u = 1 - t;
+        frames.push({ transform: `translate(${u * u * from[0] + 2 * u * t * ctrl[0] + t * t * to[0]}px, ${u * u * from[1] + 2 * u * t * ctrl[1] + t * t * to[1]}px) rotate(${(t * 7 - 3.5).toFixed(1)}deg)`, opacity: i === 0 ? 0 : 1 });
+      }
+      card.getAnimations().forEach((a) => a.cancel());
+      card.animate(frames, { duration: 1500, easing: 'ease-in-out', fill: 'forwards' });
+    };
+
+    makeStepper(node, {
+      max: POST.length - 1,
+      captionFor: (n) => `<b>${POST[n].t}</b>　${rich(POST[n].d)}`,
+      onChange: (n, old, via) => {
+        const s = POST[n];
+        scene.classList.remove(...POST_CLASSES);
+        scene.classList.add(...s.cls);
+        lcd.sender.textContent = s.lcd[0];
+        lcd.receiver.textContent = s.lcd[1];
+        for (const side of ['sender', 'receiver']) {
+          led[side].classList.remove('wait', 'send', 'on');
+          const st = s.led[side === 'sender' ? 0 : 1];
+          if (st !== 'off') led[side].classList.add(st);
+          now[side].textContent = s.now[side === 'sender' ? 0 : 1];
+        }
+        if (desc) desc.textContent = `寄明信片的比喻。第 ${n} 步：${s.t}。发送端${s.now[0]}；接收端${s.now[1]}。`;
+        /* 落定或回退后取消飞行动画，交给 CSS 按状态摆放明信片 */
+        cards.c1.getAnimations().forEach((a) => a.cancel());
+        cards.c2.getAnimations().forEach((a) => a.cancel());
+        if (via === 'next' && n === old + 1 && !reduceMotion()) {
+          if (n === 1) fly(cards.c1, [224, 200], [752, 54], [1030, 200]);
+          if (n === 3) fly(cards.c2, [244, 222], [752, 36], [1110, 212]);
+        }
+      },
+    });
+  }
+  $$('[data-post]').forEach(initPost);
+
+  /* ------------------------------------------------------------------
+   * 代码卡：行号、步骤标记、import 折叠、语法着色、复制。
+   * 源码原样放在 <pre class="cw-src"> 里（复制的就是它）；没有脚本时也能看到全文。
+   * ------------------------------------------------------------------ */
+  const TOKENS = /(\/\/[^\n]*|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|@[A-Za-z_$][\w$]*|\b(?:public|private|protected|class|static|void|int|double|float|byte|new|return|while|try|throws|import|if|else|true|false|null|final|for|catch|long|short|char|boolean)\b|\b0[xX][\da-fA-F_]+\b|\b\d[\d_]*(?:\.\d+)?[fFdDlL]?\b|\b[A-Z][\w$]*\b)/g;
+  const escapeHtml = (text) => text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+
+  function highlightJava(line) {
+    let out = '';
+    let last = 0;
+    for (const match of line.matchAll(TOKENS)) {
+      const value = match[0];
+      out += escapeHtml(line.slice(last, match.index));
+      const kind = value.startsWith('//') ? 'cm' : value[0] === '"' || value[0] === "'" ? 'str'
+        : value[0] === '@' ? 'an' : /^\d/.test(value) ? 'num' : /^[A-Z]/.test(value) ? 'ty' : 'kw';
+      out += `<span class="tk-${kind}">${escapeHtml(value)}</span>`;
+      last = match.index + value.length;
+    }
+    return out + escapeHtml(line.slice(last));
+  }
+
+  /* 标明出处的代码片段同样着色 */
+  $$('.cw-snippet').forEach((block) => { block.innerHTML = highlightJava(block.textContent); });
+
+  $$('.cw-code').forEach((card) => {
+    const source = $('pre.cw-src', card);
+    const scroll = $('.cw-code-scroll', card);
+    if (!source || !scroll) return;
+    const text = source.textContent.replace(/\n$/, '');
+    const lines = text.split('\n');
+
+    /* 标记按“包含的文字”定位行，而不是写死行号 */
+    const markAt = new Map();
+    for (const mark of JSON.parse(card.dataset.marks || '[]')) {
+      let seen = 0;
+      let index = -1;
+      const needle = mark.find || mark.after;
+      for (let i = 0; i < lines.length; i++) {
+        if (!lines[i].includes(needle)) continue;
+        if (seen++ === (mark.nth || 0)) { index = i; break; }
+      }
+      if (index >= 0 && mark.after) index += mark.offset || 0;   /* “某行之后第 N 行”，用于单独的右花括号 */
+      if (index < 0 || index >= lines.length) { card.dataset.markError = needle; console.error('[lec17] 找不到标记所在的行：', needle); continue; }
+      for (let j = 0; j < (mark.span || 1); j++) markAt.set(index + j, j === 0 ? mark.badge : '');
+    }
+
+    const pre = document.createElement('div');
+    pre.className = 'cw-pre';
+    lines.forEach((line, i) => {
+      const row = document.createElement('div');
+      const badge = markAt.get(i);
+      row.className = `cw-ln${badge !== undefined ? ' mark' : ''}${/^\s*import\s/.test(line) ? ' imp' : ''}`;
+      row.innerHTML = `<span class="mk">${badge ? `<b>${badge}</b>` : ''}</span><span class="no">${i + 1}</span><span class="tx">${highlightJava(line) || ' '}</span>`;
+      pre.appendChild(row);
+    });
+    const importCount = $$('.cw-ln.imp', pre).length;
+    if (importCount) {
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'cw-imp-toggle';
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.textContent = `import · ${importCount} 行（复制时包含）`;
+      toggle.addEventListener('click', () => {
+        const open = card.classList.toggle('imports-open');
+        toggle.setAttribute('aria-expanded', String(open));
+      });
+      pre.insertBefore(toggle, $('.cw-ln.imp', pre));
+    }
+    source.hidden = true;
+    source.before(pre);
+  });
+
+  /* 复制完整代码 */
+  const copyText = async (text) => {
+    if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
+    else throw new Error('clipboard api unavailable');
+  };
+  $$('[data-copy]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const target = document.getElementById(button.dataset.copy);
+      if (!target) return;
+      const label = button.textContent;
+      const done = () => {
+        button.textContent = '已复制 ✓';
+        setTimeout(() => { button.textContent = label; }, 2200);
+      };
+      try {
+        await copyText(target.textContent);
+        done();
+      } catch {
+        /* file:// 或权限受限时的兼容做法：选中全文，让用户按复制键 */
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(target);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch { ok = false; }
+        selection.removeAllRanges();
+        if (ok) done();
+        else {
+          /* 兼容路径也没成功：代码已全选，告诉用户按哪个键 */
+          button.textContent = '已全选 · 按 Ctrl/⌘+C';
+          setTimeout(() => { button.textContent = label; }, 5000);
+        }
+      }
+    });
+  });
+
+  /* ------------------------------------------------------------------
+   * 课堂检查
+   * ------------------------------------------------------------------ */
+  $$('[data-quiz]').forEach((quiz) => {
+    const check = $('[data-check]', quiz);
+    const result = $('.cw-result', quiz);
+    check.addEventListener('click', () => {
+      const picked = quiz.querySelector('input[type="radio"]:checked');
+      if (!picked) result.textContent = '请先选择一个答案。';
+      else if (picked.value === quiz.dataset.answer) result.textContent = `回答正确。${quiz.dataset.explanation}`;
+      else result.textContent = quiz.dataset.hint || '再想一想。';
+    });
+  });
+
+  /* ------------------------------------------------------------------
+   * 帧解剖：21 个字节排成一条带索引的格子，点字段按钮看每段的位置和用途。
+   * ------------------------------------------------------------------ */
+  const FRAME_FIELDS = [
+    { id: 'head', name: '帧头', bytes: ['EB', '90'], detail: '固定为 <code>EB 90</code>，用于识别“这是本课程格式的一条帧”。' },
+    { id: 'id', name: '设备 ID', bytes: ['01'], detail: '发送方的设备编号，本例是设备 1。' },
+    { id: 'cmd', name: '命令字', bytes: ['01'], detail: '<code>01</code> 代表“坐标与电量遥测”这一类消息。' },
+    { id: 'len', name: '载荷长度', bytes: ['0D'], detail: '<code>0D</code>＝13，只数载荷，不包含帧头、长度字节本身、校验和帧尾。' },
+    { id: 'pay', name: '载荷', bytes: ['3F', 'C0', '00', '00', 'C0', '00', '00', '00', '3F', '00', '00', '00', '57'], detail: '三个大端 float（各 4 字节）＋ 1 字节电量：<code>57</code>＝87。' },
+    { id: 'sum', name: '累加和', bytes: ['64'], detail: '对索引 2–17 的无符号字节求和、只留低 8 位：612 → <code>0x64</code>。' },
+    { id: 'tail', name: '帧尾', bytes: ['0D', '0A'], detail: '固定帧尾。它也可能出现在载荷里，所以不能只靠查找帧尾来决定一条帧在哪里结束。' },
+  ];
+
+  $$('[data-frame]').forEach((node) => {
+    const strip = $('[data-frame-cells]', node);
+    const detail = $('[data-frame-detail]', node);
+    if (!strip || !detail) return;
+    let idx = 0;
+    const cells = [];
+    for (const f of FRAME_FIELDS) {
+      for (const b of f.bytes) {
+        const i = idx++;
+        const cell = document.createElement('span');
+        cell.className = `cw-fcell f-${f.id}${i >= 2 && i <= 17 ? ' in-sum' : ''}`;
+        cell.innerHTML = `<b>${b}</b><i>${i}</i>`;
+        strip.appendChild(cell);
+        cells.push(cell);
+      }
+    }
+    const rangeOf = (id) => {
+      const first = cells.findIndex((c) => c.classList.contains(`f-${id}`));
+      const last = cells.map((c) => c.classList.contains(`f-${id}`)).lastIndexOf(true);
+      return [first, last];
+    };
+    $$('[data-f]', node).forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.f;
+        const f = FRAME_FIELDS.find((x) => x.id === id);
+        $$('[data-f]', node).forEach((b) => { const on = b === btn; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+        cells.forEach((c) => c.classList.toggle('lit', c.classList.contains(`f-${id}`)));
+        const [a, z] = rangeOf(id);
+        detail.innerHTML = `<b>${f.name}</b> · 索引 ${a}${z > a ? '–' + z : ''} · ${f.detail}`;
+      });
+    });
+  });
+
+  /* ------------------------------------------------------------------
+   * 校验盲区演示：同一条帧的三种状态，对照累加和与 CRC 的判定。
+   * 数字来自 TelemetryFrameLab 的真实运行：2F7C / 3F5D / D710。
+   * ------------------------------------------------------------------ */
+  const FRAME_BYTES = ['EB', '90', '01', '01', '0D', '3F', 'C0', '00', '00', 'C0', '00', '00', '00', '3F', '00', '00', '00', '57', '64', '0D', '0A'];
+  const CS_STATES = [
+    {
+      chg: {}, sum: '0x64', sumOk: true, sumNote: '与第 18 字节一致', crc: '2F7C', crcDiff: false,
+      note: '原帧：索引 2–17 无符号求和＝612（0x264），低 8 位 0x64，校验通过；CRC 记下基准 2F7C。',
+    },
+    {
+      chg: { 17: ['56', '−1'] }, sum: '0x63', sumOk: false, sumNote: '≠ 0x64，拒绝这条帧', crc: '3F5D', crcDiff: true,
+      note: '电量 57→56：和变 0x63，累加和立刻发现；CRC 也从 2F7C 变成 3F5D——两个都抓得住。',
+    },
+    {
+      chg: { 2: ['02', '+1'], 17: ['56', '−1'] }, sum: '0x64', sumOk: true, sumNote: '回到 0x64，通过（盲区）', crc: 'D710', crcDiff: true,
+      note: '编号 +1、电量 −1 相互抵消：累加和放行；但 CRC 变成 D710 ≠ 2F7C，一加一减被抓住。',
+    },
+  ];
+
+  $$('[data-checksim]').forEach((node) => {
+    const strip = $('[data-cs-cells]', node);
+    const sumBox = $('[data-cs-sum]', node);
+    const crcBox = $('[data-cs-crc]', node);
+    const note = $('[data-cs-note]', node);
+    if (!strip || !sumBox || !crcBox || !note) return;
+    FRAME_BYTES.forEach((b, i) => {
+      const cell = document.createElement('span');
+      cell.className = 'cw-fcell cs';
+      cell.innerHTML = `<b>${b}</b><i>${i}</i>`;
+      strip.appendChild(cell);
+    });
+    const cells = $$('.cw-fcell', strip);
+    const render = (k) => {
+      const st = CS_STATES[k];
+      cells.forEach((c, i) => {
+        const chg = st.chg[i];
+        c.classList.toggle('chg', !!chg);
+        c.innerHTML = `<b>${chg ? chg[0] : FRAME_BYTES[i]}</b><i>${i}${chg ? `<em>${chg[1]}</em>` : ''}</i>`;
+      });
+      sumBox.className = `card ${st.sumOk ? '' : 'bad'}`;
+      sumBox.innerHTML = `<div class="cw-role">累加和 · 重新计算索引 2–17</div>
+        <p class="cw-cs-line">求和取低 8 位：<code>${st.sum}</code>　<span class="${st.sumOk ? 'cw-ok' : 'cw-no'}">${st.sumOk ? '✓ ' : '✗ '}</span>${st.sumNote}</p>`;
+      crcBox.className = `card ${st.crcDiff ? 'accent' : ''}`;
+      crcBox.innerHTML = `<div class="cw-role">CRC-16 对照 · 基准 2F7C</div>
+        <p class="cw-cs-line">本条帧：<code>${st.crc}</code>　<span class="${st.crcDiff ? 'cw-no' : 'cw-ok'}">${st.crcDiff ? '✗' : '✓'}</span> ${st.crcDiff ? '与基准不同，改动能被发现' : '与基准相同'}</p>`;
+      note.innerHTML = st.note;
+      $$('[data-cs]', node).forEach((b, i) => { const on = i === k; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+    };
+    $$('[data-cs]', node).forEach((btn) => {
+      btn.addEventListener('click', () => render(Number(btn.dataset.cs)));
+    });
+    render(0);
+  });
+
+  /* ------------------------------------------------------------------
+   * IDEA 运行窗口示意：切换标签页，就是切换两个程序各自的控制台。
+   * ------------------------------------------------------------------ */
+  $$('[data-ide]').forEach((node) => {
+    node.addEventListener('click', (e) => {
+      const tab = e.target.closest('[data-ide-tab]');
+      if (!tab) return;
+      $$('[data-ide-tab]', node).forEach((t) => { const on = t === tab; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); });
+      $$('[data-ide-pane]', node).forEach((p) => p.classList.toggle('on', p.dataset.idePane === tab.dataset.ideTab));
+    });
+  });
+})();
+
+</script>
+</body>
+</html>
